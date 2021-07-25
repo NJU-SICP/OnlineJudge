@@ -4,11 +4,11 @@ import {Route, Redirect, Switch, useLocation} from "react-router-dom";
 import {Layout} from "antd";
 import Welcome from "../components/welcome";
 import Menu from "../components/menu";
-import AdminUserList from "../components/admin/user/list";
-import AdminUserCreator from "../components/admin/user/create";
-import AdminUserEditor from "../components/admin/user/edit";
+import AdminUserList from "../components/admin/users/list";
+import AdminUserCreator from "../components/admin/users/create";
+import AdminUserEditor from "../components/admin/users/edit";
 
-const MainLayout = ({children}) => {
+const MainLayout = () => {
     const location = useLocation();
     const auth = useSelector((state) => state.auth.value);
     return (
