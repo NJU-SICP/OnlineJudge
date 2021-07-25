@@ -12,6 +12,12 @@ import MainLayout from "./layouts/main";
 import AuthLayout from "./layouts/auth";
 import Header from "./components/header";
 
+console.info(
+    `Welcome to SICP Online Judge!\n` +
+    `To access API directly, call \`http()\` in console.\n` +
+    `E.g. \`http().get("/assignments")\` fetches assignments.`
+);
+
 ReactDOM.render(
     <React.StrictMode>
         <Provider store={store}>
@@ -20,7 +26,7 @@ ReactDOM.render(
                     <Header/>
                     <Switch>
                         <Route path="/auth/login" children={<AuthLayout/>}/>
-                        <Route path="/" children={<MainLayout/>}></Route>
+                        <Route path="/" children={<MainLayout/>}/>
                     </Switch>
                 </Layout>
             </BrowserRouter>

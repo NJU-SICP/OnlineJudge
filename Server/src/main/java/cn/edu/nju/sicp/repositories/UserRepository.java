@@ -10,7 +10,7 @@ import java.util.List;
 @RepositoryRestResource(excerptProjection = UserInfo.class)
 public interface UserRepository extends MongoRepository<User, String> {
 
-    List<User> findAll();
+    List<User> findAllOrderByUsername();
 
     User findByUsername(String username);
 

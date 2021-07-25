@@ -34,7 +34,7 @@ const AuthLayout = () => {
             .catch((err) => {
                 console.error(err);
                 if (err.response && err.response.status === 403) {
-                    setError("学号或密码不正确，请重试。");
+                    setError(err.response.data);
                 }
             });
     };

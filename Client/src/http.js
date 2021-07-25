@@ -19,4 +19,6 @@ const http = () => {
     return instance;
 };
 
+window.http = http;
+
 export default http;

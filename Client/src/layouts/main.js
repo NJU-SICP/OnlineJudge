@@ -1,12 +1,12 @@
 import {useSelector} from "react-redux";
 import {Route, Redirect, Switch, useLocation} from "react-router-dom";
 
-import {Layout, Menu} from "antd";
-import {HomeOutlined} from '@ant-design/icons';
+import {Layout} from "antd";
 import Welcome from "../components/welcome";
-
-const {SubMenu} = Menu;
-const {Sider, Content} = Layout;
+import Menu from "../components/menu";
+import AdminUserList from "../components/admin/user/list";
+import AdminUserCreator from "../components/admin/user/create";
+import AdminUserEditor from "../components/admin/user/edit";
 
 const MainLayout = ({children}) => {
     const location = useLocation();
@@ -17,18 +17,18 @@ const MainLayout = ({children}) => {
                 ? <Redirect to={{pathname: "/auth/login", search: `?redirect=${location.pathname}`}}/>
                 : <>
                     <Layout>
-                        <Sider width={200} className="site-layout-background">
-                            <Menu mode="inline" style={{height: '100%', borderRight: 0}}
-                                  defaultSelectedKeys={["welcome"]}>
-                                <Menu.Item key="welcome" icon={<HomeOutlined/>}>系统主页</Menu.Item>
-                            </Menu>
-                        </Sider>
+                        <Layout.Sider width={200} className="site-layout-background">
+                            <Menu/>
+                        </Layout.Sider>
                         <Layout style={{padding: '1em'}}>
-                            <Content style={{padding: "1em"}}>
+                            <Layout.Content style={{padding: "1em"}}>
                                 <Switch>
+                                    <Route path="/admin/users/create" children={<AdminUserCreator/>}/>
+                                    <Route path="/admin/users/:id" children={<AdminUserEditor/>}/>
+                                    <Route path="/admin/users" children={<AdminUserList/>}/>
                                     <Route path="/" exact children={<Welcome/>}/>
                                 </Switch>
-                            </Content>
+                            </Layout.Content>
                         </Layout>
                     </Layout>
                 </>

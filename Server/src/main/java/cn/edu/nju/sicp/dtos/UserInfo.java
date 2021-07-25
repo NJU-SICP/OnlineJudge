@@ -3,8 +3,6 @@ package cn.edu.nju.sicp.dtos;
 import cn.edu.nju.sicp.models.User;
 import org.springframework.data.rest.core.config.Projection;
 
-import java.util.Date;
-
 @Projection(name = "UserInfo", types = User.class)
 public interface UserInfo {
 
@@ -14,9 +12,11 @@ public interface UserInfo {
 
     String getFullName();
 
-    Date getValidAfter();
+    boolean isAccountNonExpired();
 
-    Date getValidBefore();
+    boolean isAccountNonLocked();
+
+    boolean isEnabled();
 
     int getRing();
 
