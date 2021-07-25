@@ -65,7 +65,7 @@ const AdminUserEditor = () => {
                 <Popconfirm title="确定要删除用户吗？" onConfirm={deleteUser}
                             okText="删除" okType="danger" cancelText="取消">
                     <Button style={{float: "right"}} type="danger" disabled={disabled}>
-                        <DeleteOutlined/>删除用户
+                        <DeleteOutlined/> 删除用户
                     </Button>
                 </Popconfirm>
             </Typography.Title>

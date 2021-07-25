@@ -16,4 +16,12 @@ public interface AssignmentInfo {
 
     Date getEndTime();
 
+    String getSubmitFileType();
+
+    int getSubmitCountLimit();
+
+    int getTotalScore();
+
+    int getPercentage();
+
 }

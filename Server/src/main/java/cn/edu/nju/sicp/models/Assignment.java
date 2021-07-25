@@ -3,7 +3,6 @@ package cn.edu.nju.sicp.models;
 import org.springframework.data.annotation.Id;
 
 import java.util.Date;
-import java.util.List;
 
 public class Assignment {
 
@@ -13,8 +12,10 @@ public class Assignment {
     private String title;
     private Date beginTime;
     private Date endTime;
-    private List<String> submitFileTypes;
+    private String submitFileType;
     private int submitCountLimit;
+    private double totalScore;
+    private double percentage;
 
     public String getId() {
         return id;
@@ -44,12 +45,12 @@ public class Assignment {
         this.endTime = endTime;
     }
 
-    public List<String> getSubmitFileTypes() {
-        return submitFileTypes;
+    public String getSubmitFileType() {
+        return submitFileType;
     }
 
-    public void setSubmitFileTypes(List<String> submitFileTypes) {
-        this.submitFileTypes = submitFileTypes;
+    public void setSubmitFileType(String submitFileType) {
+        this.submitFileType = submitFileType;
     }
 
     public int getSubmitCountLimit() {
@@ -60,4 +61,19 @@ public class Assignment {
         this.submitCountLimit = submitCountLimit;
     }
 
+    public double getTotalScore() {
+        return totalScore;
+    }
+
+    public void setTotalScore(double totalScore) {
+        this.totalScore = totalScore;
+    }
+
+    public double getPercentage() {
+        return percentage;
+    }
+
+    public void setPercentage(double percentage) {
+        this.percentage = percentage;
+    }
 }

@@ -3,7 +3,7 @@ import {useSelector} from "react-redux";
 import {useHistory} from "react-router-dom";
 
 import {Menu as AntMenu} from "antd";
-import {HomeOutlined, SettingOutlined, UserSwitchOutlined} from "@ant-design/icons";
+import {EditOutlined, HomeOutlined, SettingOutlined, UserSwitchOutlined} from "@ant-design/icons";
 
 const Menu = () => {
     const history = useHistory();
@@ -15,8 +15,14 @@ const Menu = () => {
             <AntMenu.Item key="/" icon={<HomeOutlined/>} onClick={() => redirect("/")}>系统主页</AntMenu.Item>
             {!!auth && auth.ring < 3 && <>
                 <AntMenu.SubMenu key="/admin" title="系统管理" icon={<SettingOutlined/>}>
-                    <AntMenu.Item key="/admin/user" icon={<UserSwitchOutlined/>}
-                                  onClick={() => redirect("/admin/users")}>用户管理</AntMenu.Item>
+                    <AntMenu.Item key="/admin/users" icon={<UserSwitchOutlined/>}
+                                  onClick={() => redirect("/admin/users")}>
+                        用户管理
+                    </AntMenu.Item>
+                    <AntMenu.Item key="/admin/assignments" icon={<EditOutlined/>}
+                                  onClick={() => redirect("/admin/assignments")}>
+                        作业管理
+                    </AntMenu.Item>
                 </AntMenu.SubMenu>
             </>}
         </AntMenu>

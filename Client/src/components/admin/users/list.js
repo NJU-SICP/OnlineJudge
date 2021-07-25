@@ -4,7 +4,7 @@ import qs from "qs";
 import http from "../../../http";
 
 import {Button, Pagination, Table, Typography} from "antd";
-import {PlusOutlined} from "@ant-design/icons";
+import {PlusOutlined, UserSwitchOutlined} from "@ant-design/icons";
 
 const AdminUserList = () => {
     const history = useHistory();
@@ -71,11 +71,12 @@ const AdminUserList = () => {
     return (
         <>
             <Typography.Title level={2}>
-                用户管理
-                <Button style={{float: "right"}} onClick={() => history.push("/admin/users/create")}><PlusOutlined/>添加用户</Button>
-
+                <UserSwitchOutlined/> 用户管理
+                <Button style={{float: "right"}} onClick={() => history.push("/admin/users/create")}>
+                    <PlusOutlined/> 添加用户
+                </Button>
             </Typography.Title>
-            <Table columns={columns} dataSource={users} rowKey="username" pagination={false}/>
+            <Table columns={columns} dataSource={users} rowKey="id" pagination={false}/>
             <div style={{float: "right", marginTop: "1em"}}>
                 {!!pagination &&
                 <Pagination current={pagination.number + 1} pageSize={pagination.size} total={pagination.totalElements}

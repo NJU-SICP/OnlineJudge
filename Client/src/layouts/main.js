@@ -5,8 +5,11 @@ import {Layout} from "antd";
 import Welcome from "../components/welcome";
 import Menu from "../components/menu";
 import AdminUserList from "../components/admin/users/list";
-import AdminUserCreator from "../components/admin/users/create";
-import AdminUserEditor from "../components/admin/users/edit";
+import AdminUserCreator from "../components/admin/users/creator";
+import AdminUserEditor from "../components/admin/users/editor";
+import AdminAssignmentList from "../components/admin/assignments/list";
+import AdminAssignmentCreator from "../components/admin/assignments/creator";
+import AdminAssignmentEditor from "../components/admin/assignments/editor";
 
 const MainLayout = () => {
     const location = useLocation();
@@ -26,6 +29,9 @@ const MainLayout = () => {
                                     <Route path="/admin/users/create" children={<AdminUserCreator/>}/>
                                     <Route path="/admin/users/:id" children={<AdminUserEditor/>}/>
                                     <Route path="/admin/users" children={<AdminUserList/>}/>
+                                    <Route path="/admin/assignments/create" children={<AdminAssignmentCreator/>}/>
+                                    <Route path="/admin/assignments/:id" children={<AdminAssignmentEditor/>}/>
+                                    <Route path="/admin/assignments" children={<AdminAssignmentList/>}/>
                                     <Route path="/" exact children={<Welcome/>}/>
                                 </Switch>
                             </Layout.Content>
