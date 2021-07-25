@@ -10,6 +10,9 @@ import AdminUserEditor from "../components/admin/users/editor";
 import AdminAssignmentList from "../components/admin/assignments/list";
 import AdminAssignmentCreator from "../components/admin/assignments/creator";
 import AdminAssignmentEditor from "../components/admin/assignments/editor";
+import AssignmentList from "../components/assignments/list";
+import AssignmentView from "../components/assignments/view";
+import UserConfig from "../components/config";
 
 const MainLayout = () => {
     const location = useLocation();
@@ -32,6 +35,9 @@ const MainLayout = () => {
                                     <Route path="/admin/assignments/create" children={<AdminAssignmentCreator/>}/>
                                     <Route path="/admin/assignments/:id" children={<AdminAssignmentEditor/>}/>
                                     <Route path="/admin/assignments" children={<AdminAssignmentList/>}/>
+                                    <Route path="/assignments/:id" children={<AssignmentView/>}/>
+                                    <Route path="/assignments" children={<AssignmentList/>}/>
+                                    <Route path="/config" children={<UserConfig/>}/>
                                     <Route path="/" exact children={<Welcome/>}/>
                                 </Switch>
                             </Layout.Content>

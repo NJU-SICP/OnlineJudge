@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -57,6 +58,24 @@ public class AuthController {
         } catch (JsonProcessingException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<String> setPassword(@RequestBody SetPasswordRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>("无法验证用户身份，请重新登录。", HttpStatus.FORBIDDEN);
+        }
+
+        String username = (String) authentication.getPrincipal();
+        User user = repository.findByUsername(username);
+        if (!user.validatePassword(request.oldPassword)) {
+            return new ResponseEntity<>("输入的旧密码不正确，请重试。", HttpStatus.FORBIDDEN);
+        }
+
+        user.setPassword(request.newPassword);
+        repository.save(user);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     static class LoginRequest {
@@ -119,4 +138,28 @@ public class AuthController {
         }
 
     }
+
+    static class SetPasswordRequest {
+
+        private String oldPassword;
+        private String newPassword;
+
+        public String getOldPassword() {
+            return oldPassword;
+        }
+
+        public void setOldPassword(String oldPassword) {
+            this.oldPassword = oldPassword;
+        }
+
+        public String getNewPassword() {
+            return newPassword;
+        }
+
+        public void setNewPassword(String newPassword) {
+            this.newPassword = newPassword;
+        }
+
+    }
+
 }

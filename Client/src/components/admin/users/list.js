@@ -25,18 +25,18 @@ const AdminUserList = () => {
     const columns = [
         {
             title: "学号",
-            dataIndex: "username",
-            key: "username"
+            key: "username",
+            dataIndex: "username"
         },
         {
             title: "姓名",
-            dataIndex: "fullName",
-            key: "fullName"
+            key: "fullName",
+            dataIndex: "fullName"
         },
         {
             title: "权限组",
-            dataIndex: "ring",
             key: "ring",
+            dataIndex: "ring",
             render: (ring) => (
                 <Typography.Text type={ring < 3 ? "danger" : "primary"}>{ring}</Typography.Text>
             )

@@ -26,25 +26,25 @@ const AdminAssignmentList = () => {
     const columns = [
         {
             title: "标题",
-            dataIndex: "title",
-            key: "title"
+            key: "title",
+            dataIndex: "title"
         },
         {
             title: "开始时间",
-            dataIndex: "beginTime",
             key: "beginTime",
+            dataIndex: "beginTime",
             render: (time) => moment(time).format("YYYY-MM-DD HH:mm:ss")
         },
         {
             title: "结束时间",
-            dataIndex: "endTime",
             key: "endTime",
+            dataIndex: "endTime",
             render: (time) => moment(time).format("YYYY-MM-DD HH:mm:ss")
         },
         {
             title: "提交类型",
-            dataIndex: "submitFileType",
-            key: "submitFileType"
+            key: "submitFileType",
+            dataIndex: "submitFileType"
         },
         {
             title: "总分占比",

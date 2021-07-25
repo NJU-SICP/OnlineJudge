@@ -3,7 +3,7 @@ import {useDispatch} from "react-redux";
 import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 
-import {Layout, Menu, Form, Input, Button, Alert} from "antd";
+import {Layout, Menu, Form, Input, Button, Alert, Typography} from "antd";
 import {UserOutlined} from "@ant-design/icons";
 
 import {set} from "../store/auth";
@@ -13,9 +13,11 @@ const AuthLayout = () => {
     const history = useHistory();
     const location = useLocation();
     const dispatch = useDispatch();
+    const [disabled, setDisabled] = useState(false);
     const [error, setError] = useState(null);
 
     const attemptLogin = (credentials) => {
+        setDisabled(true);
         setError(null);
         http()
             .post("/auth/login", {
@@ -36,6 +38,7 @@ const AuthLayout = () => {
                 if (err.response && err.response.status === 403) {
                     setError(err.response.data);
                 }
+                setDisabled(false);
             });
     };
 
@@ -48,15 +51,18 @@ const AuthLayout = () => {
             </Layout.Sider>
             <Layout style={{padding: '2em'}}>
                 <Layout.Content>
-                    <Form name="login" style={{maxWidth: "20em"}} onFinish={attemptLogin}>
+                    <Typography.Title level={2}>
+                        <UserOutlined/> 用户登录
+                    </Typography.Title>
+                    <Form name="login" style={{maxWidth: "20em", marginTop: "2em"}} onFinish={attemptLogin}>
                         <Form.Item label="学号" name="username" rules={[{required: true, message: "请输入学号"}]}>
-                            <Input/>
+                            <Input disabled={disabled}/>
                         </Form.Item>
                         <Form.Item label="密码" name="password" rules={[{required: true, message: "请输入密码"}]}>
-                            <Input.Password/>
+                            <Input.Password disabled={disabled}/>
                         </Form.Item>
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" style={{width: "100%"}}>
+                            <Button type="primary" htmlType="submit" disabled={disabled} style={{width: "100%"}}>
                                 登录
                             </Button>
                         </Form.Item>

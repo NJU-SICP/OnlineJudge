@@ -12,7 +12,17 @@ const Menu = () => {
     return (
         <AntMenu mode="inline" style={{height: '100%', borderRight: 0}}
                  defaultSelectedKeys={[history.location.pathname]}>
-            <AntMenu.Item key="/" icon={<HomeOutlined/>} onClick={() => redirect("/")}>系统主页</AntMenu.Item>
+            <AntMenu.Item key="/" icon={<HomeOutlined/>} onClick={() => redirect("/")}>
+                系统主页
+            </AntMenu.Item>
+            <AntMenu.Item key="/assignments" icon={<EditOutlined/>}
+                          onClick={() => redirect("/assignments")}>
+                作业列表
+            </AntMenu.Item>
+            <AntMenu.Item key="/configuration" icon={<UserSwitchOutlined/>}
+                          onClick={() => redirect("/config")}>
+                用户设置
+            </AntMenu.Item>
             {!!auth && auth.ring < 3 && <>
                 <AntMenu.SubMenu key="/admin" title="系统管理" icon={<SettingOutlined/>}>
                     <AntMenu.Item key="/admin/users" icon={<UserSwitchOutlined/>}
