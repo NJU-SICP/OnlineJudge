@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {useParams} from "react-router-dom";
 import http from "../../http";
 
-import {Col, Divider, message, Row, Skeleton, Spin, Statistic, Typography, Upload} from "antd";
+import {Col, Divider, message, Row, Skeleton, Statistic, Typography, Upload} from "antd";
 import {BookOutlined, InboxOutlined, StopOutlined} from "@ant-design/icons";
 import moment from "moment";
 import SubmissionTable from "../submissions/table";
@@ -13,6 +13,7 @@ const AssignmentView = () => {
     const auth = useSelector((state) => state.auth.value);
     const [assignment, setAssignment] = useState(null);
     const [submissions, setSubmissions] = useState(null);
+    const [disabled, setDisabled] = useState(false);
 
     useEffect(() => {
         http()
@@ -27,8 +28,19 @@ const AssignmentView = () => {
             })
             .catch((err) => console.error(err));
         http()
-            .get(`/repositories/submissions/search/findByUserIdAndAssignmentId?userId=${auth.userId}&assignmentId=${id}`)
-            .then((res) => setSubmissions(res.data._embedded.submissions))
+            .get(`/repositories/submissions/search/findByUserIdAndAssignmentIdOrderByCreatedAtDesc` +
+                `?userId=${auth.userId}&assignmentId=${id}&sort=createdAt,desc`)
+            .then((res) => {
+                const list = [];
+                const total = res.data._embedded.submissions.length;
+                res.data._embedded.submissions.forEach((s, index) => {
+                    list.push({
+                        ...s,
+                        index: total - index
+                    });
+                });
+                setSubmissions(list);
+            })
             .catch((err) => console.error(err));
     }, [id, auth]);
 
@@ -37,25 +49,29 @@ const AssignmentView = () => {
     };
 
     const createSubmission = ({file, onProgress, onSuccess, onError}) => {
-            const formData = new FormData();
-            formData.append("assignmentId", id);
-            formData.append("file", file);
-            http()
-                .post("/submissions", formData, {
-                    headers: {"Content-Type": "multipart/form-data"},
-                    onUploadProgress: (e) => onProgress({percent: e.loaded * 100 / e.total})
-                })
-                .then((res) => {
-                    onSuccess(res.data);
-                    message.success("提交作业成功！");
-                    setSubmissions(oldSubmissions => [res.data, ...oldSubmissions]);
-                })
-                .catch((err) => {
-                    console.error(err);
-                    onError(err);
-                });
-        }
-    ;
+        setDisabled(true);
+        const formData = new FormData();
+        formData.append("assignmentId", id);
+        formData.append("file", file);
+        http()
+            .post("/submissions", formData, {
+                headers: {"Content-Type": "multipart/form-data"},
+                onUploadProgress: (e) => onProgress({percent: e.loaded * 100 / e.total})
+            })
+            .then((res) => {
+                onSuccess(res.data);
+                message.success("提交作业成功！");
+                setSubmissions(oldSubmissions => [{
+                    ...res.data,
+                    index: oldSubmissions.length === 0 ? 1 : (oldSubmissions[0].index + 1)
+                }, ...oldSubmissions]);
+            })
+            .catch((err) => {
+                console.error(err);
+                onError(err);
+            })
+            .finally(() => setDisabled(false));
+    };
 
     return (
         <>
@@ -82,7 +98,7 @@ const AssignmentView = () => {
                     </Row>
                     <Upload.Dragger style={{maxHeight: "5em"}} name="file" accept={assignment.submitFileType}
                                     beforeUpload={beforeUpload} customRequest={createSubmission} maxCount={1}
-                                    disabled={assignment.ended || assignment.submitCountLimit === 0}>
+                                    disabled={assignment.ended || assignment.submitCountLimit === 0 || disabled}>
                         {assignment.ended
                             ? <Typography.Text disabled><StopOutlined/> 作业已截止，无法提交</Typography.Text>
                             : <>
@@ -91,7 +107,7 @@ const AssignmentView = () => {
                                     : <Typography.Text>
                                         <InboxOutlined/> 点击或将文件拖拽到此处上传提交
                                         {assignment.submitCountLimit > 0 &&
-                                        <span>（剩余{assignment.submitCountLimit}次提交机会）</span>
+                                        <span>（剩余{assignment.submitCountLimit - (submissions === null ? 0 : submissions.length)}次提交机会）</span>
                                         }
                                     </Typography.Text>}
                             </>}

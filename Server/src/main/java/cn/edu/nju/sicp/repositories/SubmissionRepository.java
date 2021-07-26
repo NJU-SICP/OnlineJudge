@@ -10,7 +10,7 @@ import java.util.List;
 @RepositoryRestResource(excerptProjection = SubmissionInfo.class)
 public interface SubmissionRepository extends MongoRepository<Submission, String> {
 
-    List<Submission> findByUserIdAndAssignmentId(String userId, String assignmentId);
+    List<Submission> findByUserIdAndAssignmentIdOrderByCreatedAtDesc(String userId, String assignmentId);
 
     int countByUserIdAndAssignmentId(String userId, String assignmentId);
 
