@@ -28,7 +28,7 @@ const UserConfig = () => {
                 newPassword: values.newPassword
             })
             .then(() => {
-                message.info("修改密码成功，请重新登录。");
+                message.success("修改密码成功，请重新登录。");
                 dispatch(clear());
                 history.push("/");
             })

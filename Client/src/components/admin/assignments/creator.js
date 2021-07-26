@@ -34,7 +34,7 @@ const AdminAssignmentCreator = () => {
                 percentage: values.percentage
             })
             .then(() => {
-                message.info("创建作业成功！");
+                message.success("创建作业成功！");
                 history.push("/admin/assignments");
             })
             .catch((err) => {

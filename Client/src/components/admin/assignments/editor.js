@@ -40,7 +40,7 @@ const AdminAssignmentEditor = () => {
                 percentage: values.percentage
             })
             .then(() => {
-                message.info("修改作业成功！");
+                message.success("修改作业成功！");
                 history.push("/admin/assignments");
             })
             .catch((err) => console.error(err));
@@ -51,7 +51,7 @@ const AdminAssignmentEditor = () => {
         http()
             .delete(`/assignments/${id}`)
             .then(() => {
-                message.info("删除作业成功！");
+                message.success("删除作业成功！");
                 history.push("/admin/assignments");
             })
             .catch((err) => {

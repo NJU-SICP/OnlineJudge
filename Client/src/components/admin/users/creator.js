@@ -34,7 +34,7 @@ const AdminUserCreator = () => {
                 locked: values.locked
             })
             .then(() => {
-                message.info("创建用户成功！");
+                message.success("创建用户成功！");
                 history.push("/admin/users");
             })
             .catch((err) => {

@@ -38,7 +38,7 @@ const AdminUserEditor = () => {
                 ring: values.ring
             })
             .then(() => {
-                message.info("修改用户成功！");
+                message.success("修改用户成功！");
                 history.push("/admin/users");
             })
             .catch((err) => console.error(err));
@@ -49,7 +49,7 @@ const AdminUserEditor = () => {
         http()
             .delete(`/users/${id}`)
             .then(() => {
-                message.info("删除用户成功！");
+                message.success("删除用户成功！");
                 history.push("/admin/users");
             })
             .catch((err) => {
