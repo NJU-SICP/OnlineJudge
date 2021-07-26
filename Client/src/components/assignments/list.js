@@ -36,6 +36,12 @@ const AssignmentList = () => {
 
     const columns = [
         {
+            title: "作业标题",
+            key: "title",
+            dataIndex: "title",
+            render: (title) => <Typography.Text strong>{title}</Typography.Text>
+        },
+        {
             title: "截止时间",
             key: "endTime",
             dataIndex: "endTime",
@@ -47,11 +53,6 @@ const AssignmentList = () => {
                     return <span>{ddl.format("YYYY-MM-DD HH:mm")}（{ddl.fromNow()}）</span>;
                 }
             }
-        },
-        {
-            title: "作业标题",
-            key: "title",
-            dataIndex: "title"
         },
         {
             title: "总评占比",

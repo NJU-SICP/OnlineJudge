@@ -37,23 +37,23 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<String> userLogin(@RequestBody LoginRequest request) {
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword(), new ArrayList<>());
         try {
             Authentication authentication = manager.authenticate(token);
             if (authentication.isAuthenticated()) {
                 User user = (User) authentication.getPrincipal();
-                logger.info(String.format("User %s logged in", user.getUsername()));
+                logger.info(String.format("UserLogin %s", user));
                 LoginResponse response = new LoginResponse(user);
                 return new ResponseEntity<>((new ObjectMapper()).writeValueAsString(response), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (BadCredentialsException e) {
-            logger.info(String.format("User %s login failed: %s", request.getUsername(), e.getMessage()));
+            logger.info(String.format("UserLogin failed={%s} username={%s}", e.getMessage(), request.getUsername()));
             return new ResponseEntity<>("账号或密码不正确，请重试。", HttpStatus.FORBIDDEN);
         } catch (AuthenticationException e) {
-            logger.info(String.format("User %s login failed: %s", request.getUsername(), e.getMessage()));
+            logger.info(String.format("UserLogin failed={%s} username={%s}", e.getMessage(), request.getUsername()));
             return new ResponseEntity<>("用户被禁用或锁定，请联系管理员。", HttpStatus.FORBIDDEN);
         } catch (JsonProcessingException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -61,7 +61,7 @@ public class AuthController {
     }
 
     @PutMapping("/password")
-    public ResponseEntity<String> setPassword(@RequestBody SetPasswordRequest request) {
+    public ResponseEntity<String> userSetPassword(@RequestBody SetPasswordRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             return new ResponseEntity<>("无法验证用户身份，请重新登录。", HttpStatus.FORBIDDEN);
@@ -75,6 +75,8 @@ public class AuthController {
 
         user.setPassword(request.newPassword);
         repository.save(user);
+        logger.info(String.format("UserSetPassword %s", user));
+
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

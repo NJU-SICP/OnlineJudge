@@ -26,10 +26,11 @@ const AdminAssignmentForm = ({initialValues, onFinish, disabled}) => {
             </Form.Item>
             <Form.Item name="submitCountLimit" label="提交次数" rules={[{required: true, message: "请选择提交次数"}]}>
                 <Select disabled={disabled}>
-                    <Select.Option value={0}>无限制</Select.Option>
-                    <Select.Option value={1}>1次</Select.Option>
-                    <Select.Option value={16}>16次</Select.Option>
-                    <Select.Option value={32}>32次</Select.Option>
+                    <Select.Option value={-1}>无次数限制</Select.Option>
+                    <Select.Option value={0}>不允许提交</Select.Option>
+                    <Select.Option value={1}>最多1次</Select.Option>
+                    <Select.Option value={16}>最多16次</Select.Option>
+                    <Select.Option value={32}>最多32次</Select.Option>
                 </Select>
             </Form.Item>
             <Form.Item name="totalScore" label="作业总分" rules={[{required: true, message: "请输入作业总分"}]}>

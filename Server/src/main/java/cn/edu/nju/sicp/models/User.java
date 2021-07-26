@@ -29,6 +29,10 @@ public class User implements UserDetails {
     private String fullName;
     private int ring;
 
+    public String getId() {
+        return id;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -111,6 +115,19 @@ public class User implements UserDetails {
 
     public void setRing(int ring) {
         this.ring = ring;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", enabled=" + enabled +
+                ", locked=" + locked +
+                ", expires=" + expires +
+                ", fullName='" + fullName + '\'' +
+                ", ring=" + ring +
+                '}';
     }
 
 }
