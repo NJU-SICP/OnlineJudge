@@ -2,20 +2,21 @@ import React, {useEffect, useState} from "react";
 import {useParams} from "react-router-dom";
 import http from "../../http";
 
-import {Col, Row, Statistic, Typography, Upload} from "antd";
+import {Col, Divider, message, Row, Skeleton, Spin, Statistic, Typography, Upload} from "antd";
 import {BookOutlined, InboxOutlined, StopOutlined} from "@ant-design/icons";
 import moment from "moment";
+import SubmissionTable from "../submissions/table";
 import {useSelector} from "react-redux";
-import config from "../../config";
 
 const AssignmentView = () => {
     const {id} = useParams();
     const auth = useSelector((state) => state.auth.value);
     const [assignment, setAssignment] = useState(null);
+    const [submissions, setSubmissions] = useState(null);
 
     useEffect(() => {
         http()
-            .get(`/assignments/${id}`)
+            .get(`/repositories/assignments/${id}`)
             .then((res) => {
                 const now = moment();
                 const ddl = moment(res.data.endTime);
@@ -25,12 +26,41 @@ const AssignmentView = () => {
                 });
             })
             .catch((err) => console.error(err));
-    }, [id]);
+        http()
+            .get(`/repositories/submissions/search/findByUserIdAndAssignmentId?userId=${auth.userId}&assignmentId=${id}`)
+            .then((res) => setSubmissions(res.data._embedded.submissions))
+            .catch((err) => console.error(err));
+    }, [id, auth]);
+
+    const beforeUpload = (file) => {
+        return window.confirm(`请确认提交作业和文件名称：\n作业：${assignment.title}\n文件：${file.name}\n点击“确定”提交作业，点击“取消”取消提交。`);
+    };
+
+    const createSubmission = ({file, onProgress, onSuccess, onError}) => {
+            const formData = new FormData();
+            formData.append("assignmentId", id);
+            formData.append("file", file);
+            http()
+                .post("/submissions", formData, {
+                    headers: {"Content-Type": "multipart/form-data"},
+                    onUploadProgress: (e) => onProgress({percent: e.loaded * 100 / e.total})
+                })
+                .then((res) => {
+                    onSuccess(res.data);
+                    message.success("提交作业成功！");
+                    setSubmissions(oldSubmissions => [res.data, ...oldSubmissions]);
+                })
+                .catch((err) => {
+                    console.error(err);
+                    onError(err);
+                });
+        }
+    ;
 
     return (
         <>
             {!assignment
-                ? <p>加载数据中</p>
+                ? <Skeleton/>
                 : <>
                     <Typography.Title level={2}>
                         <BookOutlined/> 作业：{assignment.title}
@@ -46,12 +76,12 @@ const AssignmentView = () => {
                             <Statistic title="提交类型" value={assignment.submitFileType}/>
                         </Col>
                         <Col span={6}>
-                            <Statistic title="提交次数" value={0}
+                            <Statistic title="提交次数" loading={submissions === null} value={submissions?.length}
                                        suffix={assignment.submitCountLimit <= 0 ? "次" : `/ ${assignment.submitCountLimit} 次`}/>
                         </Col>
                     </Row>
                     <Upload.Dragger style={{maxHeight: "5em"}} name="file" accept={assignment.submitFileType}
-                                    action={`${config.baseURL}/submissions`}  
+                                    beforeUpload={beforeUpload} customRequest={createSubmission} maxCount={1}
                                     disabled={assignment.ended || assignment.submitCountLimit === 0}>
                         {assignment.ended
                             ? <Typography.Text disabled><StopOutlined/> 作业已截止，无法提交</Typography.Text>
@@ -66,6 +96,11 @@ const AssignmentView = () => {
                                     </Typography.Text>}
                             </>}
                     </Upload.Dragger>
+                    {submissions && submissions.length > 0 &&
+                    <>
+                        <Divider/>
+                        <SubmissionTable submissions={submissions}/>
+                    </>}
                 </>
             }
         </>

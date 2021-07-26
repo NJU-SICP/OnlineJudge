@@ -3,19 +3,19 @@ import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 import http from "../../../http";
 
-import {Button, Pagination, Table, Typography} from "antd";
+import {Button, Pagination, Skeleton, Table, Typography} from "antd";
 import {EditOutlined, PlusOutlined} from "@ant-design/icons";
 import moment from "moment";
 
 const AdminAssignmentList = () => {
     const history = useHistory();
     const location = useLocation();
-    const [assignments, setAssignments] = useState([]);
+    const [assignments, setAssignments] = useState(null);
     const [pagination, setPagination] = useState(null);
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/assignments?sort=endTime,desc&page=${page - 1}`)
+            .get(`/repositories/assignments?sort=endTime,desc&page=${page - 1}`)
             .then((res) => {
                 setAssignments(res.data._embedded.assignments);
                 setPagination(res.data.page);
@@ -83,13 +83,21 @@ const AdminAssignmentList = () => {
                     <PlusOutlined/> 添加作业
                 </Button>
             </Typography.Title>
-            <Table columns={columns} dataSource={assignments} rowKey="id" pagination={false}/>
-            <div style={{float: "right", marginTop: "1em"}}>
-                {!!pagination &&
-                <Pagination current={pagination.number + 1} pageSize={pagination.size} total={pagination.totalElements}
-                            onChange={(p) => history.push({pathname: location.pathname, search: `?page=${p}`})}/>
-                }
-            </div>
+            {assignments === null
+                ? <Skeleton/>
+                : <>
+                    <Table columns={columns} dataSource={assignments} rowKey="id" pagination={false}/>
+                    <div style={{float: "right", marginTop: "1em"}}>
+                        {!!pagination &&
+                        <Pagination current={pagination.number + 1} pageSize={pagination.size}
+                                    total={pagination.totalElements}
+                                    onChange={(p) => history.push({
+                                        pathname: location.pathname,
+                                        search: `?page=${p}`
+                                    })}/>
+                        }
+                    </div>
+                </>}
         </>
     );
 };

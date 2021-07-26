@@ -5,19 +5,19 @@ import "moment/locale/zh-cn";
 import qs from "qs";
 import http from "../../http";
 
-import {Button, Table, Typography} from "antd";
+import {Button, Pagination, Skeleton, Table, Typography} from "antd";
 import {EditOutlined} from "@ant-design/icons";
 
 const AssignmentList = () => {
     const history = useHistory();
     const location = useLocation();
-    const [assignments, setAssignments] = useState([]);
+    const [assignments, setAssignments] = useState(null);
     const [pagination, setPagination] = useState(null);
 
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/assignments?sort=endTime,desc&page=${page - 1}`)
+            .get(`/repositories/assignments?sort=endTime,desc&page=${page - 1}`)
             .then((res) => {
                 const list = [];
                 const now = moment();
@@ -29,7 +29,7 @@ const AssignmentList = () => {
                     });
                 });
                 setAssignments(list);
-                setPagination(res.page);
+                setPagination(res.data.page);
             })
             .catch((err) => console.error(err));
     }, [location.search]);
@@ -80,7 +80,21 @@ const AssignmentList = () => {
             <Typography.Title level={2}>
                 <EditOutlined/> 作业列表
             </Typography.Title>
-            <Table columns={columns} dataSource={assignments} rowKey="id" pagination={false}/>
+            {assignments === null
+                ? <Skeleton/>
+                : <>
+                    <Table columns={columns} dataSource={assignments} rowKey="id" pagination={false}/>
+                    <div style={{float: "right", marginTop: "1em"}}>
+                        {!!pagination &&
+                        <Pagination current={pagination.number + 1} pageSize={pagination.size}
+                                    total={pagination.totalElements}
+                                    onChange={(p) => history.push({
+                                        pathname: location.pathname,
+                                        search: `?page=${p}`
+                                    })}/>
+                        }
+                    </div>
+                </>}
         </>
     )
 };

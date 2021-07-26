@@ -105,6 +105,7 @@ public class AuthController {
 
     static class LoginResponse {
 
+        private final String userId;
         private final String username;
         private final String fullName;
         private final int ring;
@@ -112,11 +113,16 @@ public class AuthController {
         private final Date expires;
 
         public LoginResponse(User user) {
+            userId = user.getId();
             username = user.getUsername();
             fullName = user.getFullName();
             ring = user.getRing();
             token = JwtTokenUtils.createJwtToken(user);
             expires = JwtTokenUtils.parseJwtToken(token).getExpiration();
+        }
+
+        public String getUserId() {
+            return userId;
         }
 
         public String getUsername() {

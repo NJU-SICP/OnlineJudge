@@ -15,7 +15,7 @@ const AdminAssignmentEditor = () => {
 
     useEffect(() => {
         http()
-            .get(`/assignments/${id}`)
+            .get(`/repositories/assignments/${id}`)
             .then((res) => setAssignment({
                 ...res.data,
                 id: id,
@@ -30,7 +30,7 @@ const AdminAssignmentEditor = () => {
     const updateAssignment = (values) => {
         setDisabled(true);
         http()
-            .put(`/assignments/${id}`, {
+            .put(`/repositories/assignments/${id}`, {
                 title: values.title,
                 beginTime: moment(values.rangeTime[0]),
                 endTime: moment(values.rangeTime[1]),
@@ -49,7 +49,7 @@ const AdminAssignmentEditor = () => {
     const deleteAssignment = () => {
         setDisabled(true);
         http()
-            .delete(`/assignments/${id}`)
+            .delete(`/repositories/assignments/${id}`)
             .then(() => {
                 message.success("删除作业成功！");
                 history.push("/admin/assignments");

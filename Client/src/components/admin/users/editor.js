@@ -14,7 +14,7 @@ const AdminUserEditor = () => {
 
     useEffect(() => {
         http()
-            .get(`/users/${id}`)
+            .get(`/repositories/users/${id}`)
             .then((res) => setUser({
                 ...res.data,
                 id: id,
@@ -27,7 +27,7 @@ const AdminUserEditor = () => {
     const updateUser = (values) => {
         setDisabled(true);
         http()
-            .put(`/users/${id}`, {
+            .put(`/repositories/users/${id}`, {
                 username: values.username,
                 password: values.password ?? user.oldPassword,
                 authorities: [],
@@ -47,7 +47,7 @@ const AdminUserEditor = () => {
     const deleteUser = () => {
         setDisabled(true);
         http()
-            .delete(`/users/${id}`)
+            .delete(`/repositories/users/${id}`)
             .then(() => {
                 message.success("删除用户成功！");
                 history.push("/admin/users");

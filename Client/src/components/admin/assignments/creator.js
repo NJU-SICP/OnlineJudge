@@ -24,7 +24,7 @@ const AdminAssignmentCreator = () => {
         console.log(values);
         setDisabled(true);
         http()
-            .post("/assignments", {
+            .post("/repositories/assignments", {
                 title: values.title,
                 beginTime: moment(values.rangeTime[0]),
                 endTime: moment(values.rangeTime[1]),

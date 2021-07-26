@@ -23,7 +23,7 @@ const AdminUserCreator = () => {
     const createUser = (values) => {
         setDisabled(true);
         http()
-            .post("/users", {
+            .post("/repositories/users", {
                 username: values.username,
                 password: values.password,
                 authorities: [],

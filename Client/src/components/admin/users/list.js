@@ -3,18 +3,18 @@ import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 import http from "../../../http";
 
-import {Button, Pagination, Table, Typography} from "antd";
+import {Button, Pagination, Skeleton, Table, Typography} from "antd";
 import {PlusOutlined, UserSwitchOutlined} from "@ant-design/icons";
 
 const AdminUserList = () => {
     const history = useHistory();
     const location = useLocation();
-    const [users, setUsers] = useState([]);
+    const [users, setUsers] = useState(null);
     const [pagination, setPagination] = useState(null);
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/users?sort=username,asc&page=${page - 1}`)
+            .get(`/repositories/users?sort=username,asc&page=${page - 1}`)
             .then((res) => {
                 setUsers(res.data._embedded.users);
                 setPagination(res.data.page);
@@ -76,13 +76,21 @@ const AdminUserList = () => {
                     <PlusOutlined/> 添加用户
                 </Button>
             </Typography.Title>
-            <Table columns={columns} dataSource={users} rowKey="id" pagination={false}/>
-            <div style={{float: "right", marginTop: "1em"}}>
-                {!!pagination &&
-                <Pagination current={pagination.number + 1} pageSize={pagination.size} total={pagination.totalElements}
-                            onChange={(p) => history.push({pathname: location.pathname, search: `?page=${p}`})}/>
-                }
-            </div>
+            {users === null
+                ? <Skeleton/>
+                : <>
+                    <Table columns={columns} dataSource={users} rowKey="id" pagination={false}/>
+                    <div style={{float: "right", marginTop: "1em"}}>
+                        {!!pagination &&
+                        <Pagination current={pagination.number + 1} pageSize={pagination.size}
+                                    total={pagination.totalElements}
+                                    onChange={(p) => history.push({
+                                        pathname: location.pathname,
+                                        search: `?page=${p}`
+                                    })}/>
+                        }
+                    </div>
+                </>}
         </>
     );
 };

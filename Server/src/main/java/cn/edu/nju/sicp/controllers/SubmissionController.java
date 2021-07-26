@@ -26,6 +26,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.stream.Stream;
 
@@ -84,8 +86,12 @@ public class SubmissionController {
         logger.info(String.format("CreateSubmission %s", submission));
 
         try {
-            String path = String.format("D:\\Temp\\%s\\submit%s", submission.getId(), assignment.getSubmitFileType());
-            file.transferTo(new File(path));
+            String path = String.format("D:\\Temp\\%s", submission.getId());
+            String name = String.format("submit%s", assignment.getSubmitFileType());
+            if (Files.notExists(Paths.get(path))) {
+                Files.createDirectories(Paths.get(path));
+            }
+            file.transferTo(Paths.get(path, name));
         } catch (IOException e) {
             logger.error("Cannot save submission file: " + e.getMessage());
             submissionRepository.delete(submission);
