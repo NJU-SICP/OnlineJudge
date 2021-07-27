@@ -3,7 +3,7 @@ import {useHistory, useParams} from "react-router-dom";
 import moment from "moment";
 import http from "../../../http";
 
-import {Typography, message, Popconfirm, Button} from "antd";
+import {Typography, message, Popconfirm, Button, Skeleton} from "antd";
 import {DeleteOutlined} from "@ant-design/icons";
 import AdminAssignmentForm from "./form";
 
@@ -71,10 +71,9 @@ const AdminAssignmentEditor = () => {
                     </Button>
                 </Popconfirm>
             </Typography.Title>
-            {!!user
-                ? <AdminAssignmentForm initialValues={user} onFinish={updateAssignment} disabled={disabled}/>
-                : <p>加载数据中</p>
-            }
+            {!user
+                ? <Skeleton/>
+                : <AdminAssignmentForm initialValues={user} onFinish={updateAssignment} disabled={disabled}/>}
         </>
     );
 };

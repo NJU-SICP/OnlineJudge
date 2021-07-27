@@ -66,12 +66,16 @@ const AdminAssignmentList = () => {
         {
             title: "操作",
             key: "actions",
-            render: (text, record) => (
-                <Button type="primary" size="small"
+            render: (text, record) => <>
+                <Button type="link" size="small"
                         onClick={() => history.push(`/admin/assignments/${record.id}`)}>
-                    查看
+                    编辑
                 </Button>
-            )
+                <Button type="link" size="small"
+                        onClick={() => history.push(`/admin/assignments/${record.id}/grader`)}>
+                    评分
+                </Button>
+            </>
         }
     ];
 

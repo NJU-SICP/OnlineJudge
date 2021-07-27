@@ -60,9 +60,9 @@ const AdminUserList = () => {
             title: "操作",
             key: "actions",
             render: (text, record) => (
-                <Button type="primary" size="small"
+                <Button type="link" size="small"
                         onClick={() => history.push(`/admin/users/${record.id}`)}>
-                    查看
+                    编辑
                 </Button>
             )
         }

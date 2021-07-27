@@ -13,7 +13,10 @@ public class Submission {
     private String userId;
     private String assignmentId;
 
+    private Integer score;
+    private String message;
     private List<Result> results;
+    private Date gradedAt;
 
     private Date createdAt;
     private String createdBy;
@@ -38,12 +41,36 @@ public class Submission {
         this.assignmentId = assignmentId;
     }
 
+    public Integer getScore() {
+        return score;
+    }
+
+    public void setScore(Integer score) {
+        this.score = score;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     public List<Result> getResults() {
         return results;
     }
 
     public void setResults(List<Result> results) {
         this.results = results;
+    }
+
+    public Date getGradedAt() {
+        return gradedAt;
+    }
+
+    public void setGradedAt(Date gradedAt) {
+        this.gradedAt = gradedAt;
     }
 
     public Date getCreatedAt() {
@@ -109,6 +136,8 @@ public class Submission {
                 "id='" + id + '\'' +
                 ", userId='" + userId + '\'' +
                 ", assignmentId='" + assignmentId + '\'' +
+                ", score=" + score +
+                ", gradedAt=" + gradedAt +
                 ", createdAt=" + createdAt +
                 ", createdBy='" + createdBy + '\'' +
                 '}';

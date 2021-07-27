@@ -65,7 +65,7 @@ const AssignmentList = () => {
             key: "actions",
             render: (text, record) => (
                 <>
-                    <Button type={record.ended ? "" : "primary"} size="small"
+                    <Button type={record.ended ? "text" : "link"} size="small"
                             onClick={() => history.push(`/assignments/${record.id}`)}>
                         查看
                     </Button>

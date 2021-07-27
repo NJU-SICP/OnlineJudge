@@ -3,8 +3,6 @@ package cn.edu.nju.sicp.controllers;
 import cn.edu.nju.sicp.jwt.JwtTokenUtils;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.UserRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -37,26 +36,23 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> userLogin(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> userLogin(@RequestBody LoginRequest request) {
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword(), new ArrayList<>());
         try {
             Authentication authentication = manager.authenticate(token);
             if (authentication.isAuthenticated()) {
                 User user = (User) authentication.getPrincipal();
                 logger.info(String.format("UserLogin %s", user));
-                LoginResponse response = new LoginResponse(user);
-                return new ResponseEntity<>((new ObjectMapper()).writeValueAsString(response), HttpStatus.OK);
+                return new ResponseEntity<>(new LoginResponse(user), HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
         } catch (BadCredentialsException e) {
             logger.info(String.format("UserLogin failed={%s} username={%s}", e.getMessage(), request.getUsername()));
-            return new ResponseEntity<>("账号或密码不正确，请重试。", HttpStatus.FORBIDDEN);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "账号或密码不正确，请重试。");
         } catch (AuthenticationException e) {
             logger.info(String.format("UserLogin failed={%s} username={%s}", e.getMessage(), request.getUsername()));
-            return new ResponseEntity<>("用户被禁用或锁定，请联系管理员。", HttpStatus.FORBIDDEN);
-        } catch (JsonProcessingException e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "用户被禁用或锁定，请联系管理员。");
         }
     }
 
@@ -64,13 +60,13 @@ public class AuthController {
     public ResponseEntity<String> userSetPassword(@RequestBody SetPasswordRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            return new ResponseEntity<>("无法验证用户身份，请重新登录。", HttpStatus.FORBIDDEN);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无法验证用户身份，请重新登录。");
         }
 
         String username = (String) authentication.getPrincipal();
         User user = repository.findByUsername(username);
         if (!user.validatePassword(request.oldPassword)) {
-            return new ResponseEntity<>("输入的旧密码不正确，请重试。", HttpStatus.FORBIDDEN);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "输入的旧密码不正确，请重试。");
         }
 
         user.setPassword(request.newPassword);

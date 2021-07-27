@@ -44,6 +44,11 @@ const SubmissionTable = ({submissions}) => {
             render: (time) => moment(time).format("MM-DD HH:mm")
         },
         {
+            title: "得分",
+            key: "score",
+            dataIndex: "score"
+        },
+        {
             title: "查看",
             key: "selected",
             render: (record) => <>{selected && record.index === selected.index && <ArrowRightOutlined/>}</>
@@ -56,13 +61,13 @@ const SubmissionTable = ({submissions}) => {
                 ? <Skeleton/>
                 : <>
                     <Row gutter={10}>
-                        <Col span={8}>
+                        <Col span={9}>
                             <Table columns={columns} dataSource={submissions} pagination={false}
                                    onRow={(record) => {
                                        return {onClick: () => setSelected(record)};
                                    }}/>
                         </Col>
-                        <Col span={16}>
+                        <Col span={15}>
                             {!selected
                                 ? <p style={{margin: "1em"}}>在左侧列表中点击某次提交来查看详情。</p>
                                 : <>
