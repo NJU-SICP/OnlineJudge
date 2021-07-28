@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,10 +22,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.naming.OperationNotSupportedException;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/submissions")
@@ -92,5 +97,28 @@ public class SubmissionController {
 
         String response = (new ObjectMapper()).writeValueAsString(submission);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<Resource> downloadSubmission(@PathVariable String id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = (String) authentication.getPrincipal();
+        User user = userRepository.findByUsername(username);
+
+        Submission submission = submissionRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!(user.getRing() < 3 || user.getId().equals(submission.getUserId()))) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+        Assignment assignment = assignmentRepository.findById(submission.getAssignmentId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
+
+        try {
+            Path path = Paths.get(String.format("D:\\Temp\\%s", submission.getId()),
+                    String.format("submit%s", assignment.getSubmitFileType()));
+            InputStreamResource resource = new InputStreamResource(new FileInputStream(path.toFile()));
+            return new ResponseEntity<>(resource, HttpStatus.OK);
+        } catch (IOException e) {
+            logger.error("Cannot load submission file: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取提交文件。");
+        }
     }
 }

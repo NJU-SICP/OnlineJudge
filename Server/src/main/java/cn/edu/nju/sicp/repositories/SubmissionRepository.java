@@ -12,7 +12,7 @@ import java.util.List;
 @RepositoryRestResource(excerptProjection = SubmissionInfo.class)
 public interface SubmissionRepository extends MongoRepository<Submission, String> {
 
-    Page<Submission> findByAssignmentId(String assignmentId, Pageable pageable);
+    Page<Submission> findByAssignmentIdOrderByCreatedAtDesc(String assignmentId, Pageable pageable);
 
     List<Submission> findByUserIdAndAssignmentIdOrderByCreatedAtDesc(String userId, String assignmentId);
 

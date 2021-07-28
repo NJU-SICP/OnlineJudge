@@ -55,6 +55,21 @@ const AssignmentList = () => {
             }
         },
         {
+            title: "提交类型",
+            key: "submitFileType",
+            dataIndex: "submitFileType"
+        },
+        {
+            title: "提交次数",
+            key: "submitCountLimit",
+            dataIndex: "submitCountLimit",
+            render: (limit) => {
+                if (limit < 0) return "无次数限制";
+                else if (limit === 0) return "不允许提交";
+                else return `最多${limit}次`;
+            }
+        },
+        {
             title: "总评占比",
             key: "percentage",
             dataIndex: "percentage",

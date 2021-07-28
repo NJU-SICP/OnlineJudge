@@ -1,11 +1,13 @@
 import React, {useEffect, useState} from "react";
 import moment from "moment";
+import {saveAs} from "file-saver";
 import http from "../../http";
 
-import {Card, Col, Row, Skeleton, Table, Timeline, Typography} from "antd";
-import {ArrowRightOutlined} from "@ant-design/icons";
+import {Affix, Button, Card, Col, Row, Skeleton, Table, Typography} from "antd";
+import {ArrowRightOutlined, DownloadOutlined} from "@ant-design/icons";
+import SubmissionTimeline from "./timeline";
 
-const SubmissionTable = ({submissions}) => {
+const SubmissionTable = ({assignment, submissions}) => {
     const [selected, setSelected] = useState(null);
     const [submission, setSubmission] = useState(null);
 
@@ -19,6 +21,17 @@ const SubmissionTable = ({submissions}) => {
                 .catch((err) => console.error(err));
         }
     }, [selected]);
+
+    const downloadSubmission = () => {
+        http()
+            .get(`/submissions/${selected.id}/download`, {
+                responseType: "blob"
+            })
+            .then((res) => {
+                saveAs(res.data, `${selected.id}${assignment.submitFileType}`);
+            })
+            .catch((err) => console.error(err));
+    };
 
     const columns = [
         {
@@ -70,26 +83,18 @@ const SubmissionTable = ({submissions}) => {
                         <Col span={15}>
                             {!selected
                                 ? <p style={{margin: "1em"}}>在左侧列表中点击某次提交来查看详情。</p>
-                                : <>
-                                    <Card title={`提交 #${selected.index}`} style={{width: "100%", height: "100%"}}>
+                                : <Affix offsetTop={10}>
+                                    <Card title={`提交 #${selected.index}`}
+                                          extra={
+                                              <Button type="link" size="small" onClick={downloadSubmission}>
+                                                  <DownloadOutlined/> 下载文件
+                                              </Button>
+                                          }>
                                         {!submission
                                             ? <Skeleton/>
-                                            : <>
-                                                <Timeline pending={!submission.results ? "等待系统测试/人工评分……" : null}>
-                                                    {!!submission.createdBy &&
-                                                    <Timeline.Item>
-                                                        由 {submission.createdBy} 允许手动提交。
-                                                    </Timeline.Item>
-                                                    }
-                                                    <Timeline.Item>
-                                                        SICP Online Judge 在
-                                                        {moment(submission.createdAt).format(" YYYY-MM-DD HH:mm:ss ")}
-                                                        收到提交，编号为 <code>{selected.id.substr(-8)}</code>。
-                                                    </Timeline.Item>
-                                                </Timeline>
-                                            </>}
+                                            : <SubmissionTimeline id={selected.id} submission={submission}/>}
                                     </Card>
-                                </>}
+                                </Affix>}
                         </Col>
                     </Row>
                 </>}

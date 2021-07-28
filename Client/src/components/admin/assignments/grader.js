@@ -1,12 +1,14 @@
 import React, {useEffect, useState} from "react";
-import {useParams} from "react-router-dom";
+import {useHistory, useParams} from "react-router-dom";
 import moment from "moment";
 import http from "../../../http";
 
 import {Button, Descriptions, Divider, message, Popconfirm, Skeleton, Typography, Upload} from "antd";
-import {DashboardOutlined, UploadOutlined} from "@ant-design/icons";
+import {DashboardOutlined, EditOutlined, UploadOutlined} from "@ant-design/icons";
+import AdminSubmissionTable from "../submissions/table";
 
 const AdminAssignmentGrader = () => {
+    const history = useHistory();
     const {id} = useParams();
     const [assignment, setAssignment] = useState(null);
     const [grader, setGrader] = useState(null);
@@ -15,7 +17,7 @@ const AdminAssignmentGrader = () => {
     useEffect(() => {
         http()
             .get(`/repositories/assignments/${id}`)
-            .then((res) => setAssignment(res.data))
+            .then((res) => setAssignment({...res.data, id}))
             .catch((err) => console.error(err));
         http()
             .get(`/assignments/${id}/grader`)
@@ -64,6 +66,10 @@ const AdminAssignmentGrader = () => {
         <>
             <Typography.Title level={2}>
                 <DashboardOutlined/> 评分管理
+                <Button style={{float: "right"}} type="primary"
+                        onClick={() => history.push(`/admin/assignments/${id}`)}>
+                    <EditOutlined/> 编辑作业
+                </Button>
             </Typography.Title>
             {!assignment
                 ? <Skeleton/>
@@ -94,9 +100,9 @@ const AdminAssignmentGrader = () => {
                             <UploadOutlined/> 上传自动评分文件
                         </Upload.Dragger>
                     </>}
+                    <Divider/>
+                    <AdminSubmissionTable assignment={assignment}/>
                 </>}
-            <Divider/>
-
         </>
     );
 };

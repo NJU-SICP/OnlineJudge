@@ -41,7 +41,7 @@ public class AssignmentController {
     public ResponseEntity<Assignment.GraderInfo> setGrader(@PathVariable String id, @RequestBody MultipartFile file) {
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         try {
-            assignment.setGraderFile(file);
+            assignment.putGraderFile(file);
             return new ResponseEntity<>(assignment.getGraderInfo(), HttpStatus.OK);
         } catch (IOException e) {
             logger.error(String.format("SetGrader failed: %s %s", e.getMessage(), assignment));

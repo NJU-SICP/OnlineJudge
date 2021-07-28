@@ -1,6 +1,5 @@
 package cn.edu.nju.sicp.models;
 
-import org.slf4j.LoggerFactory;
 import org.springframework.data.annotation.Id;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -108,7 +107,7 @@ public class Assignment {
         }
     }
 
-    public GraderInfo setGraderFile(MultipartFile file) throws IOException {
+    public GraderInfo putGraderFile(MultipartFile file) throws IOException {
         Path path = getGraderPath();
         Path parent = path.getParent();
         if (Files.notExists(parent)) {

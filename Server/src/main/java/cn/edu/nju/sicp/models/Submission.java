@@ -17,6 +17,7 @@ public class Submission {
     private String message;
     private List<Result> results;
     private Date gradedAt;
+    private String gradedBy;
 
     private Date createdAt;
     private String createdBy;
@@ -73,6 +74,14 @@ public class Submission {
         this.gradedAt = gradedAt;
     }
 
+    public String getGradedBy() {
+        return gradedBy;
+    }
+
+    public void setGradedBy(String gradedBy) {
+        this.gradedBy = gradedBy;
+    }
+
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -91,25 +100,16 @@ public class Submission {
 
     static class Result {
 
-        private String label;
-        private String type;
+        private String title;
         private int score;
         private String message;
 
-        public String getLabel() {
-            return label;
+        public String getTitle() {
+            return title;
         }
 
-        public void setLabel(String key) {
-            this.label = key;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
+        public void setTitle(String title) {
+            this.title = title;
         }
 
         public int getScore() {

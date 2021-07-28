@@ -115,7 +115,7 @@ const AssignmentView = () => {
                     {submissions && submissions.length > 0 &&
                     <>
                         <Divider/>
-                        <SubmissionTable submissions={submissions}/>
+                        <SubmissionTable assignment={assignment} submissions={submissions}/>
                     </>}
                 </>
             }
