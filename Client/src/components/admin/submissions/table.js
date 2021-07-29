@@ -23,6 +23,13 @@ const AdminSubmissionTable = ({assignment}) => {
     const [disabled, setDisabled] = useState(false);
 
     useEffect(() => {
+        const selectedId = qs.parse(location.search, {ignoreQueryPrefix: true}).selectedId;
+        if (selectedId != null) {
+            setSelected({id: selectedId});
+        }
+    }, [location.search]);
+
+    useEffect(() => {
         if (assignment == null) return;
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
@@ -71,7 +78,9 @@ const AdminSubmissionTable = ({assignment}) => {
             .then((res) => {
                 setSubmission(res.data);
                 const list = [...submissions];
-                list[selected.index] = {...res.data, id: selected.id};
+                if (selected.index) {
+                    list[selected.index] = {...res.data, id: selected.id};
+                }
                 setSubmissions(list);
                 setSubmission(res.data);
             })

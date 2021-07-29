@@ -12,6 +12,7 @@ const AdminAssignmentList = () => {
     const location = useLocation();
     const [assignments, setAssignments] = useState(null);
     const [pagination, setPagination] = useState(null);
+
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()

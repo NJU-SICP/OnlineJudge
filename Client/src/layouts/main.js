@@ -14,6 +14,7 @@ import AssignmentList from "../components/assignments/list";
 import AssignmentView from "../components/assignments/view";
 import UserConfig from "../components/config";
 import AdminAssignmentGrader from "../components/admin/assignments/grader";
+import AdminSubmissionList from "../components/admin/submissions/list";
 
 const MainLayout = () => {
     const location = useLocation();
@@ -37,6 +38,7 @@ const MainLayout = () => {
                                     <Route path="/admin/assignments/:id/grader" children={<AdminAssignmentGrader/>}/>
                                     <Route path="/admin/assignments/:id" children={<AdminAssignmentEditor/>}/>
                                     <Route path="/admin/assignments" children={<AdminAssignmentList/>}/>
+                                    <Route path="/admin/submissions" children={<AdminSubmissionList/>}/>
                                     <Route path="/assignments/:id" children={<AssignmentView/>}/>
                                     <Route path="/assignments" children={<AssignmentList/>}/>
                                     <Route path="/config" children={<UserConfig/>}/>
