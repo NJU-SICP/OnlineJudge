@@ -16,6 +16,10 @@ public interface SubmissionInfo {
 
     Integer getScore();
 
+    Date getGradedAt();
+
+    String getGradedBy();
+
     Date getCreatedAt();
 
     String getCreatedBy();
