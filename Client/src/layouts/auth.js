@@ -1,7 +1,8 @@
-import {useState} from "react";
-import {useDispatch} from "react-redux";
+import {useEffect, useState} from "react";
+import {useDispatch, useSelector} from "react-redux";
 import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
+import moment from "moment";
 
 import {Layout, Menu, Form, Input, Button, Alert, Typography} from "antd";
 import {UserOutlined} from "@ant-design/icons";
@@ -10,11 +11,20 @@ import {set} from "../store/auth";
 import http from "../http";
 
 const AuthLayout = () => {
+    const auth = useSelector((state) => state.auth.value);
     const history = useHistory();
     const location = useLocation();
     const dispatch = useDispatch();
     const [disabled, setDisabled] = useState(false);
     const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const now = moment();
+        const exp = moment(auth.expires);
+        if (now.isBefore(exp)) {
+            onSuccessfulLogin();
+        }
+    }, []);
 
     const attemptLogin = (credentials) => {
         setDisabled(true);
@@ -26,12 +36,7 @@ const AuthLayout = () => {
             })
             .then((res) => {
                 dispatch(set(res.data));
-                const to = qs.parse(location.search, {ignoreQueryPrefix: true}).redirect;
-                if (to != null) {
-                    history.push(to);
-                } else {
-                    history.push("/");
-                }
+                onSuccessfulLogin();
             })
             .catch((err) => {
                 console.error(err);
@@ -40,6 +45,15 @@ const AuthLayout = () => {
                 }
                 setDisabled(false);
             });
+    };
+
+    const onSuccessfulLogin = () => {
+        const to = qs.parse(location.search, {ignoreQueryPrefix: true}).redirect;
+        if (to != null) {
+            history.push(to);
+        } else {
+            history.push("/");
+        }
     };
 
     return (

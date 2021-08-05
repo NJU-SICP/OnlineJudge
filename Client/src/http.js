@@ -16,6 +16,15 @@ const http = () => {
             return config;
         });
     }
+    instance.interceptors.response.use((res) => {
+        return res;
+    }, (err) => {
+        if (err.response.status === 401) {
+            window.localStorage.removeItem(config.storageKeys.auth);
+            window.location.href = `/auth/login?redirect=${window.location.pathname}`;
+        }
+        return Promise.reject(err);
+    });
     return instance;
 };
 
