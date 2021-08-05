@@ -15,13 +15,9 @@ repositories {
 dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2', 'io.jsonwebtoken:jjwt-jackson:0.11.2'
-	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
-	implementation 'org.springframework.boot:spring-boot-starter-data-rest'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-}
-
-test {
-	useJUnitPlatform()
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:2.5.3'
+	implementation 'org.springframework.boot:spring-boot-starter-data-rest:2.5.3'
+	implementation 'org.springframework.boot:spring-boot-starter-security:2.5.3'
+	implementation 'com.github.docker-java:docker-java:3.2.11'
+	implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.2.11'
 }

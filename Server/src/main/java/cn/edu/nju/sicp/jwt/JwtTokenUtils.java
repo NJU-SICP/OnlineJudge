@@ -1,9 +1,7 @@
 package cn.edu.nju.sicp.jwt;
 
 import cn.edu.nju.sicp.models.User;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
@@ -33,7 +31,7 @@ public class JwtTokenUtils {
                 .compact();
     }
 
-    public static Claims parseJwtToken(String token) {
+    public static Claims parseJwtToken(String token) throws JwtException {
         Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(JWT_SECRET));
         JwtParser parser = Jwts.parserBuilder()
                 .requireIssuer(JWT_ISSUER)

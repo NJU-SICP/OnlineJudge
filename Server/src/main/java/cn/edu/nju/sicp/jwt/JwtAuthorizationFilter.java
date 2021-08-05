@@ -1,6 +1,7 @@
 package cn.edu.nju.sicp.jwt;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,8 +32,8 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             header = header.substring(JwtTokenUtils.TOKEN_PREFIX.length());
             UsernamePasswordAuthenticationToken token = getAuthenticationToken(header);
             SecurityContextHolder.getContext().setAuthentication(token);
-        } catch (JwtTokenExpiredException e) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        } catch (ExpiredJwtException e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Jwt token has expired.");
             response.getWriter().flush();
             return;
@@ -40,12 +41,8 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         super.doFilterInternal(request, response, chain);
     }
 
-    private UsernamePasswordAuthenticationToken getAuthenticationToken(String token) throws JwtTokenExpiredException {
+    private UsernamePasswordAuthenticationToken getAuthenticationToken(String token) throws ExpiredJwtException {
         Claims claims = JwtTokenUtils.parseJwtToken(token);
-        if ((new Date()).after(claims.getExpiration())) {
-            throw new JwtTokenExpiredException();
-        }
-
         String username = claims.getSubject();
         if (username != null) {
             return new UsernamePasswordAuthenticationToken(username, null, null);
