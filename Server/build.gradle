@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+	implementation 'net.lingala.zip4j:zip4j:2.9.0'
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2', 'io.jsonwebtoken:jjwt-jackson:0.11.2'
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:2.5.3'

@@ -16,7 +16,7 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
 
     @Bean
     public MongoClient mongoClient() {
-        return MongoClients.create("mongodb://localhost:27017");
+        return MongoClients.create("mongodb://192.168.31.4:27017");
     }
 
     @Bean

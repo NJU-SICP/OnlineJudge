@@ -1,10 +1,20 @@
 package cn.edu.nju.sicp.controllers;
 
+import cn.edu.nju.sicp.docker.Grader;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
+import cn.edu.nju.sicp.tasks.BuildImageTask;
+import cn.edu.nju.sicp.tasks.RemoveImageTask;
+import com.github.dockerjava.api.DockerClient;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.core.task.SyncTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +22,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/assignments")
@@ -20,6 +35,12 @@ public class AssignmentController {
     @Autowired
     private AssignmentRepository repository;
 
+    @Autowired
+    private SimpleAsyncTaskExecutor buildImageExecutor;
+
+    @Autowired
+    private SyncTaskExecutor removeImageExecutor;
+
     private final Logger logger;
 
     public AssignmentController() {
@@ -27,22 +48,38 @@ public class AssignmentController {
     }
 
     @GetMapping("/{id}/grader")
-    public ResponseEntity<Assignment.GraderInfo> getGrader(@PathVariable String id) {
+    public ResponseEntity<Grader> getGrader(@PathVariable String id) {
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        try {
-            return new ResponseEntity<>(assignment.getGraderInfo(), HttpStatus.OK);
-        } catch (IOException e) {
-            logger.error(String.format("GetGrader failed: %s %s", e.getMessage(), assignment));
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(assignment.getGrader(), HttpStatus.OK);
     }
 
     @PostMapping("/{id}/grader")
-    public ResponseEntity<Assignment.GraderInfo> setGrader(@PathVariable String id, @RequestBody MultipartFile file) {
+    public ResponseEntity<Grader> setGrader(@PathVariable String id, @RequestBody MultipartFile file) {
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (assignment.getGrader() != null) {
+            removeImageExecutor.execute(new RemoveImageTask(assignment.getGrader()));
+            assignment.setGrader(null);
+        }
+
         try {
-            assignment.putGraderFile(file);
-            return new ResponseEntity<>(assignment.getGraderInfo(), HttpStatus.OK);
+            Path dockerfileFolder = Paths.get("~/Downloads/SICP/graders/");
+            if (Files.notExists(dockerfileFolder)) {
+                Files.createDirectories(dockerfileFolder);
+            }
+            Path dockerfilePath = Paths.get("~/Downloads/SICP/graders/", String.format("%s.zip", id));
+            file.transferTo(dockerfilePath);
+
+            Grader grader = new Grader();
+            grader.setAssignmentId(id);
+            grader.setDockerfilePath(dockerfilePath.toString());
+            grader.setImageTags(Set.of(String.format("grader-%s-%s", id,
+                    DateFormatUtils.format(new Date(), "yyyyMMdd-HHmmss"))));
+            assignment.setGrader(grader);
+            repository.save(assignment);
+
+            BuildImageTask task = new BuildImageTask(grader, repository);
+            buildImageExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
+            return new ResponseEntity<>(grader, HttpStatus.CREATED);
         } catch (IOException e) {
             logger.error(String.format("SetGrader failed: %s %s", e.getMessage(), assignment));
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -52,13 +89,12 @@ public class AssignmentController {
     @DeleteMapping("/{id}/grader")
     public ResponseEntity<String> deleteGrader(@PathVariable String id) {
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        try {
-            assignment.deleteGraderFile();
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (IOException e) {
-            logger.error(String.format("DeleteGrader failed: %s %s", e.getMessage(), assignment));
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        Grader grader = assignment.getGrader();
+        removeImageExecutor.execute(new RemoveImageTask(grader));
+
+        assignment.setGrader(null);
+        repository.save(assignment);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 }
