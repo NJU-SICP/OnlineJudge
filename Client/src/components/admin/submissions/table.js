@@ -10,6 +10,7 @@ import {Affix, Button, Card, Col, message, Pagination, Popconfirm, Row, Skeleton
 import {ArrowRightOutlined, DownloadOutlined, RedoOutlined} from "@ant-design/icons";
 import SubmissionTimeline from "../../submissions/timeline";
 import AdminSubmissionGrader from "./grader";
+import AdminUserInfo from "../users/info";
 
 const AdminSubmissionTable = ({assignment}) => {
     const auth = useSelector((state) => state.auth.value);
@@ -122,7 +123,7 @@ const AdminSubmissionTable = ({assignment}) => {
             title: "用户",
             key: "userId",
             dataIndex: "userId",
-            render: (id) => <code>{id.substr(-8)}</code>
+            render: (id) => <AdminUserInfo userId={id}/>
         },
         {
             title: "时间",

@@ -1,10 +1,13 @@
 import React, {useEffect, useState} from "react";
+import {useHistory, useLocation} from "react-router-dom";
+import http from "../../../http";
+import qs from "qs";
+import moment from "moment";
+
 import {Button, Pagination, Skeleton, Table, Typography} from "antd";
 import {PaperClipOutlined} from "@ant-design/icons";
-import {useHistory, useLocation} from "react-router-dom";
-import qs from "qs";
-import http from "../../../http";
-import moment from "moment";
+import AdminUserInfo from "../users/info";
+import AdminAssignmentInfo from "../assignments/info";
 
 const AdminSubmissionList = () => {
     const history = useHistory();
@@ -31,16 +34,16 @@ const AdminSubmissionList = () => {
             render: (id) => <code>{id.substr(-8)}</code>
         },
         {
-            title: "用户ID",
+            title: "用户",
             key: "userId",
             dataIndex: "userId",
-            render: (id) => <code>{id.substr(-8)}</code>
+            render: (id) => <AdminUserInfo userId={id}/>
         },
         {
-            title: "作业ID",
+            title: "作业",
             key: "assignmentId",
             dataIndex: "assignmentId",
-            render: (id) => <code>{id.substr(-8)}</code>
+            render: (id) => <AdminAssignmentInfo assignmentId={id}/>
         },
         {
             title: "提交时间",
@@ -52,13 +55,14 @@ const AdminSubmissionList = () => {
             title: "总得分",
             key: "score",
             dataIndex: "result",
-            render: (result) => (result && result.error) ? <Typography.Text type="danger">评分失败</Typography.Text> : result?.score
+            render: (result) => (result && result.error) ?
+                <Typography.Text type="danger">评分失败</Typography.Text> : result?.score
         },
         {
             title: "评分人",
             key: "gradedBy",
             dataIndex: "result",
-            render: (result) => result?.gradedBy ?? "自动评分"
+            render: (result) => result?.gradedBy ?? (result?.score ? "自动评分" : "")
         },
         {
             title: "评分时间",
@@ -85,7 +89,7 @@ const AdminSubmissionList = () => {
             {!submissions
                 ? <Skeleton/>
                 : <>
-                    <Table columns={columns} dataSource={submissions} rowId="id" pagination={false}/>
+                    <Table columns={columns} dataSource={submissions} rowKey="id" pagination={false}/>
                     <div style={{float: "right", marginTop: "1em"}}>
                         {!!pagination &&
                         <Pagination current={pagination.number + 1} pageSize={pagination.size}

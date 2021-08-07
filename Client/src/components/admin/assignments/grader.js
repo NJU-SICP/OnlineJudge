@@ -3,9 +3,10 @@ import {useHistory, useParams} from "react-router-dom";
 import moment from "moment";
 import http from "../../../http";
 
-import {Button, Descriptions, Divider, message, Popconfirm, Skeleton, Tooltip, Typography, Upload} from "antd";
+import {Button, Card, Descriptions, Divider, message, Popconfirm, Skeleton, Tooltip, Typography, Upload} from "antd";
 import {DashboardOutlined, EditOutlined, UploadOutlined} from "@ant-design/icons";
 import AdminSubmissionTable from "../submissions/table";
+import AdminAssignmentInfo from "./info";
 
 const AdminAssignmentGrader = () => {
     const history = useHistory();
@@ -79,9 +80,11 @@ const AdminAssignmentGrader = () => {
                 ? <Skeleton/>
                 : <>
                     <Descriptions>
-                        <Descriptions.Item label="作业ID">{id}</Descriptions.Item>
-                        <Descriptions.Item label="作业名称">{assignment.title}</Descriptions.Item>
-                        <Descriptions.Item label="作业总分">
+                        <Descriptions.Item label="作业名称">
+                            <code>{id}</code>
+                            （<AdminAssignmentInfo assignmentId={id}/>）
+                        </Descriptions.Item>
+                        <Descriptions.Item label="作业总分" span={2}>
                             满分{assignment.totalScore}，总评占比{assignment.percentage}%
                         </Descriptions.Item>
                         <Descriptions.Item label="自动评分">
@@ -96,17 +99,23 @@ const AdminAssignmentGrader = () => {
                                                 : <>正在编译Docker镜像 {grader.imageTags}</>}
                                         </>
                                         : <>Docker镜像ID：{grader.imageId} {grader.imageTags}</>}
-                                    <Button type="link" size="small"
-                                            onClick={() => setShowBuildLog(!showBuildLog)}>
+                                    <Typography.Link style={{marginLeft: 20}}
+                                                     onClick={() => setShowBuildLog(!showBuildLog)}>
                                         查看编译日志
-                                    </Button>
+                                    </Typography.Link>
                                     <Popconfirm title="确定要删除自动评分文件吗？" onConfirm={deleteGrader}>
-                                        <Button type="link" size="small" danger>删除自动评分文件</Button>
+                                        <Typography.Link type="danger" style={{marginLeft: 20}}>
+                                            删除自动评分文件
+                                        </Typography.Link>
                                     </Popconfirm>
                                 </>}
                         </Descriptions.Item>
                     </Descriptions>
-                    {grader !== null && showBuildLog && <pre><code>{grader.imageBuildLog}</code></pre>}
+                    {grader !== null && showBuildLog &&
+                    <Card style={{marginBottom: 10}}>
+                        <pre><code>{grader.imageBuildLog}</code></pre>
+                    </Card>
+                    }
                     {grader !== null && <>
                         <Upload.Dragger style={{maxHeight: "5em"}} name="file" accept=".zip" maxCount={1}
                                         beforeUpload={beforeUpload} customRequest={uploadGrader} disabled={disabled}>

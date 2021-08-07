@@ -7,7 +7,8 @@ const AdminSubmissionGrader = ({totalScore, submission, onFinish, disabled}) => 
 
     useEffect(() => {
         const fields = form.getFieldsValue();
-        if (submission.result !== null) {
+        console.log(submission.result);
+        if (submission.result !== null && submission.result.details !== null) {
             fields.score = submission.result.score;
             fields.message = submission.result.message;
             fields.details = submission.result.details?.map((result) => ({
@@ -17,6 +18,7 @@ const AdminSubmissionGrader = ({totalScore, submission, onFinish, disabled}) => 
             })) ?? [];
         } else {
             fields.score = fields.message = null;
+            console.log(fields.details);
             if (fields.details === undefined) {
                 fields.details = [];
             } else {
