@@ -19,6 +19,7 @@ const AuthLayout = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        if (!auth) return;
         const now = moment();
         const exp = moment(auth.expires);
         if (now.isBefore(exp)) {

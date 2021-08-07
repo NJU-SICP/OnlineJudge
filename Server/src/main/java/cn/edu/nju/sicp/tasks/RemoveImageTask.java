@@ -1,7 +1,7 @@
 package cn.edu.nju.sicp.tasks;
 
-import cn.edu.nju.sicp.docker.Client;
-import cn.edu.nju.sicp.docker.Grader;
+import cn.edu.nju.sicp.configs.DockerConfig;
+import cn.edu.nju.sicp.models.Grader;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.model.Container;
@@ -28,7 +28,7 @@ public class RemoveImageTask implements Runnable {
     public void run() {
         logger.info(String.format("RemoveImage imageId=%s imageTags=%s", imageId, imageTags));
         try {
-            DockerClient client = Client.getInstance();
+            DockerClient client = DockerConfig.getInstance();
             List<Container> containers = client.listContainersCmd().withShowAll(true).exec();
             containers.forEach((container) -> {
                 if (Objects.equals(container.getImageId(), imageId)) {

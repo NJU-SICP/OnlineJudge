@@ -1,6 +1,5 @@
 package cn.edu.nju.sicp.models;
 
-import cn.edu.nju.sicp.docker.Grader;
 import org.springframework.data.annotation.Id;
 
 import java.util.Date;
@@ -95,4 +94,5 @@ public class Assignment {
                 ", grader=" + grader +
                 '}';
     }
+
 }

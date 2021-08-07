@@ -1,20 +1,18 @@
 package cn.edu.nju.sicp.controllers;
 
-import cn.edu.nju.sicp.docker.Grader;
+import cn.edu.nju.sicp.models.Grader;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import cn.edu.nju.sicp.tasks.BuildImageTask;
 import cn.edu.nju.sicp.tasks.RemoveImageTask;
-import com.github.dockerjava.api.DockerClient;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.SyncTaskExecutor;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,10 +39,12 @@ public class AssignmentController {
     @Autowired
     private SyncTaskExecutor removeImageExecutor;
 
+    private final String dataPath;
     private final Logger logger;
 
-    public AssignmentController() {
-        logger = LoggerFactory.getLogger(AssignmentController.class);
+    public AssignmentController(@Value("${spring.application.data-path}") String dataPath) {
+        this.dataPath = dataPath;
+        this.logger = LoggerFactory.getLogger(AssignmentController.class);
     }
 
     @GetMapping("/{id}/grader")
@@ -60,18 +60,19 @@ public class AssignmentController {
             removeImageExecutor.execute(new RemoveImageTask(assignment.getGrader()));
             assignment.setGrader(null);
         }
+        repository.save(assignment);
 
         try {
-            Path dockerfileFolder = Paths.get("~/Downloads/SICP/graders/");
-            if (Files.notExists(dockerfileFolder)) {
-                Files.createDirectories(dockerfileFolder);
-            }
-            Path dockerfilePath = Paths.get("~/Downloads/SICP/graders/", String.format("%s.zip", id));
-            file.transferTo(dockerfilePath);
-
             Grader grader = new Grader();
             grader.setAssignmentId(id);
-            grader.setDockerfilePath(dockerfilePath.toString());
+
+            Path path = Paths.get(dataPath, "assignments", id, "grader.zip");
+            if (Files.notExists(path.getParent())) {
+                Files.createDirectories(path.getParent());
+            }
+            file.transferTo(path);
+
+            grader.setFilePath(path.toString());
             grader.setImageTags(Set.of(String.format("grader-%s-%s", id,
                     DateFormatUtils.format(new Date(), "yyyyMMdd-HHmmss"))));
             assignment.setGrader(grader);
@@ -91,6 +92,12 @@ public class AssignmentController {
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Grader grader = assignment.getGrader();
         removeImageExecutor.execute(new RemoveImageTask(grader));
+
+        try {
+            Files.deleteIfExists(Paths.get(grader.getFilePath()));
+        } catch (IOException e) {
+            logger.warn(String.format("DeleteGrader failed: %s %s", e.getMessage(), assignment));
+        }
 
         assignment.setGrader(null);
         repository.save(assignment);

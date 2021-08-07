@@ -1,7 +1,7 @@
 package cn.edu.nju.sicp.tasks;
 
-import cn.edu.nju.sicp.docker.Client;
-import cn.edu.nju.sicp.docker.Grader;
+import cn.edu.nju.sicp.configs.DockerConfig;
+import cn.edu.nju.sicp.models.Grader;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import com.github.dockerjava.api.DockerClient;
@@ -46,10 +46,10 @@ public class BuildImageTask implements Runnable {
 
         try {
             Path path = Files.createTempDirectory("sicp-build-workdir");
-            (new ZipFile(Paths.get(grader.getDockerfilePath()).toFile())).extractAll(path.toString());
+            (new ZipFile(Paths.get(grader.getFilePath()).toFile())).extractAll(path.toString());
             logBuilder.append(String.format("Extracted dockerfile archive to %s", path.toString()));
             try {
-                DockerClient client = Client.getInstance();
+                DockerClient client = DockerConfig.getInstance();
                 StringBuilder buildLogBuilder = new StringBuilder();
                 String imageId = client.buildImageCmd(path.toFile())
                         .withNoCache(true)

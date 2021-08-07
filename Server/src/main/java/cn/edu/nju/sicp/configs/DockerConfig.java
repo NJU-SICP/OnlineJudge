@@ -1,4 +1,4 @@
-package cn.edu.nju.sicp.docker;
+package cn.edu.nju.sicp.configs;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -9,11 +9,11 @@ import com.github.dockerjava.transport.DockerHttpClient;
 
 import java.time.Duration;
 
-public class Client {
+public class DockerConfig {
 
     private static DockerClient instance;
 
-    private Client() {
+    private DockerConfig() {
     }
 
     private static void createInstance() {

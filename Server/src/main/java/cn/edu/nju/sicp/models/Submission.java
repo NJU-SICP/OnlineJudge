@@ -3,7 +3,6 @@ package cn.edu.nju.sicp.models;
 import org.springframework.data.annotation.Id;
 
 import java.util.Date;
-import java.util.List;
 
 public class Submission {
 
@@ -12,15 +11,10 @@ public class Submission {
 
     private String userId;
     private String assignmentId;
-
-    private Integer score;
-    private String message;
-    private List<Result> results;
-    private Date gradedAt;
-    private String gradedBy;
-
+    private String filePath;
     private Date createdAt;
     private String createdBy;
+    private Result result;
 
     public String getId() {
         return id;
@@ -42,44 +36,12 @@ public class Submission {
         this.assignmentId = assignmentId;
     }
 
-    public Integer getScore() {
-        return score;
+    public String getFilePath() {
+        return filePath;
     }
 
-    public void setScore(Integer score) {
-        this.score = score;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public List<Result> getResults() {
-        return results;
-    }
-
-    public void setResults(List<Result> results) {
-        this.results = results;
-    }
-
-    public Date getGradedAt() {
-        return gradedAt;
-    }
-
-    public void setGradedAt(Date gradedAt) {
-        this.gradedAt = gradedAt;
-    }
-
-    public String getGradedBy() {
-        return gradedBy;
-    }
-
-    public void setGradedBy(String gradedBy) {
-        this.gradedBy = gradedBy;
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
     public Date getCreatedAt() {
@@ -98,36 +60,12 @@ public class Submission {
         this.createdBy = createdBy;
     }
 
-    static class Result {
+    public Result getResult() {
+        return result;
+    }
 
-        private String title;
-        private int score;
-        private String message;
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        public int getScore() {
-            return score;
-        }
-
-        public void setScore(int score) {
-            this.score = score;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-
+    public void setResult(Result result) {
+        this.result = result;
     }
 
     @Override
@@ -136,10 +74,9 @@ public class Submission {
                 "id='" + id + '\'' +
                 ", userId='" + userId + '\'' +
                 ", assignmentId='" + assignmentId + '\'' +
-                ", score=" + score +
-                ", gradedAt=" + gradedAt +
                 ", createdAt=" + createdAt +
                 ", createdBy='" + createdBy + '\'' +
+                ", result=" + result +
                 '}';
     }
 
