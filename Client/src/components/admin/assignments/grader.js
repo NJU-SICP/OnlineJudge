@@ -1,9 +1,8 @@
 import React, {useEffect, useState} from "react";
 import {useHistory, useParams} from "react-router-dom";
-import moment from "moment";
 import http from "../../../http";
 
-import {Button, Card, Descriptions, Divider, message, Popconfirm, Skeleton, Tooltip, Typography, Upload} from "antd";
+import {Button, Card, Descriptions, Divider, message, Popconfirm, Skeleton, Typography, Upload} from "antd";
 import {DashboardOutlined, EditOutlined, UploadOutlined} from "@ant-design/icons";
 import AdminSubmissionTable from "../submissions/table";
 import AdminAssignmentInfo from "./info";

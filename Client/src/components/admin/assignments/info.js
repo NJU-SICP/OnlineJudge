@@ -19,7 +19,7 @@ const AdminAssignmentInfo = ({assignmentId}) => {
                 .get(`/repositories/assignments/${assignmentId}`)
                 .then((res) => {
                     setAssignment(res.data);
-                    cached[assignmentId] = assignment;
+                    cached[assignmentId] = res.data;
                 })
                 .catch((err) => console.error(err));
         }

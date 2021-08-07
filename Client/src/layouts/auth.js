@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
@@ -17,15 +17,6 @@ const AuthLayout = () => {
     const dispatch = useDispatch();
     const [disabled, setDisabled] = useState(false);
     const [error, setError] = useState(null);
-
-    useEffect(() => {
-        if (!auth) return;
-        const now = moment();
-        const exp = moment(auth.expires);
-        if (now.isBefore(exp)) {
-            onSuccessfulLogin();
-        }
-    }, []);
 
     const attemptLogin = (credentials) => {
         setDisabled(true);
@@ -48,14 +39,23 @@ const AuthLayout = () => {
             });
     };
 
-    const onSuccessfulLogin = () => {
+    const onSuccessfulLogin = useCallback(() => {
         const to = qs.parse(location.search, {ignoreQueryPrefix: true}).redirect;
         if (to != null) {
             history.push(to);
         } else {
             history.push("/");
         }
-    };
+    }, [history, location.search]);
+
+    useEffect(() => {
+        if (!auth) return;
+        const now = moment();
+        const exp = moment(auth.expires);
+        if (now.isBefore(exp)) {
+            onSuccessfulLogin();
+        }
+    }, [auth, onSuccessfulLogin]);
 
     return (
         <Layout>

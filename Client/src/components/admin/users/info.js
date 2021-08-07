@@ -19,7 +19,7 @@ const AdminUserInfo = ({userId}) => {
                 .get(`/repositories/users/${userId}`)
                 .then((res) => {
                     setUser(res.data);
-                    cached[userId] = user;
+                    cached[userId] = res.data;
                 })
                 .catch((err) => console.error(err));
         }
