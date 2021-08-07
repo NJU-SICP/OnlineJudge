@@ -6,7 +6,8 @@ import {Provider} from "react-redux";
 import store from "./store";
 
 import './index.css';
-import {Layout} from "antd";
+import {ConfigProvider, Layout} from "antd";
+import zhCN from 'antd/lib/locale/zh_CN';
 
 import MainLayout from "./layouts/main";
 import AuthLayout from "./layouts/auth";
@@ -21,15 +22,17 @@ console.info(
 ReactDOM.render(
     <React.StrictMode>
         <Provider store={store}>
-            <BrowserRouter>
-                <Layout style={{minHeight: "100vh"}}>
-                    <Header/>
-                    <Switch>
-                        <Route path="/auth/login" children={<AuthLayout/>}/>
-                        <Route path="/" children={<MainLayout/>}/>
-                    </Switch>
-                </Layout>
-            </BrowserRouter>
+            <ConfigProvider locale={zhCN}>
+                <BrowserRouter>
+                    <Layout style={{minHeight: "100vh"}}>
+                        <Header/>
+                        <Switch>
+                            <Route path="/auth/login" children={<AuthLayout/>}/>
+                            <Route path="/" children={<MainLayout/>}/>
+                        </Switch>
+                    </Layout>
+                </BrowserRouter>
+            </ConfigProvider>
         </Provider>
     </React.StrictMode>,
     document.getElementById('root')
