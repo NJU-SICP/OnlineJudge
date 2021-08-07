@@ -51,18 +51,20 @@ const AdminSubmissionList = () => {
         {
             title: "总得分",
             key: "score",
-            dataIndex: "score"
+            dataIndex: "result",
+            render: (result) => (result && result.error) ? <Typography.Text type="danger">评分失败</Typography.Text> : result?.score
         },
         {
             title: "评分人",
             key: "gradedBy",
-            dataIndex: "gradedBy"
+            dataIndex: "result",
+            render: (result) => result?.gradedBy ?? "自动评分"
         },
         {
             title: "评分时间",
             key: "gradedAt",
-            dataIndex: "gradedAt",
-            render: (time) => !time ? "" : moment(time).format("YYYY-MM-DD HH:mm:ss")
+            dataIndex: "result",
+            render: (result) => !result.gradedAt ? "" : moment(result.gradedAt).format("YYYY-MM-DD HH:mm:ss")
         },
         {
             title: "操作",

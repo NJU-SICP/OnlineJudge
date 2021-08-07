@@ -6,6 +6,7 @@ import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageResultCallback;
+import com.github.dockerjava.api.exception.BadRequestException;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.model.BuildResponseItem;
 import net.lingala.zip4j.ZipFile;
@@ -47,7 +48,7 @@ public class BuildImageTask implements Runnable {
         try {
             Path path = Files.createTempDirectory("sicp-build-workdir");
             (new ZipFile(Paths.get(grader.getFilePath()).toFile())).extractAll(path.toString());
-            logBuilder.append(String.format("Extracted dockerfile archive to %s", path.toString()));
+            logBuilder.append(String.format("Extracted dockerfile archive to %s\n", path.toString()));
             try {
                 DockerClient client = DockerConfig.getInstance();
                 StringBuilder buildLogBuilder = new StringBuilder();
@@ -74,18 +75,22 @@ public class BuildImageTask implements Runnable {
                 grader.setImageBuiltAt(imageBuiltAt);
                 logger.info(String.format("BuildImage succeed at %s %s", imageBuiltAt, assignment));
                 logBuilder.append(String.format("BuildImage succeed at %s %s", imageBuiltAt, assignment));
-            } catch (DockerClientException e) {
-                logger.error(String.format("BuildImage failed: %s %s", e.getMessage(), assignment));
-                logBuilder.append(String.format("BuildImage failed: %s %s", e.getMessage(), assignment));
+            } catch (Exception e) {
+                String error = String.format("BuildImage failed: %s %s %s", e.getClass().getName(), e.getMessage(), assignment);
+                logger.error(error);
+                logBuilder.append(error);
+                grader.setImageBuildError(error);
             } finally {
                 Files.walk(path)
                         .sorted(Comparator.reverseOrder())
                         .map(Path::toFile)
                         .forEach(File::delete);
             }
-        } catch (IOException e) {
-            logger.error(String.format("BuildImage failed: %s %s", e.getMessage(), assignment));
-            logBuilder.append(String.format("BuildImage failed: %s %s", e.getMessage(), assignment));
+        } catch (Exception e) {
+            String error = String.format("BuildImage failed: %s %s %s", e.getClass().getName(), e.getMessage(), assignment);
+            logger.error(error);
+            logBuilder.append(error);
+            grader.setImageBuildError(error);
         } finally {
             grader.setImageBuildLog(logBuilder.toString());
             repository.save(assignment);

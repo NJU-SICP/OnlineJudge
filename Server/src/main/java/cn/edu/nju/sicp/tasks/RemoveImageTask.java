@@ -26,6 +26,7 @@ public class RemoveImageTask implements Runnable {
 
     @Override
     public void run() {
+        if (imageId == null) return;
         logger.info(String.format("RemoveImage imageId=%s imageTags=%s", imageId, imageTags));
         try {
             DockerClient client = DockerConfig.getInstance();

@@ -6,8 +6,8 @@ import moment from "moment";
 import {saveAs} from "file-saver";
 import http from "../../../http";
 
-import {Affix, Button, Card, Col, Pagination, Row, Skeleton, Table} from "antd";
-import {ArrowRightOutlined, DownloadOutlined} from "@ant-design/icons";
+import {Affix, Button, Card, Col, message, Pagination, Popconfirm, Row, Skeleton, Table, Typography} from "antd";
+import {ArrowRightOutlined, DownloadOutlined, RedoOutlined} from "@ant-design/icons";
 import SubmissionTimeline from "../../submissions/timeline";
 import AdminSubmissionGrader from "./grader";
 
@@ -69,11 +69,13 @@ const AdminSubmissionTable = ({assignment}) => {
         http()
             .put(`/repositories/submissions/${selected.id}`, {
                 ...submission,
-                score: values.score ?? values.results.reduce((sum, result) => sum + result.score, 0),
-                message: values.message,
-                results: values.results,
-                gradedAt: moment(),
-                gradedBy: `${auth.username} ${auth.fullName}`
+                result: {
+                    score: values.score ?? values.results.reduce((sum, result) => sum + result.score, 0),
+                    message: values.message,
+                    details: values.details,
+                    gradedAt: moment(),
+                    gradedBy: `${auth.username} ${auth.fullName}`
+                }
             })
             .then((res) => {
                 setSubmission(res.data);
@@ -86,6 +88,16 @@ const AdminSubmissionTable = ({assignment}) => {
             })
             .catch((err) => console.error(err))
             .finally(() => setDisabled(false));
+    };
+
+    const rejudgeSubmission = () => {
+        http()
+            .post(`/submissions/${selected.id}/rejudge`)
+            .then((res) => {
+                message.success("已提交重测请求！");
+                setSubmission(res.data);
+            })
+            .catch((err) => console.error(err));
     };
 
     const downloadSubmission = () => {
@@ -121,7 +133,9 @@ const AdminSubmissionTable = ({assignment}) => {
         {
             title: "得分",
             key: "score",
-            dataIndex: "score"
+            dataIndex: "result",
+            render: (result) => (result && result.error) ?
+                <Typography.Text type="danger">评分失败</Typography.Text> : result?.score
         },
         {
             title: "查看",
@@ -156,18 +170,27 @@ const AdminSubmissionTable = ({assignment}) => {
                                 {!submission
                                     ? <Skeleton/>
                                     : <Card title={`提交 #${selected.id.substr(-8)}`}
-                                            extra={
+                                            extra={<>
+                                                {assignment.grader !== null &&
+                                                <Popconfirm title="确定要重新评分该提交吗？" onConfirm={rejudgeSubmission}>
+                                                    <Button type="link" size="small" danger>
+                                                        <RedoOutlined/> 重新评分
+                                                    </Button>
+                                                </Popconfirm>
+                                                }
                                                 <Button type="link" size="small" onClick={downloadSubmission}>
                                                     <DownloadOutlined/> 下载文件
                                                 </Button>
-                                            }>
+                                            </>}>
                                         <SubmissionTimeline id={selected.id} submission={submission}/>
+                                        {assignment.grader === null &&
                                         <Card>
                                             <AdminSubmissionGrader totalScore={assignment.totalScore}
                                                                    submission={submission}
                                                                    onFinish={gradeSubmission}
                                                                    disabled={disabled}/>
                                         </Card>
+                                        }
                                     </Card>}
                             </Affix>}
                     </Col>

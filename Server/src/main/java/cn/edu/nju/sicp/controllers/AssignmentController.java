@@ -73,7 +73,7 @@ public class AssignmentController {
             file.transferTo(path);
 
             grader.setFilePath(path.toString());
-            grader.setImageTags(Set.of(String.format("grader-%s-%s", id,
+            grader.setImageTags(Set.of(String.format("grader-%s:%s", id,
                     DateFormatUtils.format(new Date(), "yyyyMMdd-HHmmss"))));
             assignment.setGrader(grader);
             repository.save(assignment);

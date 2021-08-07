@@ -12,6 +12,7 @@ public class Grader {
     private Set<String> imageTags;
     private String imageId;
     private String imageBuildLog;
+    private String imageBuildError;
     private Date imageBuiltAt;
 
     public String getAssignmentId() {
@@ -54,6 +55,14 @@ public class Grader {
         this.imageBuildLog = imageBuildLog;
     }
 
+    public String getImageBuildError() {
+        return imageBuildError;
+    }
+
+    public void setImageBuildError(String imageBuildError) {
+        this.imageBuildError = imageBuildError;
+    }
+
     public Date getImageBuiltAt() {
         return imageBuiltAt;
     }
@@ -68,6 +77,7 @@ public class Grader {
                 "dockerfilePath='" + filePath + '\'' +
                 ", imageTags=" + imageTags +
                 ", imageId='" + imageId + '\'' +
+                ", imageBuildError='" + imageBuildError + '\'' +
                 ", imageBuiltAt=" + imageBuiltAt +
                 '}';
     }

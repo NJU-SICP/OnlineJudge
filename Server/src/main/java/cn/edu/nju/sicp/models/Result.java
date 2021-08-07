@@ -10,8 +10,9 @@ public class Result {
     private List<ScoreDetail> details;
     private String log;
     private String error;
-    private Date retry;
-    private Date date;
+    private Date retryAt;
+    private Date gradedAt;
+    private String gradedBy;
 
     public Integer getScore() {
         return score;
@@ -53,20 +54,28 @@ public class Result {
         this.error = error;
     }
 
-    public Date getRetry() {
-        return retry;
+    public Date getRetryAt() {
+        return retryAt;
     }
 
-    public void setRetry(Date retry) {
-        this.retry = retry;
+    public void setRetryAt(Date retryAt) {
+        this.retryAt = retryAt;
     }
 
-    public Date getDate() {
-        return date;
+    public Date getGradedAt() {
+        return gradedAt;
     }
 
-    public void setDate(Date date) {
-        this.date = date;
+    public void setGradedAt(Date gradedAt) {
+        this.gradedAt = gradedAt;
+    }
+
+    public String getGradedBy() {
+        return gradedBy;
+    }
+
+    public void setGradedBy(String gradedBy) {
+        this.gradedBy = gradedBy;
     }
 
     public static class ScoreDetail {
@@ -105,7 +114,10 @@ public class Result {
     public String toString() {
         return "Result{" +
                 "score=" + score +
-                ", date=" + date +
+                ", error='" + error + '\'' +
+                ", retryAt=" + retryAt +
+                ", gradedAt=" + gradedAt +
+                ", gradedBy='" + gradedBy + '\'' +
                 '}';
     }
 

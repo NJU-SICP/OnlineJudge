@@ -1,5 +1,6 @@
 package cn.edu.nju.sicp.dtos;
 
+import cn.edu.nju.sicp.models.Result;
 import cn.edu.nju.sicp.models.Submission;
 import org.springframework.data.rest.core.config.Projection;
 
@@ -14,14 +15,10 @@ public interface SubmissionInfo {
 
     String getAssignmentId();
 
-    Integer getScore();
-
-    Date getGradedAt();
-
-    String getGradedBy();
-
     Date getCreatedAt();
 
     String getCreatedBy();
+
+    Result getResult();
 
 }

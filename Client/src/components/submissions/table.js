@@ -59,7 +59,8 @@ const SubmissionTable = ({assignment, submissions}) => {
         {
             title: "得分",
             key: "score",
-            dataIndex: "score"
+            dataIndex: "result",
+            render: (result) => (result && result.error) ? <Typography.Text type="danger">评分失败</Typography.Text> : result?.score
         },
         {
             title: "查看",
@@ -75,7 +76,7 @@ const SubmissionTable = ({assignment, submissions}) => {
                 : <>
                     <Row gutter={10}>
                         <Col span={9}>
-                            <Table columns={columns} dataSource={submissions} pagination={false}
+                            <Table columns={columns} dataSource={submissions} pagination={false} rowKey="id"
                                    onRow={(record) => {
                                        return {onClick: () => setSelected(record)};
                                    }}/>

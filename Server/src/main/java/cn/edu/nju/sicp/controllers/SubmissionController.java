@@ -54,15 +54,15 @@ public class SubmissionController {
     private final String dataPath;
     private final Logger logger;
 
-    public SubmissionController(@Value("${spring.application.data-path") String dataPath) {
+    public SubmissionController(@Value("${spring.application.data-path}") String dataPath) {
         this.dataPath = dataPath;
         this.logger = LoggerFactory.getLogger(SubmissionController.class);
     }
 
     @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<String> createSubmission(@RequestPart("assignmentId") String assignmentId,
-                                                   @RequestPart(value = "token", required = false) String token,
-                                                   @RequestPart("file") MultipartFile file) throws OperationNotSupportedException, JsonProcessingException {
+    public ResponseEntity<Submission> createSubmission(@RequestPart("assignmentId") String assignmentId,
+                                                       @RequestPart(value = "token", required = false) String token,
+                                                       @RequestPart("file") MultipartFile file) throws OperationNotSupportedException, JsonProcessingException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = (String) authentication.getPrincipal();
         User user = userRepository.findByUsername(username);
@@ -105,11 +105,24 @@ public class SubmissionController {
             submissionRepository.delete(submission);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法存储提交文件。");
         }
-        gradeSubmissionExecutor.execute(new GradeSubmissionTask(assignment, submission, submissionRepository),
-                AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
 
-        String response = (new ObjectMapper()).writeValueAsString(submission);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository);
+        gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
+        return new ResponseEntity<>(submission, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/rejudge")
+    public ResponseEntity<Submission> rejudgeSubmission(@PathVariable String id) {
+        Submission submission = submissionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        submission.setResult(null);
+        submissionRepository.save(submission);
+
+        Assignment assignment = assignmentRepository.findById(submission.getAssignmentId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
+        GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository, GradeSubmissionTask.PRIORITY_LOW);
+        gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
+        return new ResponseEntity<>(submission, HttpStatus.OK);
     }
 
     @GetMapping("/{id}/download")
@@ -118,7 +131,8 @@ public class SubmissionController {
         String username = (String) authentication.getPrincipal();
         User user = userRepository.findByUsername(username);
 
-        Submission submission = submissionRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        Submission submission = submissionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!(user.getRing() < 3 || user.getId().equals(submission.getUserId()))) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
