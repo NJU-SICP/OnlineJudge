@@ -4,27 +4,33 @@ import http from "../../../http";
 import qs from "qs";
 import moment from "moment";
 
-import {Button, Pagination, Skeleton, Table, Typography} from "antd";
+import {Button, Form, Pagination, Skeleton, Table, Typography} from "antd";
 import {PaperClipOutlined} from "@ant-design/icons";
 import AdminUserInfo from "../users/info";
 import AdminAssignmentInfo from "../assignments/info";
+import AdminUserSearch from "../users/search";
+import AdminAssignmentSearch from "../assignments/search";
 
 const AdminSubmissionList = () => {
     const history = useHistory();
     const location = useLocation();
-    const [submissions, setSubmissions] = useState(null);
-    const [pagination, setPagination] = useState(null);
+    const [queryUserId, setQueryUserId] = useState(null);
+    const [queryAssignmentId, setQueryAssignmentId] = useState(null);
+    const [page, setPage] = useState(null);
 
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/repositories/submissions?sort=createdAt,desc&page=${page - 1}`)
-            .then((res) => {
-                setSubmissions(res.data._embedded.submissions);
-                setPagination(res.data.page);
+            .get(`/submissions`, {
+                params: {
+                    userId: queryUserId,
+                    assignmentId: queryAssignmentId,
+                    page: page - 1
+                }
             })
+            .then((res) => setPage(res.data))
             .catch((err) => console.error(err));
-    }, [location.search]);
+    }, [location.search, queryUserId, queryAssignmentId]);
 
     const columns = [
         {
@@ -86,19 +92,26 @@ const AdminSubmissionList = () => {
             <Typography.Title level={2}>
                 <PaperClipOutlined/> 提交管理
             </Typography.Title>
-            {!submissions
+            {!page
                 ? <Skeleton/>
                 : <>
-                    <Table columns={columns} dataSource={submissions} rowKey="id" pagination={false}/>
+                    <Form>
+                        <Form.Item label="根据用户搜索">
+                            <AdminUserSearch onSelect={(text, option) => setQueryUserId(option.user.id)}/>
+                        </Form.Item>
+                        <Form.Item label="根据作业搜索">
+                            <AdminAssignmentSearch
+                                onSelect={(text, option) => setQueryAssignmentId(option.assignment.id)}/>
+                        </Form.Item>
+                    </Form>
+                    <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false}/>
                     <div style={{float: "right", marginTop: "1em"}}>
-                        {!!pagination &&
-                        <Pagination current={pagination.number + 1} pageSize={pagination.size}
-                                    total={pagination.totalElements}
+                        <Pagination current={page.number + 1} pageSize={page.size}
+                                    total={page.totalElements}
                                     onChange={(p) => history.push({
                                         pathname: location.pathname,
                                         search: `?page=${p}`
                                     })}/>
-                        }
                     </div>
                 </>}
         </>

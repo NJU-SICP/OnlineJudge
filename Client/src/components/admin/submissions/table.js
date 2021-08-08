@@ -73,7 +73,7 @@ const AdminSubmissionTable = ({assignment}) => {
                 result: {
                     score: values.score ?? values.results.reduce((sum, result) => sum + result.score, 0),
                     message: values.message,
-                    details: values.details,
+                    details: values.details && values.details.length > 0 ? values.details : null,
                     gradedAt: moment(),
                     gradedBy: `${auth.username} ${auth.fullName}`
                 }

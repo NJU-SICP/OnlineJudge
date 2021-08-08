@@ -2,6 +2,7 @@ package cn.edu.nju.sicp.repositories;
 
 import cn.edu.nju.sicp.dtos.SubmissionInfo;
 import cn.edu.nju.sicp.models.Submission;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;

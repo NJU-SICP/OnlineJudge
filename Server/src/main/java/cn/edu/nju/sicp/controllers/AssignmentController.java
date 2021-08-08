@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -45,6 +46,12 @@ public class AssignmentController {
     public AssignmentController(@Value("${spring.application.data-path}") String dataPath) {
         this.dataPath = dataPath;
         this.logger = LoggerFactory.getLogger(AssignmentController.class);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Assignment>> searchAssignments(String prefix) {
+        List<Assignment> assignments = repository.findFirst5ByTitleStartingWith(prefix);
+        return new ResponseEntity<>(assignments, HttpStatus.OK);
     }
 
     @GetMapping("/{id}/grader")

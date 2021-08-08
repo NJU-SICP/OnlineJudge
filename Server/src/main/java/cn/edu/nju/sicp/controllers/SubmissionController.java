@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -57,6 +58,16 @@ public class SubmissionController {
     public SubmissionController(@Value("${spring.application.data-path}") String dataPath) {
         this.dataPath = dataPath;
         this.logger = LoggerFactory.getLogger(SubmissionController.class);
+    }
+
+    @GetMapping()
+    public ResponseEntity<Page<Submission>> getSubmissions(String userId, String assignmentId, int page) {
+        Submission target = new Submission();
+        target.setUserId(userId);
+        target.setAssignmentId(assignmentId);
+        Page<Submission> submissions = submissionRepository
+                .findAll(Example.of(target), PageRequest.of(page, 20, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return new ResponseEntity<>(submissions, HttpStatus.OK);
     }
 
     @PostMapping(consumes = {"multipart/form-data"})
