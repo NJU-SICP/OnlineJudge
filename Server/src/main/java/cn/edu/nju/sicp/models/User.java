@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.Collection;
 import java.util.Date;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class User implements UserDetails {
 
@@ -19,15 +20,12 @@ public class User implements UserDetails {
 
     @Indexed(unique = true)
     private String username;
-
+    private String fullName;
     private String password;
-    private Collection<? extends GrantedAuthority> authorities;
+    private Collection<String> roles;
     private boolean enabled;
     private boolean locked;
     private Date expires;
-
-    private String fullName;
-    private int ring;
 
     public String getId() {
         return id;
@@ -39,6 +37,14 @@ public class User implements UserDetails {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 
     public String getPassword() {
@@ -59,13 +65,21 @@ public class User implements UserDetails {
         }
     }
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
+    public Collection<String> getRoles() {
+        return roles;
     }
 
-    public void setAuthorities(Collection<? extends GrantedAuthority> authorities) {
-        this.authorities = authorities;
+    public void setRoles(Collection<String> roles) {
+        this.roles = roles;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles.stream()
+                .map(Role::new)
+                .map(Role::getAuthorities)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -105,32 +119,16 @@ public class User implements UserDetails {
         return true;
     }
 
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public int getRing() {
-        return ring;
-    }
-
-    public void setRing(int ring) {
-        this.ring = ring;
-    }
-
     @Override
     public String toString() {
         return "User{" +
                 "id='" + id + '\'' +
                 ", username='" + username + '\'' +
+                ", fullName='" + fullName + '\'' +
+                ", roles=" + roles +
                 ", enabled=" + enabled +
                 ", locked=" + locked +
                 ", expires=" + expires +
-                ", fullName='" + fullName + '\'' +
-                ", ring=" + ring +
                 '}';
     }
 

@@ -1,13 +1,13 @@
 package cn.edu.nju.sicp.configs;
 
+import cn.edu.nju.sicp.models.Role;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class StartupRunner implements CommandLineRunner {
@@ -31,7 +31,7 @@ public class StartupRunner implements CommandLineRunner {
         admin.setEnabled(true);
         admin.setLocked(false);
         admin.setExpires(null);
-        admin.setRing(0);
+        admin.setRoles(List.of(Role.ROLE_ADMIN));
         repository.save(admin);
     }
 

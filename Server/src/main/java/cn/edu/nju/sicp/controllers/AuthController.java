@@ -1,6 +1,7 @@
 package cn.edu.nju.sicp.controllers;
 
 import cn.edu.nju.sicp.jwt.JwtTokenUtils;
+import cn.edu.nju.sicp.models.Role;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.UserRepository;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 
 @CrossOrigin
@@ -104,7 +106,7 @@ public class AuthController {
         private final String userId;
         private final String username;
         private final String fullName;
-        private final int ring;
+        private final Collection<String> roles;
         private final String token;
         private final Date expires;
 
@@ -112,7 +114,7 @@ public class AuthController {
             userId = user.getId();
             username = user.getUsername();
             fullName = user.getFullName();
-            ring = user.getRing();
+            roles = user.getRoles();
             token = JwtTokenUtils.createJwtToken(user);
             expires = JwtTokenUtils.parseJwtToken(token).getExpiration();
         }
@@ -129,8 +131,8 @@ public class AuthController {
             return fullName;
         }
 
-        public int getRing() {
-            return ring;
+        public Collection<String> getRoles() {
+            return roles;
         }
 
         public String getToken() {

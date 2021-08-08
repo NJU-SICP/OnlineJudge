@@ -2,6 +2,7 @@ package cn.edu.nju.sicp.controllers;
 
 import cn.edu.nju.sicp.models.Grader;
 import cn.edu.nju.sicp.models.Assignment;
+import cn.edu.nju.sicp.models.Role;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import cn.edu.nju.sicp.tasks.BuildImageTask;
 import cn.edu.nju.sicp.tasks.RemoveImageTask;
@@ -15,6 +16,7 @@ import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -55,12 +57,14 @@ public class AssignmentController {
     }
 
     @GetMapping("/{id}/grader")
+    @Secured(Role.OP_ASSIGNMENT_UPDATE)
     public ResponseEntity<Grader> getGrader(@PathVariable String id) {
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return new ResponseEntity<>(assignment.getGrader(), HttpStatus.OK);
     }
 
     @PostMapping("/{id}/grader")
+    @Secured(Role.OP_ASSIGNMENT_UPDATE)
     public ResponseEntity<Grader> setGrader(@PathVariable String id, @RequestBody MultipartFile file) {
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (assignment.getGrader() != null) {
@@ -95,6 +99,7 @@ public class AssignmentController {
     }
 
     @DeleteMapping("/{id}/grader")
+    @Secured(Role.OP_ASSIGNMENT_UPDATE)
     public ResponseEntity<String> deleteGrader(@PathVariable String id) {
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Grader grader = assignment.getGrader();

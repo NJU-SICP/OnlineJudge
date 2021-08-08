@@ -14,7 +14,7 @@ const AdminUserCreator = () => {
         username: null,
         password: null,
         fullName: null,
-        ring: null,
+        roles: ["ROLE_STUDENT"],
         expires: null,
         enabled: true,
         locked: false
@@ -26,9 +26,8 @@ const AdminUserCreator = () => {
             .post("/repositories/users", {
                 username: values.username,
                 password: values.password,
-                authorities: [],
                 fullName: values.fullName,
-                ring: values.ring,
+                roles: values.roles,
                 expires: !!values.expires ? moment(values.expires) : null,
                 enabled: values.enabled,
                 locked: values.locked

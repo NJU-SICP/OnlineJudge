@@ -23,7 +23,7 @@ const Menu = () => {
                           onClick={() => redirect("/config")}>
                 用户设置
             </AntMenu.Item>
-            {!!auth && auth.ring < 3 && <>
+            {!!auth && auth.roles.filter(role => role !== "ROLE_STUDENT").length > 0 && <>
                 <AntMenu.SubMenu key="/admin" title="系统管理" icon={<SettingOutlined/>}>
                     <AntMenu.Item key="/admin/users" icon={<UserSwitchOutlined/>}
                                   onClick={() => redirect("/admin/users")}>

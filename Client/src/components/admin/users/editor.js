@@ -30,12 +30,11 @@ const AdminUserEditor = () => {
             .put(`/repositories/users/${id}`, {
                 username: values.username,
                 password: values.password ?? user.oldPassword,
-                authorities: [],
+                fullName: values.fullName,
+                roles: values.roles,
                 expires: values.expires,
                 enabled: values.enabled,
                 locked: values.locked,
-                fullName: values.fullName,
-                ring: values.ring
             })
             .then(() => {
                 message.success("修改用户成功！");

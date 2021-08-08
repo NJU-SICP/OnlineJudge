@@ -1,6 +1,6 @@
 import React from "react";
 
-import {Button, DatePicker, Form, Input, Select, Switch} from "antd";
+import {Button, Checkbox, DatePicker, Form, Input, Select, Switch} from "antd";
 import {CheckOutlined} from "@ant-design/icons";
 
 const AdminUserForm = ({initialValues, onFinish, disabled}) => {
@@ -20,13 +20,13 @@ const AdminUserForm = ({initialValues, onFinish, disabled}) => {
             <Form.Item name="fullName" label="姓名" rules={[{required: true, message: "请输入姓名"}]}>
                 <Input disabled={disabled}/>
             </Form.Item>
-            <Form.Item name="ring" label="权限组" rules={[{required: true, message: "请选择权限组"}]}>
-                <Select placeholder="权限组" disabled={disabled}>
-                    <Select.Option value={3}>3 - 学生</Select.Option>
-                    <Select.Option value={2}>2 - 助教</Select.Option>
-                    <Select.Option value={1}>1 - 管理员</Select.Option>
-                    <Select.Option value={0}>0 - 超级管理员</Select.Option>
-                </Select>
+            <Form.Item name="roles" label="角色" rules={[{required: true, message: "请选择至少一个角色"}]}>
+                <Checkbox.Group options={[
+                    {label: "管理 [ROLE_ADMIN]", value: "ROLE_ADMIN"},
+                    {label: "教师 [ROLE_TEACHER]", value: "ROLE_TEACHER"},
+                    {label: "助教 [ROLE_STAFF]", value: "ROLE_STAFF"},
+                    {label: "学生 [ROLE_STUDENT]", value: "ROLE_STUDENT"}
+                ]} disabled={disabled}/>
             </Form.Item>
             <Form.Item name="expires" label="过期日（如为空值则该用户不会过期）">
                 <DatePicker disabled={disabled}/>

@@ -3,7 +3,7 @@ import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 import http from "../../../http";
 
-import {Button, Pagination, Skeleton, Table, Typography} from "antd";
+import {Button, Pagination, Skeleton, Table, Tag, Typography} from "antd";
 import {PlusOutlined, UserSwitchOutlined} from "@ant-design/icons";
 
 const AdminUserList = () => {
@@ -34,12 +34,18 @@ const AdminUserList = () => {
             dataIndex: "fullName"
         },
         {
-            title: "权限组",
-            key: "ring",
-            dataIndex: "ring",
-            render: (ring) => (
-                <Typography.Text type={ring < 3 ? "danger" : "primary"}>{ring}</Typography.Text>
-            )
+            title: "角色",
+            key: "roles",
+            dataIndex: "roles",
+            render: (roles) => {
+                const colors = {
+                    "ROLE_ADMIN": "red",
+                    "ROLE_TEACHER": "purple",
+                    "ROLE_STAFF": "blue",
+                    "ROLE_STUDENT": "green"
+                };
+                return <>{roles.map(role => <Tag key={role} color={colors[role]}>{role}</Tag>)}</>;
+            }
         },
         {
             title: "状态",

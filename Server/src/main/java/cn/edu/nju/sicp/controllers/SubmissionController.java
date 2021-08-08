@@ -1,6 +1,7 @@
 package cn.edu.nju.sicp.controllers;
 
 import cn.edu.nju.sicp.models.Assignment;
+import cn.edu.nju.sicp.models.Role;
 import cn.edu.nju.sicp.models.Submission;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -71,6 +73,7 @@ public class SubmissionController {
     }
 
     @PostMapping(consumes = {"multipart/form-data"})
+    @Secured(Role.OP_SUBMISSION_CREATE)
     public ResponseEntity<Submission> createSubmission(@RequestPart("assignmentId") String assignmentId,
                                                        @RequestPart(value = "token", required = false) String token,
                                                        @RequestPart("file") MultipartFile file) throws OperationNotSupportedException, JsonProcessingException {
@@ -123,6 +126,7 @@ public class SubmissionController {
     }
 
     @PostMapping("/{id}/rejudge")
+    @Secured(Role.OP_SUBMISSION_UPDATE)
     public ResponseEntity<Submission> rejudgeSubmission(@PathVariable String id) {
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -137,6 +141,7 @@ public class SubmissionController {
     }
 
     @GetMapping("/{id}/download")
+    @Secured(Role.OP_SUBMISSION_READ_SELF)
     public ResponseEntity<Resource> downloadSubmission(@PathVariable String id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = (String) authentication.getPrincipal();
@@ -144,7 +149,7 @@ public class SubmissionController {
 
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!(user.getRing() < 3 || user.getId().equals(submission.getUserId()))) {
+        if (!user.getId().equals(submission.getUserId())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
 

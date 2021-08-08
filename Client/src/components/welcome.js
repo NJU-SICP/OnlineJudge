@@ -19,7 +19,7 @@ const Welcome = () => {
             .get(`/repositories/assignments`)
             .then((res) => setAssignments(res.data._embedded.assignments))
             .catch((err) => console.error(err));
-    });
+    }, []);
 
     const dateCellRender = (date) => {
         return (<ul style={{margin: 0, padding: 0, listStyle: "none"}}>
