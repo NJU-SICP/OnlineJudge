@@ -17,7 +17,7 @@ const AdminAssignmentGrader = () => {
 
     useEffect(() => {
         http()
-            .get(`/repositories/assignments/${id}`)
+            .get(`/assignments/${id}`)
             .then((res) => setAssignment({...res.data, id}))
             .catch((err) => console.error(err));
         http()

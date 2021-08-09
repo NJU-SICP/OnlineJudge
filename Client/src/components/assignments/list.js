@@ -11,25 +11,23 @@ import {EditOutlined} from "@ant-design/icons";
 const AssignmentList = () => {
     const history = useHistory();
     const location = useLocation();
-    const [assignments, setAssignments] = useState(null);
-    const [pagination, setPagination] = useState(null);
+    const [page, setPage] = useState(null);
 
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/repositories/assignments?sort=endTime,desc&page=${page - 1}`)
+            .get(`/assignments?page=${page - 1}`)
             .then((res) => {
                 const list = [];
                 const now = moment();
-                res.data._embedded.assignments.forEach((assignment) => {
+                res.data.content.forEach((assignment) => {
                     const ddl = moment(assignment.endTime);
                     list.push({
                         ...assignment,
                         ended: now.isAfter(ddl)
                     });
                 });
-                setAssignments(list);
-                setPagination(res.data.page);
+                setPage({...res.data, content: list});
             })
             .catch((err) => console.error(err));
     }, [location.search]);
@@ -95,19 +93,16 @@ const AssignmentList = () => {
             <Typography.Title level={2}>
                 <EditOutlined/> 作业列表
             </Typography.Title>
-            {assignments === null
+            {!page
                 ? <Skeleton/>
                 : <>
-                    <Table columns={columns} dataSource={assignments} rowKey="id" pagination={false}/>
+                    <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false}/>
                     <div style={{float: "right", marginTop: "1em"}}>
-                        {!!pagination &&
-                        <Pagination current={pagination.number + 1} pageSize={pagination.size}
-                                    total={pagination.totalElements}
+                        <Pagination current={page.number + 1} pageSize={page.size} total={page.totalElements}
                                     onChange={(p) => history.push({
                                         pathname: location.pathname,
                                         search: `?page=${p}`
                                     })}/>
-                        }
                     </div>
                 </>}
         </>

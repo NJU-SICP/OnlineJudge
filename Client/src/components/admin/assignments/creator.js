@@ -11,20 +11,19 @@ const AdminAssignmentCreator = () => {
     const [disabled, setDisabled] = useState(false);
 
     const initialValues = {
-        title: null,
+        title: "",
         beginTime: null,
         endTime: null,
         submitFileType: null,
         submitCountLimit: null,
-        totalScore: null,
-        percentage: null
+        totalScore: 0,
+        percentage: 0
     };
 
     const createAssignment = (values) => {
-        console.log(values);
         setDisabled(true);
         http()
-            .post("/repositories/assignments", {
+            .post("/assignments", {
                 title: values.title,
                 beginTime: moment(values.rangeTime[0]),
                 endTime: moment(values.rangeTime[1]),

@@ -11,9 +11,9 @@ const AdminUserCreator = () => {
     const [disabled, setDisabled] = useState(false);
 
     const initialValues = {
-        username: null,
-        password: null,
-        fullName: null,
+        username: "",
+        fullName: "",
+        password: "",
         roles: ["ROLE_STUDENT"],
         expires: null,
         enabled: true,
@@ -23,7 +23,7 @@ const AdminUserCreator = () => {
     const createUser = (values) => {
         setDisabled(true);
         http()
-            .post("/repositories/users", {
+            .post("/users", {
                 username: values.username,
                 password: values.password,
                 fullName: values.fullName,

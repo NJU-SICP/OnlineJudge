@@ -1,5 +1,7 @@
 package cn.edu.nju.sicp.models;
 
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.security.core.GrantedAuthority;
@@ -8,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -23,9 +26,9 @@ public class User implements UserDetails {
     private String fullName;
     private String password;
     private Collection<String> roles;
+    private Date expires;
     private boolean enabled;
     private boolean locked;
-    private Date expires;
 
     public String getId() {
         return id;
@@ -57,11 +60,13 @@ public class User implements UserDetails {
     }
 
     public void setPassword(String password) {
-        if (BCRYPT_PATTERN.matcher(password).matches()) {
-            this.password = password;
-        } else {
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-            this.password = encoder.encode(password);
+        if (!StringUtils.isEmpty(password)) {
+            if (BCRYPT_PATTERN.matcher(password).matches()) {
+                this.password = password;
+            } else {
+                BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+                this.password = encoder.encode(password);
+            }
         }
     }
 
@@ -79,7 +84,16 @@ public class User implements UserDetails {
                 .map(Role::new)
                 .map(Role::getAuthorities)
                 .flatMap(Collection::stream)
+                .distinct()
                 .collect(Collectors.toList());
+    }
+
+    public Date getExpires() {
+        return expires;
+    }
+
+    public void setExpires(Date expires) {
+        this.expires = expires;
     }
 
     @Override
@@ -88,8 +102,13 @@ public class User implements UserDetails {
         return expires == null || now.before(expires);
     }
 
-    public void setExpires(Date expires) {
-        this.expires = expires;
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     @Override
@@ -103,15 +122,6 @@ public class User implements UserDetails {
 
     public void setLocked(boolean locked) {
         this.locked = locked;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
     }
 
     @Override

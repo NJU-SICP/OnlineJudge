@@ -1,7 +1,8 @@
 package cn.edu.nju.sicp.controllers;
 
+import cn.edu.nju.sicp.configs.RolesConfig;
+import cn.edu.nju.sicp.dtos.SubmissionInfo;
 import cn.edu.nju.sicp.models.Assignment;
-import cn.edu.nju.sicp.models.Role;
 import cn.edu.nju.sicp.models.Submission;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
@@ -9,7 +10,6 @@ import cn.edu.nju.sicp.repositories.SubmissionRepository;
 import cn.edu.nju.sicp.repositories.UserRepository;
 import cn.edu.nju.sicp.tasks.GradeSubmissionTask;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,12 +19,14 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.domain.*;
+import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -50,6 +52,9 @@ public class SubmissionController {
     @Autowired
     private SubmissionRepository submissionRepository;
 
+    @Autowired
+    private ProjectionFactory projectionFactory;
+
     @Qualifier("threadPoolTaskExecutor")
     @Autowired
     private ThreadPoolTaskExecutor gradeSubmissionExecutor;
@@ -63,24 +68,39 @@ public class SubmissionController {
     }
 
     @GetMapping()
-    public ResponseEntity<Page<Submission>> getSubmissions(String userId, String assignmentId, int page) {
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF) or hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
+    public ResponseEntity<Page<SubmissionInfo>> listSubmissions(String userId, String assignmentId, Integer page, Integer size) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!user.getId().equals(userId) && user.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         Submission target = new Submission();
         target.setUserId(userId);
         target.setAssignmentId(assignmentId);
         Page<Submission> submissions = submissionRepository
-                .findAll(Example.of(target), PageRequest.of(page, 20, Sort.by(Sort.Direction.DESC, "createdAt")));
-        return new ResponseEntity<>(submissions, HttpStatus.OK);
+                .findAll(Example.of(target), PageRequest.of(page == null ? 0 : page,
+                        size == null ? 20 : size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return new ResponseEntity<>(submissions.map(s -> projectionFactory.createProjection(SubmissionInfo.class, s)), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF) or hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
+    public ResponseEntity<Submission> viewSubmissions(@PathVariable String id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Submission submission = submissionRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!submission.getUserId().equals(user.getId()) &&
+                user.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        return new ResponseEntity<>(submission, HttpStatus.OK);
     }
 
     @PostMapping(consumes = {"multipart/form-data"})
-    @Secured(Role.OP_SUBMISSION_CREATE)
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_CREATE)")
     public ResponseEntity<Submission> createSubmission(@RequestPart("assignmentId") String assignmentId,
                                                        @RequestPart(value = "token", required = false) String token,
                                                        @RequestPart("file") MultipartFile file) throws OperationNotSupportedException, JsonProcessingException {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = (String) authentication.getPrincipal();
-        User user = userRepository.findByUsername(username);
-
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -113,9 +133,9 @@ public class SubmissionController {
             file.transferTo(path);
             submission.setFilePath(path.toString());
             submissionRepository.save(submission);
-            logger.info(String.format("CreateSubmission %s", submission));
+            logger.info(String.format("CreateSubmission %s by %s", submission, user));
         } catch (IOException e) {
-            logger.error("Cannot save submission file: " + e.getMessage());
+            logger.error(String.format("CreateSubmission failed: %s %s by %s", e.getMessage(), submission, user));
             submissionRepository.delete(submission);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法存储提交文件。");
         }
@@ -125,9 +145,33 @@ public class SubmissionController {
         return new ResponseEntity<>(submission, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
+    public ResponseEntity<Submission> updateSubmission(@PathVariable String id, @RequestBody Submission updatedSubmission) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Submission submission = submissionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        submission.setResult(updatedSubmission.getResult());
+        submissionRepository.save(submission);
+        logger.info(String.format("UpdateSubmission %s by %s", submission, user));
+        return new ResponseEntity<>(submission, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_DELETE)")
+    public ResponseEntity<Void> deleteSubmission(@PathVariable String id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Submission submission = submissionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        submissionRepository.delete(submission);
+        logger.info(String.format("DeleteSubmission %s by %s", submission, user));
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
     @PostMapping("/{id}/rejudge")
-    @Secured(Role.OP_SUBMISSION_UPDATE)
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_UPDATE)")
     public ResponseEntity<Submission> rejudgeSubmission(@PathVariable String id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         submission.setResult(null);
@@ -137,11 +181,12 @@ public class SubmissionController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
         GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository, GradeSubmissionTask.PRIORITY_LOW);
         gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
+        logger.info(String.format("RejudgeSubmission %s by %s", submission, user));
         return new ResponseEntity<>(submission, HttpStatus.OK);
     }
 
     @GetMapping("/{id}/download")
-    @Secured(Role.OP_SUBMISSION_READ_SELF)
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF)")
     public ResponseEntity<Resource> downloadSubmission(@PathVariable String id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = (String) authentication.getPrincipal();
@@ -158,7 +203,7 @@ public class SubmissionController {
             InputStreamResource resource = new InputStreamResource(new FileInputStream(path.toFile()));
             return new ResponseEntity<>(resource, HttpStatus.OK);
         } catch (IOException e) {
-            logger.error("Cannot load submission file: " + e.getMessage());
+            logger.error(String.format("DownloadSubmission failed: %s %s by %s", e.getMessage(), submission, user));
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取提交文件。");
         }
     }

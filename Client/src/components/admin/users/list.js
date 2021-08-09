@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from "react";
+import {useSelector} from "react-redux";
 import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 import http from "../../../http";
@@ -7,18 +8,15 @@ import {Button, Pagination, Skeleton, Table, Tag, Typography} from "antd";
 import {PlusOutlined, UserSwitchOutlined} from "@ant-design/icons";
 
 const AdminUserList = () => {
+    const auth = useSelector((state) => state.auth.value);
     const history = useHistory();
     const location = useLocation();
-    const [users, setUsers] = useState(null);
-    const [pagination, setPagination] = useState(null);
+    const [page, setPage] = useState(null);
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/repositories/users?sort=username,asc&page=${page - 1}`)
-            .then((res) => {
-                setUsers(res.data._embedded.users);
-                setPagination(res.data.page);
-            })
+            .get(`/users?page=${page - 1}`)
+            .then((res) => setPage(res.data))
             .catch((err) => console.error(err));
     }, [location.search]);
 
@@ -65,12 +63,14 @@ const AdminUserList = () => {
         {
             title: "操作",
             key: "actions",
-            render: (text, record) => (
+            render: (text, record) => (<>
+                {auth.authorities && auth.authorities.indexOf("OP_USER_UPDATE") >= 0 &&
                 <Button type="link" size="small"
                         onClick={() => history.push(`/admin/users/${record.id}`)}>
                     编辑
                 </Button>
-            )
+                }
+            </>)
         }
     ];
 
@@ -78,23 +78,22 @@ const AdminUserList = () => {
         <>
             <Typography.Title level={2}>
                 <UserSwitchOutlined/> 用户管理
+                {auth.authorities && auth.authorities.indexOf("OP_USER_CREATE") >= 0 &&
                 <Button style={{float: "right"}} onClick={() => history.push("/admin/users/create")}>
                     <PlusOutlined/> 添加用户
                 </Button>
+                }
             </Typography.Title>
-            {users === null
+            {page === null
                 ? <Skeleton/>
                 : <>
-                    <Table columns={columns} dataSource={users} rowKey="id" pagination={false}/>
+                    <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false}/>
                     <div style={{float: "right", marginTop: "1em"}}>
-                        {!!pagination &&
-                        <Pagination current={pagination.number + 1} pageSize={pagination.size}
-                                    total={pagination.totalElements}
+                        <Pagination current={page.number + 1} pageSize={page.size} total={page.totalElements}
                                     onChange={(p) => history.push({
                                         pathname: location.pathname,
                                         search: `?page=${p}`
                                     })}/>
-                        }
                     </div>
                 </>}
         </>

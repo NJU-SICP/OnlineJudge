@@ -23,20 +23,27 @@ const Menu = () => {
                           onClick={() => redirect("/config")}>
                 用户设置
             </AntMenu.Item>
-            {!!auth && auth.roles.filter(role => role !== "ROLE_STUDENT").length > 0 && <>
+            {!!auth && auth.roles && auth.authorities &&
+            auth.roles.filter(role => role !== "ROLE_STUDENT").length > 0 && <>
                 <AntMenu.SubMenu key="/admin" title="系统管理" icon={<SettingOutlined/>}>
+                    {auth.authorities.indexOf("OP_USER_READ") > 0 &&
                     <AntMenu.Item key="/admin/users" icon={<UserSwitchOutlined/>}
                                   onClick={() => redirect("/admin/users")}>
                         用户管理
                     </AntMenu.Item>
+                    }
+                    {auth.authorities.indexOf("OP_ASSIGNMENT_READ_ALL") > 0 &&
                     <AntMenu.Item key="/admin/assignments" icon={<EditOutlined/>}
                                   onClick={() => redirect("/admin/assignments")}>
                         作业管理
                     </AntMenu.Item>
+                    }
+                    {auth.authorities.indexOf("OP_SUBMISSION_READ_ALL") > 0 &&
                     <AntMenu.Item key="/admin/submissions" icon={<PaperClipOutlined/>}
                                   onClick={() => redirect("/admin/submissions")}>
                         提交管理
                     </AntMenu.Item>
+                    }
                 </AntMenu.SubMenu>
             </>}
         </AntMenu>

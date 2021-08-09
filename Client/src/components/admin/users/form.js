@@ -1,6 +1,6 @@
 import React from "react";
 
-import {Button, Checkbox, DatePicker, Form, Input, Select, Switch} from "antd";
+import {Button, Checkbox, DatePicker, Form, Input, Switch} from "antd";
 import {CheckOutlined} from "@ant-design/icons";
 
 const AdminUserForm = ({initialValues, onFinish, disabled}) => {

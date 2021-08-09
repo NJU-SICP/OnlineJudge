@@ -7,7 +7,6 @@ const AdminSubmissionGrader = ({totalScore, submission, onFinish, disabled}) => 
 
     useEffect(() => {
         const fields = form.getFieldsValue();
-        console.log(submission.result);
         if (submission.result !== null) {
             fields.score = submission.result.score;
             fields.message = submission.result.message;

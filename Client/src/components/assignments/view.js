@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
-import {useParams} from "react-router-dom";
+import {useLocation, useParams} from "react-router-dom";
+import qs from "qs";
 import http from "../../http";
 
 import {Col, Divider, message, Row, Skeleton, Statistic, Typography, Upload} from "antd";
@@ -10,14 +11,15 @@ import {useSelector} from "react-redux";
 
 const AssignmentView = () => {
     const {id} = useParams();
+    const location = useLocation();
     const auth = useSelector((state) => state.auth.value);
     const [assignment, setAssignment] = useState(null);
-    const [submissions, setSubmissions] = useState(null);
+    const [submissionsPage, setSubmissionsPage] = useState(null);
     const [disabled, setDisabled] = useState(false);
 
     useEffect(() => {
         http()
-            .get(`/repositories/assignments/${id}`)
+            .get(`/assignments/${id}`)
             .then((res) => {
                 const now = moment();
                 const ddl = moment(res.data.endTime);
@@ -27,22 +29,31 @@ const AssignmentView = () => {
                 });
             })
             .catch((err) => console.error(err));
+    }, [id, auth]);
+
+    useEffect(() => {
+        const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/repositories/submissions/search/findByUserIdAndAssignmentIdOrderByCreatedAtDesc` +
-                `?userId=${auth.userId}&assignmentId=${id}&sort=createdAt,desc`)
+            .get(`/submissions`, {
+                params: {
+                    userId: auth.userId,
+                    assignmentId: id,
+                    page: page - 1
+                }
+            })
             .then((res) => {
                 const list = [];
-                const total = res.data._embedded.submissions.length;
-                res.data._embedded.submissions.forEach((s, index) => {
+                const total = res.data.totalElements;
+                res.data.content.forEach((s, index) => {
                     list.push({
                         ...s,
-                        index: total - index
+                        index: total - 20 * (page - 1) - index
                     });
                 });
-                setSubmissions(list);
+                setSubmissionsPage({...res.data, content: list});
             })
             .catch((err) => console.error(err));
-    }, [id, auth]);
+    }, [id, auth, location.search]);
 
     const beforeUpload = (file) => {
         return window.confirm(`请确认提交作业和文件名称：\n作业：${assignment.title}\n文件：${file.name}\n点击“确定”提交作业，点击“取消”取消提交。`);
@@ -61,10 +72,15 @@ const AssignmentView = () => {
             .then((res) => {
                 onSuccess(res.data);
                 message.success("提交作业成功！");
-                setSubmissions(oldSubmissions => [{
-                    ...res.data,
-                    index: oldSubmissions.length === 0 ? 1 : (oldSubmissions[0].index + 1)
-                }, ...oldSubmissions]);
+                setSubmissionsPage(oldSubmissionPage => {
+                    return {
+                        ...oldSubmissionPage,
+                        content: [{
+                            ...res.data,
+                            index: oldSubmissionPage.content.length === 0 ? 1 : (oldSubmissionPage.content[0].index + 1)
+                        }, ...oldSubmissionPage.content.slice(0, 20 - 1)]
+                    };
+                });
             })
             .catch((err) => {
                 console.error(err);
@@ -92,7 +108,8 @@ const AssignmentView = () => {
                             <Statistic title="提交类型" value={assignment.submitFileType}/>
                         </Col>
                         <Col span={6}>
-                            <Statistic title="提交次数" loading={submissions === null} value={submissions?.length}
+                            <Statistic title="提交次数" loading={!submissionsPage}
+                                       value={submissionsPage?.totalElements ?? 0}
                                        suffix={assignment.submitCountLimit <= 0 ? "次" : `/ ${assignment.submitCountLimit} 次`}/>
                         </Col>
                     </Row>
@@ -107,15 +124,15 @@ const AssignmentView = () => {
                                     : <Typography.Text>
                                         <InboxOutlined/> 点击或将文件拖拽到此处上传提交
                                         {assignment.submitCountLimit > 0 &&
-                                        <span>（剩余{assignment.submitCountLimit - (submissions === null ? 0 : submissions.length)}次提交机会）</span>
+                                        <span>（剩余{assignment.submitCountLimit - (submissionsPage && submissionsPage.totalElements ? submissionsPage.totalElements : 0)}次提交机会）</span>
                                         }
                                     </Typography.Text>}
                             </>}
                     </Upload.Dragger>
-                    {submissions && submissions.length > 0 &&
+                    {submissionsPage &&
                     <>
                         <Divider/>
-                        <SubmissionTable assignment={assignment} submissions={submissions}/>
+                        <SubmissionTable assignment={assignment} page={submissionsPage}/>
                     </>}
                 </>
             }

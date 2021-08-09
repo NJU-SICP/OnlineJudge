@@ -86,11 +86,27 @@ public class Assignment {
         this.grader = grader;
     }
 
+    public void setValues(Assignment o) {
+        this.title = o.getTitle();
+        this.beginTime = o.getBeginTime();
+        this.endTime = o.getEndTime();
+        this.submitFileType = o.getSubmitFileType();
+        this.submitCountLimit = o.getSubmitCountLimit();
+        this.totalScore = o.getTotalScore();
+        this.percentage = o.getPercentage();
+    }
+
     @Override
     public String toString() {
         return "Assignment{" +
                 "id='" + id + '\'' +
                 ", title='" + title + '\'' +
+                ", beginTime=" + beginTime +
+                ", endTime=" + endTime +
+                ", submitFileType='" + submitFileType + '\'' +
+                ", submitCountLimit=" + submitCountLimit +
+                ", totalScore=" + totalScore +
+                ", percentage=" + percentage +
                 ", grader=" + grader +
                 '}';
     }

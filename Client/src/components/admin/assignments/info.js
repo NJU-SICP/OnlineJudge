@@ -16,20 +16,27 @@ const AdminAssignmentInfo = ({assignmentId}) => {
             setAssignment(cached[assignmentId]);
         } else {
             http()
-                .get(`/repositories/assignments/${assignmentId}`)
+                .get(`/assignments/${assignmentId}`)
                 .then((res) => {
                     setAssignment(res.data);
                     cached[assignmentId] = res.data;
                 })
-                .catch((err) => console.error(err));
+                .catch((err) => {
+                    console.error(err);
+                    if (err.response.status === 404) {
+                        setAssignment({title: null});
+                        cached[assignmentId] = {title: null};
+                    }
+                });
         }
     }, [assignmentId]);
 
     return (<>
-        <Typography.Link onClick={() => history.push(`/admin/assignments/${assignmentId}`)}>
+        <Typography.Link type={assignment && assignment.title === null ? "danger" : "primary"}
+                         onClick={() => history.push(`/admin/assignments/${assignmentId}`)}>
             {!assignment
                 ? <><code>{assignmentId.substr(-8)}</code><LoadingOutlined/></>
-                : <>{assignment.title}</>}
+                : <>{assignment.title ?? "作业不存在"}</>}
         </Typography.Link>
     </>);
 };

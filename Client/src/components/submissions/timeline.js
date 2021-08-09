@@ -29,7 +29,7 @@ const SubmissionTimeline = ({id, submission}) => (
                     </Timeline.Item>
                 </>
                 : <>
-                    {submission.result.score
+                    {submission.result.score !== null
                         ? <>
                             <Timeline.Item color="green" className="ant-timeline-item-last">
                                 {submission.result.gradedBy ?? "SICP Online Judge"} 在

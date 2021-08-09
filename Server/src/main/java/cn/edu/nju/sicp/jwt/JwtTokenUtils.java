@@ -4,10 +4,12 @@ import cn.edu.nju.sicp.models.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.GrantedAuthority;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 public class JwtTokenUtils {
 
@@ -21,6 +23,8 @@ public class JwtTokenUtils {
     public static String createJwtToken(User user) {
         Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(JWT_SECRET));
         HashMap<String, Object> claims = new HashMap<>();
+        claims.put("roles", user.getRoles().toArray());
+        claims.put("authorities", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toArray());
         return Jwts.builder()
                 .signWith(key)
                 .setClaims(claims)

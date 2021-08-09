@@ -1,13 +1,16 @@
 import React, {useEffect, useState} from "react";
+import {useHistory, useLocation} from "react-router-dom";
 import moment from "moment";
 import {saveAs} from "file-saver";
 import http from "../../http";
 
-import {Affix, Button, Card, Col, Row, Skeleton, Table, Typography} from "antd";
+import {Affix, Button, Card, Col, Pagination, Row, Skeleton, Table, Typography} from "antd";
 import {ArrowRightOutlined, DownloadOutlined} from "@ant-design/icons";
 import SubmissionTimeline from "./timeline";
 
-const SubmissionTable = ({assignment, submissions}) => {
+const SubmissionTable = ({assignment, page}) => {
+    const history = useHistory();
+    const location = useLocation();
     const [selected, setSelected] = useState(null);
     const [submission, setSubmission] = useState(null);
 
@@ -16,7 +19,7 @@ const SubmissionTable = ({assignment, submissions}) => {
             setSubmission(null);
         } else {
             http()
-                .get(`/repositories/submissions/${selected.id}`)
+                .get(`/submissions/${selected.id}`)
                 .then((res) => setSubmission(res.data))
                 .catch((err) => console.error(err));
         }
@@ -71,15 +74,22 @@ const SubmissionTable = ({assignment, submissions}) => {
 
     return (
         <>
-            {submissions === null
+            {!page
                 ? <Skeleton/>
                 : <>
                     <Row gutter={10}>
                         <Col span={9}>
-                            <Table columns={columns} dataSource={submissions} pagination={false} rowKey="id"
+                            <Table columns={columns} dataSource={page.content} pagination={false} rowKey="id"
                                    onRow={(record) => {
                                        return {onClick: () => setSelected(record)};
                                    }}/>
+                            <div style={{float: "right", marginTop: "1em"}}>
+                                <Pagination current={page.number + 1} pageSize={page.size} total={page.totalElements}
+                                            onChange={(p) => history.push({
+                                                pathname: location.pathname,
+                                                search: `?page=${p}`
+                                            })}/>
+                            </div>
                         </Col>
                         <Col span={15}>
                             {!selected

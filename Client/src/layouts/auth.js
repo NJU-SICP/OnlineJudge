@@ -32,8 +32,8 @@ const AuthLayout = () => {
             })
             .catch((err) => {
                 console.error(err);
-                if (err.response && err.response.status === 403) {
-                    setError(err.response.data);
+                if (err.response && err.response.status === 400) {
+                    setError(err.response.data.message);
                 }
                 setDisabled(false);
             });

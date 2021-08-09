@@ -1,7 +1,6 @@
 package cn.edu.nju.sicp.controllers;
 
 import cn.edu.nju.sicp.jwt.JwtTokenUtils;
-import cn.edu.nju.sicp.models.Role;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.UserRepository;
 import org.slf4j.Logger;
@@ -12,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,8 +19,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.stream.Collectors;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -47,14 +47,14 @@ public class AuthController {
                 logger.info(String.format("UserLogin %s", user));
                 return new ResponseEntity<>(new LoginResponse(user), HttpStatus.OK);
             } else {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (BadCredentialsException e) {
             logger.info(String.format("UserLogin failed={%s} username={%s}", e.getMessage(), request.getUsername()));
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "账号或密码不正确，请重试。");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "账号或密码不正确，请重试。");
         } catch (AuthenticationException e) {
             logger.info(String.format("UserLogin failed={%s} username={%s}", e.getMessage(), request.getUsername()));
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "用户被禁用或锁定，请联系管理员。");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户被禁用或锁定，请联系管理员。");
         }
     }
 
@@ -62,13 +62,13 @@ public class AuthController {
     public ResponseEntity<String> userSetPassword(@RequestBody SetPasswordRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无法验证用户身份，请重新登录。");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "无法验证用户身份，请重新登录。");
         }
 
         String username = (String) authentication.getPrincipal();
         User user = repository.findByUsername(username);
         if (!user.validatePassword(request.oldPassword)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "输入的旧密码不正确，请重试。");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "输入的旧密码不正确，请重试。");
         }
 
         user.setPassword(request.newPassword);
@@ -107,6 +107,7 @@ public class AuthController {
         private final String username;
         private final String fullName;
         private final Collection<String> roles;
+        private final Collection<String> authorities;
         private final String token;
         private final Date expires;
 
@@ -115,6 +116,7 @@ public class AuthController {
             username = user.getUsername();
             fullName = user.getFullName();
             roles = user.getRoles();
+            authorities = user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
             token = JwtTokenUtils.createJwtToken(user);
             expires = JwtTokenUtils.parseJwtToken(token).getExpiration();
         }
@@ -133,6 +135,10 @@ public class AuthController {
 
         public Collection<String> getRoles() {
             return roles;
+        }
+
+        public Collection<String> getAuthorities() {
+            return authorities;
         }
 
         public String getToken() {

@@ -16,20 +16,27 @@ const AdminUserInfo = ({userId}) => {
             setUser(cached[userId]);
         } else {
             http()
-                .get(`/repositories/users/${userId}`)
+                .get(`/users/${userId}`)
                 .then((res) => {
                     setUser(res.data);
                     cached[userId] = res.data;
                 })
-                .catch((err) => console.error(err));
+                .catch((err) => {
+                    console.error(err);
+                    if (err.response.status === 404) {
+                        setUser({username: null});
+                        cached[userId] = {username: null};
+                    }
+                });
         }
     }, [userId]);
 
     return (<>
-        <Typography.Link onClick={() => history.push(`/admin/users/${userId}`)}>
+        <Typography.Link type={user && user.username === null ? "danger" : "primary"}
+                         onClick={() => history.push(`/admin/users/${userId}`)}>
             {!user
                 ? <><code>{userId.substr(-8)}</code><LoadingOutlined/></>
-                : <>{user.username} {user.fullName}</>}
+                : <>{user.username ? `${user.username} ${user.fullName}` : "用户不存在"}</>}
         </Typography.Link>
     </>);
 };

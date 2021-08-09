@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from "react";
+
 import {useHistory, useParams} from "react-router-dom";
 import moment from "moment";
 import http from "../../../http";
@@ -6,8 +7,10 @@ import http from "../../../http";
 import {Typography, message, Popconfirm, Button, Skeleton} from "antd";
 import {DeleteOutlined} from "@ant-design/icons";
 import AdminAssignmentForm from "./form";
+import {useSelector} from "react-redux";
 
 const AdminAssignmentEditor = () => {
+    const auth = useSelector((state) => state.auth.value);
     const {id} = useParams();
     const history = useHistory();
     const [user, setAssignment] = useState(null);
@@ -15,7 +18,7 @@ const AdminAssignmentEditor = () => {
 
     useEffect(() => {
         http()
-            .get(`/repositories/assignments/${id}`)
+            .get(`/assignments/${id}`)
             .then((res) => setAssignment({
                 ...res.data,
                 id: id,
@@ -30,7 +33,7 @@ const AdminAssignmentEditor = () => {
     const updateAssignment = (values) => {
         setDisabled(true);
         http()
-            .put(`/repositories/assignments/${id}`, {
+            .put(`/assignments/${id}`, {
                 title: values.title,
                 beginTime: moment(values.rangeTime[0]),
                 endTime: moment(values.rangeTime[1]),
@@ -49,7 +52,7 @@ const AdminAssignmentEditor = () => {
     const deleteAssignment = () => {
         setDisabled(true);
         http()
-            .delete(`/repositories/assignments/${id}`)
+            .delete(`/assignments/${id}`)
             .then(() => {
                 message.success("删除作业成功！");
                 history.push("/admin/assignments");
@@ -64,12 +67,14 @@ const AdminAssignmentEditor = () => {
         <>
             <Typography.Title level={2}>
                 编辑作业
+                {auth.authorities && auth.authorities.indexOf("OP_ASSIGNMENT_DELETE") >= 0 &&
                 <Popconfirm title="确定要删除作业吗？" onConfirm={deleteAssignment}
                             okText="删除" okType="danger" cancelText="取消">
                     <Button style={{float: "right"}} type="danger" disabled={disabled}>
                         <DeleteOutlined/> 删除作业
                     </Button>
                 </Popconfirm>
+                }
             </Typography.Title>
             {!user
                 ? <Skeleton/>

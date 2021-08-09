@@ -17,8 +17,7 @@ const AdminSubmissionTable = ({assignment}) => {
     const history = useHistory();
     const location = useLocation();
 
-    const [submissions, setSubmissions] = useState(null);
-    const [pagination, setPagination] = useState(null);
+    const [page, setPage] = useState(null);
     const [selected, setSelected] = useState(null);
     const [submission, setSubmission] = useState(null);
     const [disabled, setDisabled] = useState(false);
@@ -34,7 +33,7 @@ const AdminSubmissionTable = ({assignment}) => {
         if (assignment == null) return;
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/repositories/submissions/search/findByAssignmentIdOrderByCreatedAtDesc`, {
+            .get(`/submissions`, {
                 params: {
                     assignmentId: assignment.id,
                     page: page - 1
@@ -42,14 +41,13 @@ const AdminSubmissionTable = ({assignment}) => {
             })
             .then((res) => {
                 const list = [];
-                res.data._embedded.submissions.forEach((s, index) => {
+                res.data.content.forEach((s, index) => {
                     list.push({
                         ...s,
                         index: index
                     });
                 });
-                setSubmissions(list);
-                setPagination(res.data.page);
+                setPage({...res.data, content: list});
             })
             .catch((err) => console.error(err));
     }, [assignment, location.search]);
@@ -59,7 +57,7 @@ const AdminSubmissionTable = ({assignment}) => {
             setSubmission(null);
         } else {
             http()
-                .get(`/repositories/submissions/${selected.id}`)
+                .get(`/submissions/${selected.id}`)
                 .then((res) => setSubmission(res.data))
                 .catch((err) => console.error(err));
         }
@@ -68,7 +66,7 @@ const AdminSubmissionTable = ({assignment}) => {
     const gradeSubmission = (values) => {
         setDisabled(true);
         http()
-            .put(`/repositories/submissions/${selected.id}`, {
+            .put(`/submissions/${selected.id}`, {
                 ...submission,
                 result: {
                     score: values.score ?? values.results.reduce((sum, result) => sum + result.score, 0),
@@ -80,16 +78,17 @@ const AdminSubmissionTable = ({assignment}) => {
             })
             .then((res) => {
                 setSubmission(res.data);
-                const list = [...submissions];
+                const list = [...page.content];
                 if (selected.index) {
                     list[selected.index] = {...res.data, id: selected.id};
                 }
-                setSubmissions(list);
-                setSubmission(res.data);
+                setPage({...page, content: list});
             })
             .catch((err) => console.error(err))
             .finally(() => setDisabled(false));
     };
+
+    // TODO: add delete submission button
 
     const rejudgeSubmission = () => {
         http()
@@ -147,17 +146,17 @@ const AdminSubmissionTable = ({assignment}) => {
 
     return (
         <>
-            {(!submissions || !pagination)
+            {!page
                 ? <Skeleton/>
                 : <Row gutter={10}>
                     <Col span={9}>
-                        <Table columns={columns} dataSource={submissions} rowKey="id" pagination={false}
+                        <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false}
                                onRow={(record) => {
                                    return {onClick: () => setSelected(record)};
                                }}/>
                         <div style={{float: "right", marginTop: "1em"}}>
-                            <Pagination current={pagination.number + 1} pageSize={pagination.size}
-                                        total={pagination.totalElements}
+                            <Pagination current={page.number + 1} pageSize={page.size}
+                                        total={page.totalElements}
                                         onChange={(p) => history.push({
                                             pathname: location.pathname,
                                             search: `?page=${p}`

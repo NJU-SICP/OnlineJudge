@@ -1,8 +1,10 @@
 package cn.edu.nju.sicp.controllers;
 
+import cn.edu.nju.sicp.configs.RolesConfig;
+import cn.edu.nju.sicp.dtos.AssignmentInfo;
 import cn.edu.nju.sicp.models.Grader;
 import cn.edu.nju.sicp.models.Assignment;
-import cn.edu.nju.sicp.models.Role;
+import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import cn.edu.nju.sicp.tasks.BuildImageTask;
 import cn.edu.nju.sicp.tasks.RemoveImageTask;
@@ -14,9 +16,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.SyncTaskExecutor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -28,6 +35,7 @@ import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/assignments")
@@ -35,6 +43,9 @@ public class AssignmentController {
 
     @Autowired
     private AssignmentRepository repository;
+
+    @Autowired
+    private ProjectionFactory projectionFactory;
 
     @Autowired
     private SimpleAsyncTaskExecutor buildImageExecutor;
@@ -50,22 +61,87 @@ public class AssignmentController {
         this.logger = LoggerFactory.getLogger(AssignmentController.class);
     }
 
+    @GetMapping()
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_BEGUN)")
+    public ResponseEntity<Page<AssignmentInfo>> listBegunAssignments(Integer page, Integer size) {
+        Page<Assignment> assignments = repository.findAllByBeginTimeBefore(new Date(),
+                PageRequest.of(page == null ? 0 : page, size == null ? 20 : size, Sort.by(Sort.Direction.DESC, "endTime")));
+        return new ResponseEntity<>(assignments.map(a -> projectionFactory.createProjection(AssignmentInfo.class, a)), HttpStatus.OK);
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
+    public ResponseEntity<Page<AssignmentInfo>> listallAssignments(Integer page, Integer size) {
+        Page<Assignment> assignments = repository.findAll(PageRequest.of(page == null ? 0 : page,
+                size == null ? 20 : size, Sort.by(Sort.Direction.DESC, "endTime")));
+        return new ResponseEntity<>(assignments.map(a -> projectionFactory.createProjection(AssignmentInfo.class, a)), HttpStatus.OK);
+    }
+
     @GetMapping("/search")
-    public ResponseEntity<List<Assignment>> searchAssignments(String prefix) {
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
+    public ResponseEntity<List<AssignmentInfo>> searchAssignments(String prefix) {
         List<Assignment> assignments = repository.findFirst5ByTitleStartingWith(prefix);
-        return new ResponseEntity<>(assignments, HttpStatus.OK);
+        return new ResponseEntity<>(assignments.stream()
+                .map(assignment -> projectionFactory.createProjection(AssignmentInfo.class, assignment))
+                .collect(Collectors.toList()), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_BEGUN) or hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
+    public ResponseEntity<Assignment> viewAssignment(@PathVariable String id) {
+        Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (assignment.getBeginTime() != null && (new Date()).before(assignment.getBeginTime())) {
+            if (SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                    .stream().noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+        }
+        return new ResponseEntity<>(assignment, HttpStatus.OK);
+    }
+
+    @PostMapping()
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_CREATE)")
+    public ResponseEntity<Assignment> createAssignment(@RequestBody Assignment createdAssignment) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Assignment assignment = new Assignment();
+        assignment.setValues(createdAssignment);
+        repository.save(assignment);
+        logger.info(String.format("CreateAssignment %s by %s", assignment, user));
+        return new ResponseEntity<>(assignment, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
+    public ResponseEntity<Assignment> updateAssignment(@PathVariable String id, @RequestBody Assignment updatedAssignment) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        assignment.setValues(updatedAssignment);
+        repository.save(assignment);
+        logger.info(String.format("UpdateAssignment %s by %s", assignment, user));
+        return new ResponseEntity<>(assignment, HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_DELETE)")
+    public ResponseEntity<Void> deleteAssignment(@PathVariable String id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        repository.delete(assignment);
+        logger.info(String.format("DeleteAssignment %s by %s", assignment, user));
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/{id}/grader")
-    @Secured(Role.OP_ASSIGNMENT_UPDATE)
-    public ResponseEntity<Grader> getGrader(@PathVariable String id) {
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
+    public ResponseEntity<Grader> getAssignmentGrader(@PathVariable String id) {
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return new ResponseEntity<>(assignment.getGrader(), HttpStatus.OK);
     }
 
     @PostMapping("/{id}/grader")
-    @Secured(Role.OP_ASSIGNMENT_UPDATE)
-    public ResponseEntity<Grader> setGrader(@PathVariable String id, @RequestBody MultipartFile file) {
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
+    public ResponseEntity<Grader> setAssignmentGrader(@PathVariable String id, @RequestBody MultipartFile file) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (assignment.getGrader() != null) {
             removeImageExecutor.execute(new RemoveImageTask(assignment.getGrader()));
@@ -91,16 +167,18 @@ public class AssignmentController {
 
             BuildImageTask task = new BuildImageTask(grader, repository);
             buildImageExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
+            logger.info(String.format("SetAssignmentGrader %s by %s", assignment, user));
             return new ResponseEntity<>(grader, HttpStatus.CREATED);
         } catch (IOException e) {
-            logger.error(String.format("SetGrader failed: %s %s", e.getMessage(), assignment));
+            logger.error(String.format("SetAssignmentGrader failed: %s %s by %s", e.getMessage(), assignment, user));
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @DeleteMapping("/{id}/grader")
-    @Secured(Role.OP_ASSIGNMENT_UPDATE)
-    public ResponseEntity<String> deleteGrader(@PathVariable String id) {
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
+    public ResponseEntity<String> deleteAssignmentGrader(@PathVariable String id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Grader grader = assignment.getGrader();
         removeImageExecutor.execute(new RemoveImageTask(grader));
@@ -108,11 +186,12 @@ public class AssignmentController {
         try {
             Files.deleteIfExists(Paths.get(grader.getFilePath()));
         } catch (IOException e) {
-            logger.warn(String.format("DeleteGrader failed: %s %s", e.getMessage(), assignment));
+            logger.error(String.format("DeleteAssignmentGrader failed: %s %s by %s", e.getMessage(), assignment, user));
         }
 
         assignment.setGrader(null);
         repository.save(assignment);
+        logger.info(String.format("DeleteAssignmentGrader %s by %s", assignment, user));
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 

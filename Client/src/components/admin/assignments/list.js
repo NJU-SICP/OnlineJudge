@@ -1,26 +1,24 @@
 import React, {useEffect, useState} from "react";
+import {useSelector} from "react-redux";
 import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
+import moment from "moment";
 import http from "../../../http";
 
 import {Button, Pagination, Skeleton, Table, Typography} from "antd";
 import {EditOutlined, PlusOutlined} from "@ant-design/icons";
-import moment from "moment";
 
 const AdminAssignmentList = () => {
+    const auth = useSelector((state) => state.auth.value);
     const history = useHistory();
     const location = useLocation();
-    const [assignments, setAssignments] = useState(null);
-    const [pagination, setPagination] = useState(null);
+    const [page, setPage] = useState(null);
 
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/repositories/assignments?sort=endTime,desc&page=${page - 1}`)
-            .then((res) => {
-                setAssignments(res.data._embedded.assignments);
-                setPagination(res.data.page);
-            })
+            .get(`/assignments/all?page=${page - 1}`)
+            .then((res) => setPage(res.data))
             .catch((err) => console.error(err));
     }, [location.search]);
 
@@ -68,14 +66,18 @@ const AdminAssignmentList = () => {
             title: "操作",
             key: "actions",
             render: (text, record) => <>
+                {auth.authorities && auth.authorities.indexOf("OP_ASSIGNMENT_UPDATE") > 0 &&
                 <Button type="link" size="small"
                         onClick={() => history.push(`/admin/assignments/${record.id}`)}>
-                    编辑
+                    编辑作业
                 </Button>
+                }
+                {auth.authorities && auth.authorities.indexOf("OP_SUBMISSION_UPDATE") > 0 &&
                 <Button type="link" size="small"
                         onClick={() => history.push(`/admin/assignments/${record.id}/grader`)}>
-                    评分
+                    评分管理
                 </Button>
+                }
             </>
         }
     ];
@@ -84,23 +86,22 @@ const AdminAssignmentList = () => {
         <>
             <Typography.Title level={2}>
                 <EditOutlined/> 作业管理
+                {auth.authorities && auth.authorities.indexOf("OP_ASSIGNMENT_CREATE") >= 0 &&
                 <Button style={{float: "right"}} onClick={() => history.push("/admin/assignments/create")}>
                     <PlusOutlined/> 添加作业
                 </Button>
+                }
             </Typography.Title>
-            {assignments === null
+            {!page
                 ? <Skeleton/>
                 : <>
-                    <Table columns={columns} dataSource={assignments} rowKey="id" pagination={false}/>
+                    <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false}/>
                     <div style={{float: "right", marginTop: "1em"}}>
-                        {!!pagination &&
-                        <Pagination current={pagination.number + 1} pageSize={pagination.size}
-                                    total={pagination.totalElements}
+                        <Pagination current={page.number + 1} pageSize={page.size} total={page.totalElements}
                                     onChange={(p) => history.push({
                                         pathname: location.pathname,
                                         search: `?page=${p}`
                                     })}/>
-                        }
                     </div>
                 </>}
         </>

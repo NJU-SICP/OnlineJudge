@@ -1,14 +1,16 @@
 package cn.edu.nju.sicp.repositories;
 
-import cn.edu.nju.sicp.dtos.AssignmentInfo;
 import cn.edu.nju.sicp.models.Assignment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
+import java.util.Date;
 import java.util.List;
 
-@RepositoryRestResource(excerptProjection = AssignmentInfo.class)
 public interface AssignmentRepository extends MongoRepository<Assignment, String> {
+
+    Page<Assignment> findAllByBeginTimeBefore(Date beginTime, Pageable pageable);
 
     List<Assignment> findFirst5ByTitleStartingWith(String prefix);
 

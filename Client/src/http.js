@@ -1,5 +1,6 @@
 import axios from "axios";
 import config from "./config";
+import {message} from "antd";
 
 const http = () => {
     const options = {
@@ -20,8 +21,11 @@ const http = () => {
         return res;
     }, (err) => {
         if (err.response.status === 401) {
+            message.error(`您没有登录或您的凭证已过期，请重新登录！`);
             window.localStorage.removeItem(config.storageKeys.auth);
             window.location.href = `/auth/login?redirect=${window.location.pathname}`;
+        } else if (err.response.status === 403) {
+            message.error(`对不起，您没有权限访问该内容！`);
         }
         return Promise.reject(err);
     });

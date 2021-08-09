@@ -31,7 +31,7 @@ public class StartupRunner implements CommandLineRunner {
         admin.setEnabled(true);
         admin.setLocked(false);
         admin.setExpires(null);
-        admin.setRoles(List.of(Role.ROLE_ADMIN));
+        admin.setRoles(List.of(RolesConfig.ROLE_ADMIN));
         repository.save(admin);
     }
 
