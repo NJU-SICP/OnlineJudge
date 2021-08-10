@@ -16,8 +16,8 @@ const Welcome = () => {
     const [assignments, setAssignments] = useState(null);
     useEffect(() => {
         http()
-            .get(`/repositories/assignments`)
-            .then((res) => setAssignments(res.data._embedded.assignments))
+            .get(`/assignments`)
+            .then((res) => setAssignments(res.data.content))
             .catch((err) => console.error(err));
     }, []);
 

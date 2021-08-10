@@ -2,6 +2,7 @@ package cn.edu.nju.sicp.controllers;
 
 import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.dtos.SubmissionInfo;
+import cn.edu.nju.sicp.dtos.UserInfo;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.models.Submission;
 import cn.edu.nju.sicp.models.User;
@@ -24,9 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -38,6 +37,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/submissions")
@@ -74,13 +75,69 @@ public class SubmissionController {
         if (!user.getId().equals(userId) && user.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        Submission target = new Submission();
-        target.setUserId(userId);
-        target.setAssignmentId(assignmentId);
-        Page<Submission> submissions = submissionRepository
-                .findAll(Example.of(target), PageRequest.of(page == null ? 0 : page,
-                        size == null ? 20 : size, Sort.by(Sort.Direction.DESC, "createdAt")));
-        return new ResponseEntity<>(submissions.map(s -> projectionFactory.createProjection(SubmissionInfo.class, s)), HttpStatus.OK);
+        Submission submission = new Submission();
+        submission.setUserId(userId);
+        submission.setAssignmentId(assignmentId);
+        Page<SubmissionInfo> infos = submissionRepository
+                .findAll(Example.of(submission),
+                        PageRequest.of(page == null || page < 0 ? 0 : page,
+                                size == null || size < 0 ? 20 : size,
+                                Sort.by(Sort.Direction.DESC, "createdAt")))
+                .map(s -> projectionFactory.createProjection(SubmissionInfo.class, s));
+        return new ResponseEntity<>(infos, HttpStatus.OK);
+    }
+
+    @GetMapping("/count")
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
+    public ResponseEntity<Long> countSubmissions(String userId, String assignmentId) {
+        Submission submission = new Submission();
+        submission.setUserId(userId);
+        submission.setAssignmentId(assignmentId);
+        long count = submissionRepository.count(Example.of(submission));
+        return new ResponseEntity<>(count, HttpStatus.OK);
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_ALL) and hasAuthority(@Roles.OP_USER_READ)")
+    public ResponseEntity<Page<UserInfo>> getUsers(@RequestParam String assignmentId,
+                                                   @RequestParam Boolean submitted,
+                                                   @RequestParam String role,
+                                                   Integer page, Integer size) {
+        Submission submission = new Submission();
+        submission.setAssignmentId(assignmentId);
+        List<String> userIds = submissionRepository
+                .findAll(Example.of(submission)).stream()
+                .map(Submission::getUserId).collect(Collectors.toList());
+        Page<User> users = null;
+        PageRequest pageRequest = PageRequest.of(page == null || page < 0 ? 0 : page,
+                size == null || size < 0 ? 20 : size,
+                Sort.by(Sort.Direction.ASC, "id"));
+        if (submitted) {
+            users = userRepository.findAllByIdInAndRolesContains(userIds, role, pageRequest);
+        } else {
+            users = userRepository.findAllByIdNotInAndRolesContains(userIds, role, pageRequest);
+        }
+        Page<UserInfo> infos = users.map(u -> projectionFactory.createProjection(UserInfo.class, u));
+        return new ResponseEntity<>(infos, HttpStatus.OK);
+    }
+
+    @GetMapping("/users/count")
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
+    public ResponseEntity<Long> countUsers(@RequestParam String assignmentId,
+                                           @RequestParam Boolean submitted,
+                                           @RequestParam String role) {
+        Submission submission = new Submission();
+        submission.setAssignmentId(assignmentId);
+        List<String> userIds = submissionRepository
+                .findAll(Example.of(submission)).stream()
+                .map(Submission::getUserId).collect(Collectors.toList());
+        Long count = null;
+        if (submitted) {
+            count = userRepository.countAllByIdInAndRolesContains(userIds, role);
+        } else {
+            count = userRepository.countAllByIdNotInAndRolesContains(userIds, role);
+        }
+        return new ResponseEntity<>(count, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
@@ -104,12 +161,19 @@ public class SubmissionController {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        if (file.getSize() > assignment.getSubmitFileSize() * 1024 * 1024) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交的文件超过作业限制的文件大小。");
+        }
+
         // TODO: support submit by token
         if (token != null) throw new OperationNotSupportedException("token not supported");
 
-        int limit = assignment.getSubmitCountLimit();
+        long limit = assignment.getSubmitCountLimit();
         if (limit > 0) {
-            int count = submissionRepository.countByUserIdAndAssignmentId(user.getId(), assignment.getId());
+            Submission submission = new Submission();
+            submission.setUserId(user.getId());
+            submission.setAssignmentId(assignment.getId());
+            long count = submissionRepository.count(Example.of(submission));
             if (count >= limit) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交次数已达上限。");
             }
@@ -186,16 +250,14 @@ public class SubmissionController {
     }
 
     @GetMapping("/{id}/download")
-    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF)")
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF) or hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
     public ResponseEntity<Resource> downloadSubmission(@PathVariable String id) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = (String) authentication.getPrincipal();
-        User user = userRepository.findByUsername(username);
-
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!user.getId().equals(submission.getUserId())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        if (!user.getId().equals(submission.getUserId()) &&
+                user.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
         try {

@@ -1,16 +1,15 @@
 package cn.edu.nju.sicp.models;
 
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -71,7 +70,7 @@ public class User implements UserDetails {
     }
 
     public Collection<String> getRoles() {
-        return roles;
+        return roles == null ? new ArrayList<>() : roles;
     }
 
     public void setRoles(Collection<String> roles) {

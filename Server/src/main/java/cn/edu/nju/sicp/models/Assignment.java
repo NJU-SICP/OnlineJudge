@@ -13,9 +13,10 @@ public class Assignment {
     private Date beginTime;
     private Date endTime;
     private String submitFileType;
-    private int submitCountLimit;
-    private double totalScore;
-    private double percentage;
+    private Long submitFileSize;
+    private Long submitCountLimit;
+    private Double totalScore;
+    private Double percentage;
     private Grader grader;
 
     public String getId() {
@@ -54,27 +55,35 @@ public class Assignment {
         this.submitFileType = submitFileType;
     }
 
-    public int getSubmitCountLimit() {
+    public Long getSubmitFileSize() {
+        return submitFileSize;
+    }
+
+    public void setSubmitFileSize(Long submitFileSize) {
+        this.submitFileSize = submitFileSize;
+    }
+
+    public Long getSubmitCountLimit() {
         return submitCountLimit;
     }
 
-    public void setSubmitCountLimit(int submitCountLimit) {
+    public void setSubmitCountLimit(Long submitCountLimit) {
         this.submitCountLimit = submitCountLimit;
     }
 
-    public double getTotalScore() {
+    public Double getTotalScore() {
         return totalScore;
     }
 
-    public void setTotalScore(double totalScore) {
+    public void setTotalScore(Double totalScore) {
         this.totalScore = totalScore;
     }
 
-    public double getPercentage() {
+    public Double getPercentage() {
         return percentage;
     }
 
-    public void setPercentage(double percentage) {
+    public void setPercentage(Double percentage) {
         this.percentage = percentage;
     }
 
@@ -91,6 +100,7 @@ public class Assignment {
         this.beginTime = o.getBeginTime();
         this.endTime = o.getEndTime();
         this.submitFileType = o.getSubmitFileType();
+        this.submitFileSize = o.getSubmitFileSize();
         this.submitCountLimit = o.getSubmitCountLimit();
         this.totalScore = o.getTotalScore();
         this.percentage = o.getPercentage();
@@ -104,6 +114,7 @@ public class Assignment {
                 ", beginTime=" + beginTime +
                 ", endTime=" + endTime +
                 ", submitFileType='" + submitFileType + '\'' +
+                ", submitFileSize=" + submitFileSize +
                 ", submitCountLimit=" + submitCountLimit +
                 ", totalScore=" + totalScore +
                 ", percentage=" + percentage +

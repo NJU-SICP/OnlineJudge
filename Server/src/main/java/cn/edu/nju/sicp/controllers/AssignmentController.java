@@ -64,17 +64,23 @@ public class AssignmentController {
     @GetMapping()
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_BEGUN)")
     public ResponseEntity<Page<AssignmentInfo>> listBegunAssignments(Integer page, Integer size) {
-        Page<Assignment> assignments = repository.findAllByBeginTimeBefore(new Date(),
-                PageRequest.of(page == null ? 0 : page, size == null ? 20 : size, Sort.by(Sort.Direction.DESC, "endTime")));
-        return new ResponseEntity<>(assignments.map(a -> projectionFactory.createProjection(AssignmentInfo.class, a)), HttpStatus.OK);
+        Page<AssignmentInfo> infos = repository
+                .findAllByBeginTimeBefore(new Date(), PageRequest.of(page == null || page < 0 ? 0 : page,
+                        size == null || size < 0 ? 20 : size,
+                        Sort.by(Sort.Direction.DESC, "endTime")))
+                .map(a -> projectionFactory.createProjection(AssignmentInfo.class, a));
+        return new ResponseEntity<>(infos, HttpStatus.OK);
     }
 
     @GetMapping("/all")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
     public ResponseEntity<Page<AssignmentInfo>> listallAssignments(Integer page, Integer size) {
-        Page<Assignment> assignments = repository.findAll(PageRequest.of(page == null ? 0 : page,
-                size == null ? 20 : size, Sort.by(Sort.Direction.DESC, "endTime")));
-        return new ResponseEntity<>(assignments.map(a -> projectionFactory.createProjection(AssignmentInfo.class, a)), HttpStatus.OK);
+        Page<AssignmentInfo> infos = repository
+                .findAll(PageRequest.of(page == null || page < 0 ? 0 : page,
+                        size == null || size < 0 ? 20 : size,
+                        Sort.by(Sort.Direction.DESC, "endTime")))
+                .map(a -> projectionFactory.createProjection(AssignmentInfo.class, a));
+        return new ResponseEntity<>(infos, HttpStatus.OK);
     }
 
     @GetMapping("/search")

@@ -40,9 +40,12 @@ public class UserController {
     @GetMapping()
     @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
     public ResponseEntity<Page<UserInfo>> listUsers(Integer page, Integer size) {
-        Page<User> users = repository.findAll(PageRequest.of(page == null ? 0 : page,
-                size == null ? 20 : size, Sort.by(Sort.Direction.ASC, "username")));
-        return new ResponseEntity<>(users.map(u -> projectionFactory.createProjection(UserInfo.class, u)), HttpStatus.OK);
+        Page<UserInfo> infos = repository
+                .findAll(PageRequest.of(page == null || page < 0 ? 0 : page,
+                        size == null || size < 0 ? 20 : size,
+                        Sort.by(Sort.Direction.ASC, "username")))
+                .map(u -> projectionFactory.createProjection(UserInfo.class, u));
+        return new ResponseEntity<>(infos, HttpStatus.OK);
     }
 
     @GetMapping("/search")

@@ -6,6 +6,7 @@ import {Button, Card, Descriptions, Divider, message, Popconfirm, Skeleton, Typo
 import {DashboardOutlined, EditOutlined, UploadOutlined} from "@ant-design/icons";
 import AdminSubmissionTable from "../submissions/table";
 import AdminAssignmentInfo from "./info";
+import AdminSubmissionStatistics from "../submissions/statistics";
 
 const AdminAssignmentGrader = () => {
     const history = useHistory();
@@ -121,6 +122,8 @@ const AdminAssignmentGrader = () => {
                             <UploadOutlined/> 上传自动评分文件（包含Dockerfile的zip压缩文件夹）
                         </Upload.Dragger>
                     </>}
+                    <Divider/>
+                    <AdminSubmissionStatistics assignment={assignment}/>
                     <Divider/>
                     <AdminSubmissionTable assignment={assignment}/>
                 </>}
