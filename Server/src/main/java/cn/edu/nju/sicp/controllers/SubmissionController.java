@@ -4,6 +4,7 @@ import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.dtos.SubmissionInfo;
 import cn.edu.nju.sicp.dtos.UserInfo;
 import cn.edu.nju.sicp.models.Assignment;
+import cn.edu.nju.sicp.models.Result;
 import cn.edu.nju.sicp.models.Submission;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
@@ -37,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -70,14 +72,20 @@ public class SubmissionController {
 
     @GetMapping()
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF) or hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
-    public ResponseEntity<Page<SubmissionInfo>> listSubmissions(String userId, String assignmentId, Integer page, Integer size) {
+    public ResponseEntity<Page<SubmissionInfo>> listSubmissions(@RequestParam(required = false) String userId,
+                                                                @RequestParam(required = false) String assignmentId,
+                                                                @RequestParam(required = false) Boolean graded,
+                                                                @RequestParam(required = false) Integer page,
+                                                                @RequestParam(required = false) Integer size) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (!user.getId().equals(userId) && user.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+        if (!user.getId().equals(userId) && user.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         Submission submission = new Submission();
         submission.setUserId(userId);
         submission.setAssignmentId(assignmentId);
+        submission.setGraded(graded);
         Page<SubmissionInfo> infos = submissionRepository
                 .findAll(Example.of(submission),
                         PageRequest.of(page == null || page < 0 ? 0 : page,
@@ -89,10 +97,13 @@ public class SubmissionController {
 
     @GetMapping("/count")
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
-    public ResponseEntity<Long> countSubmissions(String userId, String assignmentId) {
+    public ResponseEntity<Long> countSubmissions(@RequestParam(required = false) String userId,
+                                                 @RequestParam(required = false) String assignmentId,
+                                                 @RequestParam(required = false) Boolean graded) {
         Submission submission = new Submission();
         submission.setUserId(userId);
         submission.setAssignmentId(assignmentId);
+        submission.setGraded(graded);
         long count = submissionRepository.count(Example.of(submission));
         return new ResponseEntity<>(count, HttpStatus.OK);
     }
@@ -102,7 +113,8 @@ public class SubmissionController {
     public ResponseEntity<Page<UserInfo>> getUsers(@RequestParam String assignmentId,
                                                    @RequestParam Boolean submitted,
                                                    @RequestParam String role,
-                                                   Integer page, Integer size) {
+                                                   @RequestParam(required = false) Integer page,
+                                                   @RequestParam(required = false) Integer size) {
         Submission submission = new Submission();
         submission.setAssignmentId(assignmentId);
         List<String> userIds = submissionRepository
@@ -140,13 +152,36 @@ public class SubmissionController {
         return new ResponseEntity<>(count, HttpStatus.OK);
     }
 
+    @GetMapping("/scores/statistics")
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF) or hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
+    public ResponseEntity<DoubleSummaryStatistics> getAverageScore(@RequestParam String assignmentId,
+                                                                   @RequestParam(required = false) String userId) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (userId != null && !userId.equals(user.getId()) && user.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Submission submission = new Submission();
+        submission.setUserId(userId);
+        submission.setAssignmentId(assignmentId);
+        DoubleSummaryStatistics statistics = submissionRepository
+                .findAll(Example.of(submission)).stream()
+                .filter(s -> s.getResult() != null && s.getResult().getScore() != null)
+                .map(Submission::getResult)
+                .map(Result::getScore)
+                .mapToDouble(Double::valueOf)
+                .summaryStatistics();
+        return new ResponseEntity<>(statistics, HttpStatus.OK);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF) or hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
-    public ResponseEntity<Submission> viewSubmissions(@PathVariable String id) {
+    public ResponseEntity<Submission> viewSubmission(@PathVariable String id) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Submission submission = submissionRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!submission.getUserId().equals(user.getId()) &&
-                user.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+        Submission submission = submissionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!submission.getUserId().equals(user.getId()) && user.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         return new ResponseEntity<>(submission, HttpStatus.OK);
@@ -156,7 +191,8 @@ public class SubmissionController {
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_CREATE)")
     public ResponseEntity<Submission> createSubmission(@RequestPart("assignmentId") String assignmentId,
                                                        @RequestPart(value = "token", required = false) String token,
-                                                       @RequestPart("file") MultipartFile file) throws OperationNotSupportedException, JsonProcessingException {
+                                                       @RequestPart("file") MultipartFile file)
+            throws OperationNotSupportedException {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -186,6 +222,7 @@ public class SubmissionController {
         submission.setAssignmentId(assignment.getId());
         submission.setCreatedAt(new Date());
         submission.setCreatedBy(null);
+        submission.setGraded(false);
         submission.setResult(null);
         submission = submissionRepository.save(submission);
 
@@ -211,10 +248,12 @@ public class SubmissionController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
-    public ResponseEntity<Submission> updateSubmission(@PathVariable String id, @RequestBody Submission updatedSubmission) {
+    public ResponseEntity<Submission> updateSubmission(@PathVariable String id,
+                                                       @RequestBody Submission updatedSubmission) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        submission.setGraded(updatedSubmission.getGraded());
         submission.setResult(updatedSubmission.getResult());
         submissionRepository.save(submission);
         logger.info(String.format("UpdateSubmission %s by %s", submission, user));
@@ -238,6 +277,7 @@ public class SubmissionController {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        submission.setGraded(false);
         submission.setResult(null);
         submissionRepository.save(submission);
 
@@ -255,8 +295,8 @@ public class SubmissionController {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!user.getId().equals(submission.getUserId()) &&
-                user.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
+        if (!user.getId().equals(submission.getUserId()) && user.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 

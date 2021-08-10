@@ -119,6 +119,7 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
             if (result.getGradedAt() == null) {
                 result.setGradedAt(new Date());
             }
+            submission.setGraded(true);
             submission.setResult(result);
         } catch (JsonParseException | JsonMappingException e) {
             Result result = new Result();

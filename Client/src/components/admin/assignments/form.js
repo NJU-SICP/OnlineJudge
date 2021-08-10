@@ -24,6 +24,9 @@ const AdminAssignmentForm = ({initialValues, onFinish, disabled}) => {
                     <Radio value=".zip">压缩文件夹（*.zip）</Radio>
                 </Radio.Group>
             </Form.Item>
+            <Form.Item name="submitFileSize" label="文件大小" rules={[{required: true, message: "请输入文件大小"}]}>
+                <InputNumber min="0" max="100" formatter={(value) => `${value}MiB`}/>
+            </Form.Item>
             <Form.Item name="submitCountLimit" label="提交次数" rules={[{required: true, message: "请选择提交次数"}]}>
                 <Select disabled={disabled}>
                     <Select.Option value={-1}>无次数限制</Select.Option>

@@ -38,6 +38,7 @@ const AdminAssignmentEditor = () => {
                 beginTime: moment(values.rangeTime[0]),
                 endTime: moment(values.rangeTime[1]),
                 submitFileType: values.submitFileType,
+                submitFileSize: values.submitFileSize,
                 submitCountLimit: values.submitCountLimit,
                 totalScore: values.totalScore,
                 percentage: values.percentage

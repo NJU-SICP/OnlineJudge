@@ -18,10 +18,12 @@ public interface AssignmentInfo {
 
     String getSubmitFileType();
 
-    int getSubmitCountLimit();
+    Long getSubmitFileSize();
 
-    int getTotalScore();
+    Long getSubmitCountLimit();
 
-    int getPercentage();
+    Double getTotalScore();
+
+    Double getPercentage();
 
 }

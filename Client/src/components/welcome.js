@@ -13,13 +13,18 @@ const Welcome = () => {
     const username = auth?.username;
     const fullName = auth?.fullName;
 
+    const [queryDate, setQueryDate] = useState(new moment());
     const [assignments, setAssignments] = useState(null);
     useEffect(() => {
         http()
-            .get(`/assignments`)
-            .then((res) => setAssignments(res.data.content))
+            .get(`/assignments/calendar`, {
+                params: {
+                    date: queryDate.toJSON()
+                }
+            })
+            .then((res) => setAssignments(res.data))
             .catch((err) => console.error(err));
-    }, []);
+    }, [queryDate]);
 
     const dateCellRender = (date) => {
         return (<ul style={{margin: 0, padding: 0, listStyle: "none"}}>
@@ -38,7 +43,7 @@ const Welcome = () => {
                 <HomeOutlined/> 系统主页
             </Typography.Title>
             <p>欢迎访问SICP Online Judge，您已经以{fullName}（{username}）的身份登录。</p>
-            {assignments && <Calendar dateCellRender={dateCellRender}/>}
+            {assignments && <Calendar dateCellRender={dateCellRender} onChange={setQueryDate}/>}
         </>
     );
 };

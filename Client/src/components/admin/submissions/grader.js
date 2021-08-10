@@ -9,7 +9,11 @@ const AdminSubmissionGrader = ({totalScore, submission, onFinish, disabled}) => 
         const fields = form.getFieldsValue();
         if (submission.result !== null) {
             fields.score = submission.result.score;
-            fields.message = submission.result.message;
+            if (!!submission.result.message && submission.result.message.startsWith("此作业未配置自动测试")) {
+                fields.message = "";
+            } else {
+                fields.message = submission.result.message;
+            }
             if (submission.result.details !== null) {
                 fields.details = submission.result.details.map((result) => ({
                     title: result.title,

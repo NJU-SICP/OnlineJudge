@@ -39,7 +39,8 @@ public class UserController {
 
     @GetMapping()
     @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
-    public ResponseEntity<Page<UserInfo>> listUsers(Integer page, Integer size) {
+    public ResponseEntity<Page<UserInfo>> listUsers(@RequestParam(required = false) Integer page,
+                                                    @RequestParam(required = false) Integer size) {
         Page<UserInfo> infos = repository
                 .findAll(PageRequest.of(page == null || page < 0 ? 0 : page,
                         size == null || size < 0 ? 20 : size,
@@ -50,7 +51,7 @@ public class UserController {
 
     @GetMapping("/search")
     @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
-    public ResponseEntity<List<UserInfo>> searchUsers(String prefix) {
+    public ResponseEntity<List<UserInfo>> searchUsers(@RequestParam String prefix) {
         List<User> users = repository.findFirst5ByUsernameStartingWithOrFullNameStartingWith(prefix, prefix);
         return new ResponseEntity<>(users.stream()
                 .map(user -> projectionFactory.createProjection(UserInfo.class, user))

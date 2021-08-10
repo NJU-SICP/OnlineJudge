@@ -14,6 +14,7 @@ public class Submission {
     private String filePath;
     private Date createdAt;
     private String createdBy;
+    private Boolean graded;
     private Result result;
 
     public String getId() {
@@ -60,6 +61,14 @@ public class Submission {
         this.createdBy = createdBy;
     }
 
+    public Boolean getGraded() {
+        return graded;
+    }
+
+    public void setGraded(Boolean graded) {
+        this.graded = graded;
+    }
+
     public Result getResult() {
         return result;
     }
@@ -74,8 +83,10 @@ public class Submission {
                 "id='" + id + '\'' +
                 ", userId='" + userId + '\'' +
                 ", assignmentId='" + assignmentId + '\'' +
+                ", filePath='" + filePath + '\'' +
                 ", createdAt=" + createdAt +
                 ", createdBy='" + createdBy + '\'' +
+                ", graded=" + graded +
                 ", result=" + result +
                 '}';
     }

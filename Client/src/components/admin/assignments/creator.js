@@ -15,6 +15,7 @@ const AdminAssignmentCreator = () => {
         beginTime: null,
         endTime: null,
         submitFileType: null,
+        submitFileSize: 10,
         submitCountLimit: null,
         totalScore: 0,
         percentage: 0
@@ -28,6 +29,7 @@ const AdminAssignmentCreator = () => {
                 beginTime: moment(values.rangeTime[0]),
                 endTime: moment(values.rangeTime[1]),
                 submitFileType: values.submitFileType,
+                submitFileSize: values.submitFileSize,
                 submitCountLimit: values.submitCountLimit,
                 totalScore: values.totalScore,
                 percentage: values.percentage

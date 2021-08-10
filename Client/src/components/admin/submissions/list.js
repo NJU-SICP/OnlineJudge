@@ -4,7 +4,7 @@ import http from "../../../http";
 import qs from "qs";
 import moment from "moment";
 
-import {Button, Form, Pagination, Skeleton, Table, Typography} from "antd";
+import {Button, Checkbox, Divider, Form, Pagination, Skeleton, Table, Typography} from "antd";
 import {PaperClipOutlined} from "@ant-design/icons";
 import AdminUserInfo from "../users/info";
 import AdminAssignmentInfo from "../assignments/info";
@@ -14,8 +14,10 @@ import AdminAssignmentSearch from "../assignments/search";
 const AdminSubmissionList = () => {
     const history = useHistory();
     const location = useLocation();
+
     const [queryUserId, setQueryUserId] = useState(null);
     const [queryAssignmentId, setQueryAssignmentId] = useState(null);
+    const [queryGraded, setQueryGraded] = useState(null);
     const [page, setPage] = useState(null);
 
     useEffect(() => {
@@ -25,12 +27,13 @@ const AdminSubmissionList = () => {
                 params: {
                     userId: queryUserId,
                     assignmentId: queryAssignmentId,
+                    graded: queryGraded,
                     page: page - 1
                 }
             })
             .then((res) => setPage(res.data))
             .catch((err) => console.error(err));
-    }, [location.search, queryUserId, queryAssignmentId]);
+    }, [location.search, queryUserId, queryAssignmentId, queryGraded]);
 
     const columns = [
         {
@@ -92,18 +95,36 @@ const AdminSubmissionList = () => {
             <Typography.Title level={2}>
                 <PaperClipOutlined/> 提交管理
             </Typography.Title>
+            <Form layout="inline">
+                <Form.Item label="根据用户搜索">
+                    <AdminUserSearch onSelect={(text, option) => setQueryUserId(option.user.id)}/>
+                </Form.Item>
+                <Form.Item label="根据作业搜索">
+                    <AdminAssignmentSearch
+                        onSelect={(text, option) => setQueryAssignmentId(option.assignment.id)}/>
+                </Form.Item>
+                <Form.Item label="根据结果查询">
+                    <Checkbox.Group options={[
+                        {label: "未评分", value: false},
+                        {label: "已评分", value: true}
+                    ]} defaultValue={[false, true]} onChange={(values) => {
+                        setQueryGraded(values.length > 1 ? null : values[0]);
+                    }}/>
+                </Form.Item>
+                <Form.Item>
+                    <Button type="primary"
+                            disabled={queryUserId === null && queryAssignmentId === null && queryGraded === null}
+                            onClick={() => {
+                                setQueryUserId(null);
+                                setQueryAssignmentId(null);
+                                setQueryGraded(null);
+                            }}>清除搜索条件</Button>
+                </Form.Item>
+            </Form>
+            <Divider/>
             {!page
                 ? <Skeleton/>
                 : <>
-                    <Form>
-                        <Form.Item label="根据用户搜索">
-                            <AdminUserSearch onSelect={(text, option) => setQueryUserId(option.user.id)}/>
-                        </Form.Item>
-                        <Form.Item label="根据作业搜索">
-                            <AdminAssignmentSearch
-                                onSelect={(text, option) => setQueryAssignmentId(option.assignment.id)}/>
-                        </Form.Item>
-                    </Form>
                     <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false}/>
                     <div style={{float: "right", marginTop: "1em"}}>
                         <Pagination current={page.number + 1} pageSize={page.size}

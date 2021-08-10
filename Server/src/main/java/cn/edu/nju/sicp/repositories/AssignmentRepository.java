@@ -12,6 +12,8 @@ public interface AssignmentRepository extends MongoRepository<Assignment, String
 
     Page<Assignment> findAllByBeginTimeBefore(Date beginTime, Pageable pageable);
 
+    List<Assignment> findAllByBeginTimeBeforeAndEndTimeBetween(Date beginTime, Date endTime1, Date endTime2);
+
     List<Assignment> findFirst5ByTitleStartingWith(String prefix);
 
 }

@@ -6,17 +6,34 @@ import moment from "moment";
 import {saveAs} from "file-saver";
 import http from "../../../http";
 
-import {Affix, Button, Card, Col, message, Pagination, Popconfirm, Row, Skeleton, Table, Typography} from "antd";
+import {
+    Affix,
+    Button,
+    Card,
+    Checkbox,
+    Col, Divider,
+    Form,
+    message,
+    Pagination,
+    Popconfirm,
+    Row,
+    Skeleton,
+    Table,
+    Typography
+} from "antd";
 import {ArrowRightOutlined, DownloadOutlined, RedoOutlined} from "@ant-design/icons";
 import SubmissionTimeline from "../../submissions/timeline";
 import AdminSubmissionGrader from "./grader";
 import AdminUserInfo from "../users/info";
+import AdminUserSearch from "../users/search";
 
 const AdminSubmissionTable = ({assignment}) => {
     const auth = useSelector((state) => state.auth.value);
     const history = useHistory();
     const location = useLocation();
 
+    const [queryUserId, setQueryUserId] = useState(null);
+    const [queryGraded, setQueryGraded] = useState(null);
     const [page, setPage] = useState(null);
     const [selected, setSelected] = useState(null);
     const [submission, setSubmission] = useState(null);
@@ -35,7 +52,9 @@ const AdminSubmissionTable = ({assignment}) => {
         http()
             .get(`/submissions`, {
                 params: {
+                    userId: queryUserId,
                     assignmentId: assignment.id,
+                    graded: queryGraded,
                     page: page - 1
                 }
             })
@@ -50,7 +69,7 @@ const AdminSubmissionTable = ({assignment}) => {
                 setPage({...res.data, content: list});
             })
             .catch((err) => console.error(err));
-    }, [assignment, location.search]);
+    }, [queryUserId, assignment, queryGraded, location.search]);
 
     useEffect(() => {
         if (!selected) {
@@ -68,8 +87,9 @@ const AdminSubmissionTable = ({assignment}) => {
         http()
             .put(`/submissions/${selected.id}`, {
                 ...submission,
+                graded: true,
                 result: {
-                    score: values.score ?? values.results.reduce((sum, result) => sum + result.score, 0),
+                    score: values.score ?? values.details.reduce((sum, result) => sum + result.score, 0),
                     message: values.message,
                     details: values.details && values.details.length > 0 ? values.details : null,
                     gradedAt: moment(),
@@ -88,7 +108,17 @@ const AdminSubmissionTable = ({assignment}) => {
             .finally(() => setDisabled(false));
     };
 
-    // TODO: add delete submission button
+    const deleteSubmission = () => {
+        setDisabled(true);
+        http()
+            .delete(`/submissions/${selected.id}`)
+            .then(() => {
+                message.info("删除提交成功！");
+                setSelected(null);
+            })
+            .catch((err) => console.error(err))
+            .finally(() => setDisabled(false));
+    };
 
     const rejudgeSubmission = () => {
         http()
@@ -146,6 +176,29 @@ const AdminSubmissionTable = ({assignment}) => {
 
     return (
         <>
+            <Row>
+                <Form layout="inline">
+                    <Form.Item label="根据学生查询">
+                        <AdminUserSearch onSelect={(value, option) => setQueryUserId(option.user.id)}/>
+                    </Form.Item>
+                    <Form.Item label="根据结果查询">
+                        <Checkbox.Group options={[
+                            {label: "未评分", value: false},
+                            {label: "已评分", value: true}
+                        ]} defaultValue={[false, true]} onChange={(values) => {
+                            setQueryGraded(values.length > 1 ? null : values[0]);
+                        }}/>
+                    </Form.Item>
+                    <Form.Item>
+                        <Button type="primary" disabled={queryUserId === null && queryGraded === null}
+                                onClick={() => {
+                                    setQueryUserId(null);
+                                    setQueryGraded(null);
+                                }}>清除搜索条件</Button>
+                    </Form.Item>
+                </Form>
+            </Row>
+            <Divider/>
             {!page
                 ? <Skeleton/>
                 : <Row gutter={10}>
@@ -188,6 +241,7 @@ const AdminSubmissionTable = ({assignment}) => {
                                             <AdminSubmissionGrader totalScore={assignment.totalScore}
                                                                    submission={submission}
                                                                    onFinish={gradeSubmission}
+                                                                   onDelete={deleteSubmission}
                                                                    disabled={disabled}/>
                                         </Card>
                                         }
