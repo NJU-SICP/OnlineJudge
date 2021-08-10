@@ -27,11 +27,13 @@ public class BuildImageTask implements Runnable {
     private final Logger logger;
     private final Grader grader;
     private final AssignmentRepository repository;
+    private final DockerClient client;
 
-    public BuildImageTask(Grader grader, AssignmentRepository repository) {
+    public BuildImageTask(Grader grader, AssignmentRepository repository, DockerClient client) {
         this.logger = LoggerFactory.getLogger(BuildImageTask.class);
         this.grader = grader;
         this.repository = repository;
+        this.client = client;
     }
 
     public void run() {
@@ -50,7 +52,6 @@ public class BuildImageTask implements Runnable {
             (new ZipFile(Paths.get(grader.getFilePath()).toFile())).extractAll(path.toString());
             logBuilder.append(String.format("Extracted dockerfile archive to %s\n", path.toString()));
             try {
-                DockerClient client = DockerConfig.getInstance();
                 StringBuilder buildLogBuilder = new StringBuilder();
                 String imageId = client.buildImageCmd(path.toFile())
                         .withNoCache(true)

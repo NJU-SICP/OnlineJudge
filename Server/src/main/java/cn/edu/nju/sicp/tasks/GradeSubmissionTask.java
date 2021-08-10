@@ -37,17 +37,26 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
     private final Assignment assignment;
     private final Submission submission;
     private final SubmissionRepository repository;
+    private final DockerClient client;
     private final Logger logger;
 
-    public GradeSubmissionTask(Assignment assignment, Submission submission, SubmissionRepository repository) {
-        this(assignment, submission, repository, PRIORITY_NORM);
+    public GradeSubmissionTask(Assignment assignment,
+                               Submission submission,
+                               SubmissionRepository repository,
+                               DockerClient client) {
+        this(assignment, submission, repository, client, PRIORITY_NORM);
     }
 
-    public GradeSubmissionTask(Assignment assignment, Submission submission, SubmissionRepository repository, int priority) {
+    public GradeSubmissionTask(Assignment assignment,
+                               Submission submission,
+                               SubmissionRepository repository,
+                               DockerClient client,
+                               int priority) {
         this.assignment = assignment;
         this.submission = submission;
         this.repository = repository;
         this.priority = priority;
+        this.client = client;
         this.logger = LoggerFactory.getLogger(GradeSubmissionTask.class);
     }
 
@@ -77,9 +86,7 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
         }
 
         try {
-            DockerClient client = DockerConfig.getInstance();
             String containerId = client.createContainerCmd(imageId).exec().getId();
-
             Path temp = Files.createTempFile("grader-tar", ".tar");
             Path json = Files.createTempFile("grader-json", ".json");
             Path file = Paths.get(submission.getFilePath());

@@ -16,11 +16,13 @@ public class RemoveImageTask implements Runnable {
 
     private final String imageId;
     private final Set<String> imageTags;
+    private final DockerClient client;
     private final Logger logger;
 
-    public RemoveImageTask(Grader grader) {
+    public RemoveImageTask(Grader grader, DockerClient client) {
         this.imageId = grader.getImageId();
         this.imageTags = grader.getImageTags();
+        this.client = client;
         this.logger = LoggerFactory.getLogger(RemoveImageTask.class);
     }
 
@@ -29,7 +31,6 @@ public class RemoveImageTask implements Runnable {
         if (imageId == null) return;
         logger.info(String.format("RemoveImage imageId=%s imageTags=%s", imageId, imageTags));
         try {
-            DockerClient client = DockerConfig.getInstance();
             List<Container> containers = client.listContainersCmd().withShowAll(true).exec();
             containers.forEach((container) -> {
                 if (Objects.equals(container.getImageId(), imageId)) {

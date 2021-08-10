@@ -1,5 +1,6 @@
 package cn.edu.nju.sicp.controllers;
 
+import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.dtos.SubmissionInfo;
 import cn.edu.nju.sicp.dtos.UserInfo;
@@ -61,6 +62,9 @@ public class SubmissionController {
     @Qualifier("threadPoolTaskExecutor")
     @Autowired
     private ThreadPoolTaskExecutor gradeSubmissionExecutor;
+
+    @Autowired
+    private DockerConfig dockerConfig;
 
     private final String dataPath;
     private final Logger logger;
@@ -241,7 +245,8 @@ public class SubmissionController {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法存储提交文件。");
         }
 
-        GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository);
+        GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository,
+                dockerConfig.getInstance());
         gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
         return new ResponseEntity<>(submission, HttpStatus.CREATED);
     }
@@ -283,7 +288,8 @@ public class SubmissionController {
 
         Assignment assignment = assignmentRepository.findById(submission.getAssignmentId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
-        GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository, GradeSubmissionTask.PRIORITY_LOW);
+        GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository,
+                dockerConfig.getInstance(), GradeSubmissionTask.PRIORITY_LOW);
         gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
         logger.info(String.format("RejudgeSubmission %s by %s", submission, user));
         return new ResponseEntity<>(submission, HttpStatus.OK);

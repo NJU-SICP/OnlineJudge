@@ -1,6 +1,7 @@
 package cn.edu.nju.sicp;
 
 import cn.edu.nju.sicp.configs.AdminConfig;
+import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.UserRepository;
@@ -31,6 +32,9 @@ public class SicpApplication {
         @Autowired
         private AdminConfig adminConfig;
 
+        @Autowired
+        private DockerConfig dockerConfig;
+
         private final Logger logger;
 
         public StartupRunner() {
@@ -39,24 +43,39 @@ public class SicpApplication {
 
         @Override
         public void run(String... args) {
-            String username = adminConfig.getUsername();
-            String password = adminConfig.getPassword();
-            String fullName = adminConfig.getFullName();
-            User admin = repository.findByUsername(username);
-            if (admin == null) {
-                admin = new User();
-                admin.setUsername(username);
-                admin.setPassword(password);
-                admin.setFullName(fullName);
-            } else if (!admin.validatePassword(password)) {
-                admin.setPassword(password);
+            logger.info(String.format("Applying admin config %s", adminConfig));
+            try {
+                String username = adminConfig.getUsername();
+                String password = adminConfig.getPassword();
+                String fullName = adminConfig.getFullName();
+                User admin = repository.findByUsername(username);
+                if (admin == null) {
+                    admin = new User();
+                    admin.setUsername(username);
+                    admin.setPassword(password);
+                    admin.setFullName(fullName);
+                } else if (!admin.validatePassword(password)) {
+                    admin.setPassword(password);
+                }
+                admin.setEnabled(true);
+                admin.setLocked(false);
+                admin.setExpires(null);
+                admin.setRoles(List.of(RolesConfig.ROLE_ADMIN));
+                repository.save(admin);
+            } catch (Exception e) {
+                logger.error(String.format("Cannot apply: %s %s", e.getClass().getName(), e.getMessage()));
+                throw e;
             }
-            admin.setEnabled(true);
-            admin.setLocked(false);
-            admin.setExpires(null);
-            admin.setRoles(List.of(RolesConfig.ROLE_ADMIN));
-            logger.info(String.format("Setup admin account %s", adminConfig));
-            repository.save(admin);
+            logger.info("Apply admin config OK");
+
+            logger.info(String.format("Applying docker config %s", dockerConfig));
+            try {
+                dockerConfig.getInstance().pingCmd().exec();
+            } catch (Exception e) {
+                logger.error(String.format("Cannot apply: %s %s", e.getClass().getName(), e.getMessage()));
+                throw e;
+            }
+            logger.info("Apply docker config OK");
         }
 
     }

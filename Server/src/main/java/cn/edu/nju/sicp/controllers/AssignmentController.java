@@ -1,5 +1,6 @@
 package cn.edu.nju.sicp.controllers;
 
+import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.dtos.AssignmentInfo;
 import cn.edu.nju.sicp.models.Grader;
@@ -54,6 +55,9 @@ public class AssignmentController {
 
     @Autowired
     private SyncTaskExecutor removeImageExecutor;
+
+    @Autowired
+    private DockerConfig dockerConfig;
 
     private final String dataPath;
     private final Logger logger;
@@ -180,7 +184,7 @@ public class AssignmentController {
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (assignment.getGrader() != null) {
-            removeImageExecutor.execute(new RemoveImageTask(assignment.getGrader()));
+            removeImageExecutor.execute(new RemoveImageTask(assignment.getGrader(), dockerConfig.getInstance()));
             assignment.setGrader(null);
         }
         repository.save(assignment);
@@ -201,7 +205,7 @@ public class AssignmentController {
             assignment.setGrader(grader);
             repository.save(assignment);
 
-            BuildImageTask task = new BuildImageTask(grader, repository);
+            BuildImageTask task = new BuildImageTask(grader, repository, dockerConfig.getInstance());
             buildImageExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
             logger.info(String.format("SetAssignmentGrader %s by %s", assignment, user));
             return new ResponseEntity<>(grader, HttpStatus.CREATED);
@@ -218,7 +222,7 @@ public class AssignmentController {
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Grader grader = assignment.getGrader();
-        removeImageExecutor.execute(new RemoveImageTask(grader));
+        removeImageExecutor.execute(new RemoveImageTask(grader, dockerConfig.getInstance()));
 
         try {
             Files.deleteIfExists(Paths.get(grader.getFilePath()));
