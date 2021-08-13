@@ -48,13 +48,14 @@ public class SicpApplication {
                 String username = adminConfig.getUsername();
                 String password = adminConfig.getPassword();
                 String fullName = adminConfig.getFullName();
-                User admin = repository.findByUsername(username);
-                if (admin == null) {
-                    admin = new User();
-                    admin.setUsername(username);
-                    admin.setPassword(password);
-                    admin.setFullName(fullName);
-                } else if (!admin.validatePassword(password)) {
+                User admin = repository.findByUsername(username).orElseGet(() -> {
+                    User user = new User();
+                    user.setUsername(username);
+                    user.setPassword(password);
+                    user.setFullName(fullName);
+                    return user;
+                });
+                if (!admin.validatePassword(password)) {
                     admin.setPassword(password);
                 }
                 admin.setEnabled(true);

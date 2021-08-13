@@ -66,9 +66,10 @@ public class AuthController {
         }
 
         String username = (String) authentication.getPrincipal();
-        User user = repository.findByUsername(username);
+        User user = repository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "输入的信息不正确，请重试。"));
         if (!user.validatePassword(request.oldPassword)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "输入的旧密码不正确，请重试。");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "输入的信息不正确，请重试。");
         }
 
         user.setPassword(request.newPassword);
