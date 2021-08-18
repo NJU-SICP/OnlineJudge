@@ -1,12 +1,12 @@
 import React, {useEffect, useState} from "react";
 import {useHistory, useLocation} from "react-router-dom";
 import moment from "moment";
-import {saveAs} from "file-saver";
 import http from "../../http";
 
-import {Affix, Button, Card, Col, Pagination, Row, Skeleton, Table, Typography} from "antd";
-import {ArrowRightOutlined, DownloadOutlined} from "@ant-design/icons";
+import {Affix, Card, Col, Pagination, Row, Skeleton, Table, Typography} from "antd";
+import {ArrowRightOutlined} from "@ant-design/icons";
 import SubmissionTimeline from "./timeline";
+import Download from "../download";
 
 const SubmissionTable = ({assignment, page}) => {
     const history = useHistory();
@@ -24,17 +24,6 @@ const SubmissionTable = ({assignment, page}) => {
                 .catch((err) => console.error(err));
         }
     }, [selected]);
-
-    const downloadSubmission = () => {
-        http()
-            .get(`/submissions/${selected.id}/download`, {
-                responseType: "blob"
-            })
-            .then((res) => {
-                saveAs(res.data, `${selected.id}${assignment.submitFileType}`);
-            })
-            .catch((err) => console.error(err));
-    };
 
     const columns = [
         {
@@ -97,9 +86,8 @@ const SubmissionTable = ({assignment, page}) => {
                                 : <Affix offsetTop={10}>
                                     <Card title={`提交 #${selected.index}`}
                                           extra={
-                                              <Button type="link" size="small" onClick={downloadSubmission}>
-                                                  <DownloadOutlined/> 下载文件
-                                              </Button>
+                                              <Download link={`/submissions/${selected.id}/download`}
+                                                        name={`${selected.id}${assignment.submitFileType}`}/>
                                           }>
                                         {!submission
                                             ? <Skeleton/>

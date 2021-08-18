@@ -4,11 +4,12 @@ import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 import moment from "moment";
 
-import {Layout, Menu, Form, Input, Button, Alert, Typography} from "antd";
-import {UserOutlined} from "@ant-design/icons";
+import {Layout, Form, Input, Button, Alert, Typography, Divider, Row, Col, List} from "antd";
+import {CloseOutlined, CopyrightOutlined, HomeOutlined, LinkOutlined, UserOutlined} from "@ant-design/icons";
 
 import {set} from "../store/auth";
 import http from "../http";
+import Time from "../components/time";
 
 const AuthLayout = () => {
     const auth = useSelector((state) => state.auth.value);
@@ -58,33 +59,70 @@ const AuthLayout = () => {
     }, [auth, onSuccessfulLogin]);
 
     return (
-        <Layout>
-            <Layout.Sider width={200} className="site-layout-background">
-                <Menu style={{height: '100%', borderRight: 0}} defaultSelectedKeys={["0"]}>
-                    <Menu.Item key="0" icon={<UserOutlined/>}>用户登录</Menu.Item>
-                </Menu>
-            </Layout.Sider>
-            <Layout style={{padding: '2em'}}>
-                <Layout.Content>
+        <Layout style={{paddingTop: "10vh", paddingBottom: "10vh", paddingLeft: "10vw", paddingRight: "10vw"}}>
+            <Typography.Title level={1}>SICP Online Judge</Typography.Title>
+            <Typography.Text>
+                当前服务器时间：<Time/></Typography.Text>
+            <Divider/>
+            <Row gutter={24}>
+                <Col span={16}>
                     <Typography.Title level={2}>
                         <UserOutlined/> 用户登录
                     </Typography.Title>
-                    <Form name="login" style={{maxWidth: "20em", marginTop: "2em"}} onFinish={attemptLogin}>
+                    <Form name="login" onFinish={attemptLogin}
+                          style={{
+                              maxWidth: "27em",
+                              marginTop: "2em",
+                              padding: "1em",
+                              border: "1px solid #1890ff",
+                              borderRadius: "5px"
+                          }}>
+                        <Form.Item>
+                            {!error
+                                ? <Alert message="请登录以提交代码或查看成绩。"/>
+                                : <Alert message={error} type={"error"} action={
+                                    <Button type="text" size="small" style={{padding: "0"}}
+                                            onClick={() => setError(null)}>
+                                        <CloseOutlined/>
+                                    </Button>
+                                }/>
+                            }
+                        </Form.Item>
                         <Form.Item label="学号" name="username" rules={[{required: true, message: "请输入学号"}]}>
                             <Input disabled={disabled}/>
                         </Form.Item>
                         <Form.Item label="密码" name="password" rules={[{required: true, message: "请输入密码"}]}>
                             <Input.Password disabled={disabled}/>
                         </Form.Item>
-                        <Form.Item>
-                            <Button type="primary" htmlType="submit" disabled={disabled} style={{width: "100%"}}>
+                        <Form.Item style={{marginBottom: "0.5em"}}>
+                            <Button type="primary" htmlType="submit" disabled={disabled} style={{float: "right"}}>
                                 登录
                             </Button>
                         </Form.Item>
-                        {error && <Alert message={error} type={"error"} closable onClose={() => setError(null)}/>}
                     </Form>
-                </Layout.Content>
-            </Layout>
+                </Col>
+                <Col span={8}>
+                    <Typography.Title level={2}>
+                        <LinkOutlined/> 相关链接
+                    </Typography.Title>
+                    <List>
+                        <List.Item>
+                            <Typography.Text>
+                                <HomeOutlined style={{marginRight: "1em"}}/>
+                                <a href="https://nju-sicp.bitbucket.io/" target="_blank" rel="noreferrer">
+                                    SICP课程主页
+                                </a>
+                            </Typography.Text>
+                        </List.Item>
+                        <List.Item>
+                            <Typography.Text>
+                                <CopyrightOutlined style={{marginRight: "1em"}}/>
+                                <span>南京大学 版权所有</span>
+                            </Typography.Text>
+                        </List.Item>
+                    </List>
+                </Col>
+            </Row>
         </Layout>
     )
 };

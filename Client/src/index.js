@@ -11,7 +11,6 @@ import zhCN from 'antd/lib/locale/zh_CN';
 
 import MainLayout from "./layouts/main";
 import AuthLayout from "./layouts/auth";
-import Header from "./components/header";
 
 console.info(
     `Welcome to SICP Online Judge!\n` +
@@ -25,7 +24,6 @@ ReactDOM.render(
             <ConfigProvider locale={zhCN}>
                 <BrowserRouter>
                     <Layout style={{minHeight: "100vh"}}>
-                        <Header/>
                         <Switch>
                             <Route path="/auth/login" children={<AuthLayout/>}/>
                             <Route path="/" children={<MainLayout/>}/>

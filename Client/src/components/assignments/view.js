@@ -105,7 +105,8 @@ const AssignmentView = () => {
                             <Statistic title="总评占比" value={assignment.percentage} suffix="%"/>
                         </Col>
                         <Col span={6}>
-                            <Statistic title="提交类型" value={assignment.submitFileType}/>
+                            <Statistic title="提交类型"
+                                       value={`${assignment.submitFileType} (${assignment.submitFileSize} MiB)`}/>
                         </Col>
                         <Col span={6}>
                             <Statistic title="提交次数" loading={!submissionsPage}

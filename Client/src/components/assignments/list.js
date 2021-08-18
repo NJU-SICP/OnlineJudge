@@ -55,7 +55,7 @@ const AssignmentList = () => {
         {
             title: "提交类型",
             key: "submitFileType",
-            dataIndex: "submitFileType"
+            render: (text, record) => <span>{record.submitFileType} ({record.submitFileSize} MiB)</span>
         },
         {
             title: "提交次数",

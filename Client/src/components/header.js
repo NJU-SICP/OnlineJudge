@@ -1,43 +1,17 @@
-import React, {useEffect, useState} from "react";
+import React from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {useHistory} from "react-router-dom";
-import moment from "moment";
-import http from "../http";
 
-import {Button, Layout, message} from "antd";
+import {Button, Layout, Typography} from "antd";
 import {UserOutlined} from "@ant-design/icons";
 
 import {clear} from "../store/auth";
+import Time from "./time";
 
 const Header = () => {
     const history = useHistory();
     const dispatch = useDispatch();
     const auth = useSelector((state) => state.auth.value);
-
-    const [time, setTime] = useState(null);
-    const fetchTime = () => {
-        http()
-            .get(`/misc/time`)
-            .then((res) => {
-                setTime(moment(res.data));
-            })
-            .catch((err) => {
-                console.error(err);
-                message.error("无法连接至服务器，请检查网络环境。");
-            });
-    };
-
-    useEffect(() => {
-        fetchTime();
-        const interval1 = setInterval(fetchTime, 60 * 1000);
-        const interval2 = setInterval(() => {
-            setTime(t => t == null ? null : moment(t).add(1, "seconds"));
-        }, 1000);
-        return () => {
-            clearInterval(interval1);
-            clearInterval(interval2);
-        };
-    }, []);
 
     const logout = () => {
         dispatch(clear());
@@ -45,12 +19,10 @@ const Header = () => {
     }
 
     return (
-        <Layout.Header style={{color: "white"}}>
+        <Layout.Header style={{background: "white", zIndex: 1000, boxShadow: "0 2px 8px #f0f1f2"}}>
             <div style={{float: "left"}}>
-                SICP Online Judge
-                <span style={{marginLeft: "5em"}}>
-                    {time && <>服务器时间：{time.format("YYYY-MM-DD HH:mm:ss")}</>}
-                </span>
+                <Typography.Text strong>SICP Online Judge</Typography.Text>
+                <span style={{marginLeft: "6em"}}>当前服务器时间：<Time/></span>
             </div>
             <div style={{float: "right"}}>
                 {!!auth && <>

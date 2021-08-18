@@ -2,30 +2,33 @@ import React from "react";
 import {useSelector} from "react-redux";
 import {useHistory} from "react-router-dom";
 
-import {Menu as AntMenu} from "antd";
-import {EditOutlined, HomeOutlined, PaperClipOutlined, SettingOutlined, UserSwitchOutlined} from "@ant-design/icons";
+import {Divider, Menu as AntMenu} from "antd";
+import {EditOutlined, HomeOutlined, PaperClipOutlined, UserSwitchOutlined} from "@ant-design/icons";
 
 const Menu = () => {
     const history = useHistory();
     const auth = useSelector((state) => state.auth.value);
     const redirect = (to) => history.push(to);
     return (
-        <AntMenu mode="inline" style={{height: '100%', borderRight: 0}}
+        <AntMenu mode="inline" style={{height: '100%', paddingTop: "1.5em" }}
                  defaultSelectedKeys={[history.location.pathname]}>
-            <AntMenu.Item key="/" icon={<HomeOutlined/>} onClick={() => redirect("/")}>
-                系统主页
-            </AntMenu.Item>
-            <AntMenu.Item key="/assignments" icon={<EditOutlined/>}
-                          onClick={() => redirect("/assignments")}>
-                作业列表
-            </AntMenu.Item>
-            <AntMenu.Item key="/configuration" icon={<UserSwitchOutlined/>}
-                          onClick={() => redirect("/config")}>
-                用户设置
-            </AntMenu.Item>
+            <AntMenu.ItemGroup key="g1" title="系统导航">
+                <AntMenu.Item key="/" icon={<HomeOutlined/>} onClick={() => redirect("/")}>
+                    系统主页
+                </AntMenu.Item>
+                <AntMenu.Item key="/assignments" icon={<EditOutlined/>}
+                              onClick={() => redirect("/assignments")}>
+                    作业列表
+                </AntMenu.Item>
+                <AntMenu.Item key="/configuration" icon={<UserSwitchOutlined/>}
+                              onClick={() => redirect("/config")}>
+                    用户设置
+                </AntMenu.Item>
+            </AntMenu.ItemGroup>
             {!!auth && auth.roles && auth.authorities &&
             auth.roles.filter(role => role !== "ROLE_STUDENT").length > 0 && <>
-                <AntMenu.SubMenu key="/admin" title="系统管理" icon={<SettingOutlined/>}>
+                <Divider/>
+                <AntMenu.ItemGroup key="g2" title="系统管理">
                     {auth.authorities.indexOf("OP_USER_READ") >= 0 &&
                     <AntMenu.Item key="/admin/users" icon={<UserSwitchOutlined/>}
                                   onClick={() => redirect("/admin/users")}>
@@ -44,7 +47,7 @@ const Menu = () => {
                         提交管理
                     </AntMenu.Item>
                     }
-                </AntMenu.SubMenu>
+                </AntMenu.ItemGroup>
             </>}
         </AntMenu>
     );

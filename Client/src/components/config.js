@@ -58,8 +58,8 @@ const UserConfig = () => {
             <Typography.Title level={2}>
                 <KeyOutlined/> 修改密码
             </Typography.Title>
-            <Form style={{maxWidth: "20em"}} onFinish={updatePassword}>
-                <Alert message="请妥善保管您的密码。" style={{marginBottom: "1.5em"}}/>
+            <Form style={{maxWidth: "25em"}} onFinish={updatePassword}>
+                <Alert message="修改密码后会退出登录，请妥善保管您的密码。" style={{marginBottom: "1.5em"}}/>
                 <Form.Item name="oldPassword" label="当前密码" rules={[{required: true, message: "请输入旧密码"}]}>
                     <Input.Password disabled={disabled}/>
                 </Form.Item>
