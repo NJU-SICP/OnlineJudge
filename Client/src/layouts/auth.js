@@ -35,6 +35,10 @@ const AuthLayout = () => {
                 console.error(err);
                 if (err.response && err.response.status === 400) {
                     setError(err.response.data.message);
+                } else if (!err.response) {
+                    setError("无法连接至服务器，请检查网络连接。");
+                } else {
+                    setError("未知错误，请联系管理员。");
                 }
                 setDisabled(false);
             });
