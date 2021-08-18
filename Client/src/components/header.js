@@ -19,10 +19,7 @@ const Header = () => {
         http()
             .get(`/misc/time`)
             .then((res) => {
-                setTime({
-                    value: moment(res.data),
-                    fetched: new moment()
-                });
+                setTime(moment(res.data));
             })
             .catch((err) => {
                 console.error(err);
@@ -32,23 +29,15 @@ const Header = () => {
 
     useEffect(() => {
         fetchTime();
-        const interval = setInterval(fetchTime, 60 * 1000);
-        return () => clearInterval(interval);
+        const interval1 = setInterval(fetchTime, 60 * 1000);
+        const interval2 = setInterval(() => {
+            setTime(t => t == null ? null : moment(t).add(1, "seconds"));
+        }, 1000);
+        return () => {
+            clearInterval(interval1);
+            clearInterval(interval2);
+        };
     }, []);
-
-    useEffect(() => {
-        if (time) {
-            const current = moment(time.fetched);
-            setTimeout(() => {
-                if (time && time.fetched.isSame(current)) {
-                    setTime({
-                        ...time,
-                        value: moment(time.value).add(1, "seconds")
-                    });
-                }
-            }, 1000);
-        }
-    }, [time]);
 
     const logout = () => {
         dispatch(clear());
@@ -60,7 +49,7 @@ const Header = () => {
             <div style={{float: "left"}}>
                 SICP Online Judge
                 <span style={{marginLeft: "5em"}}>
-                    {time && <>服务器时间：{time.value.format("YYYY-MM-DD HH:mm:ss")}</>}
+                    {time && <>服务器时间：{time.format("YYYY-MM-DD HH:mm:ss")}</>}
                 </span>
             </div>
             <div style={{float: "right"}}>
