@@ -69,7 +69,7 @@ const AuthLayout = () => {
                 当前服务器时间：<Time/></Typography.Text>
             <Divider/>
             <Row gutter={24}>
-                <Col span={16}>
+                <Col xs={24} md={16}>
                     <Typography.Title level={2}>
                         <UserOutlined/> 用户登录
                     </Typography.Title>
@@ -77,6 +77,7 @@ const AuthLayout = () => {
                           style={{
                               maxWidth: "27em",
                               marginTop: "2em",
+                              marginBottom: "2em",
                               padding: "1em",
                               border: "1px solid #1890ff",
                               borderRadius: "5px"
@@ -105,7 +106,7 @@ const AuthLayout = () => {
                         </Form.Item>
                     </Form>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} md={8}>
                     <Typography.Title level={2}>
                         <LinkOutlined/> 相关链接
                     </Typography.Title>
