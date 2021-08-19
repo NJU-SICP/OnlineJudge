@@ -77,7 +77,7 @@ const AdminSubmissionList = () => {
             title: "评分时间",
             key: "gradedAt",
             dataIndex: "result",
-            render: (result) => !result.gradedAt ? "" : moment(result.gradedAt).format("YYYY-MM-DD HH:mm:ss")
+            render: (result) => !result?.gradedAt ? "" : moment(result.gradedAt).format("YYYY-MM-DD HH:mm:ss")
         },
         {
             title: "操作",
