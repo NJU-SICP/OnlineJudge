@@ -1,20 +1,16 @@
 package cn.edu.nju.sicp.tasks;
 
-import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.models.Grader;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageResultCallback;
-import com.github.dockerjava.api.exception.BadRequestException;
-import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.model.BuildResponseItem;
 import net.lingala.zip4j.ZipFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,7 +48,6 @@ public class BuildImageTask implements Runnable {
             (new ZipFile(Paths.get(grader.getFilePath()).toFile())).extractAll(path.toString());
             logBuilder.append(String.format("Extracted dockerfile archive to %s\n", path.toString()));
             try {
-                StringBuilder buildLogBuilder = new StringBuilder();
                 String imageId = client.buildImageCmd(path.toFile())
                         .withNoCache(true)
                         .withTags(grader.getImageTags())
@@ -61,17 +56,15 @@ public class BuildImageTask implements Runnable {
                             public void onNext(BuildResponseItem item) {
                                 String stream = item.getStream();
                                 if (stream != null) {
-                                    buildLogBuilder.append(stream);
-                                    grader.setImageBuildLog(buildLogBuilder.toString());
+                                    logBuilder.append(stream);
+                                    grader.setImageBuildLog(logBuilder.toString());
                                     repository.save(assignment);
                                 }
                                 super.onNext(item);
                             }
                         })
                         .awaitImageId();
-                logBuilder.append(buildLogBuilder.toString());
                 Date imageBuiltAt = new Date();
-
                 grader.setImageId(imageId);
                 grader.setImageBuiltAt(imageBuiltAt);
                 logger.info(String.format("BuildImage succeed at %s %s", imageBuiltAt, assignment));
