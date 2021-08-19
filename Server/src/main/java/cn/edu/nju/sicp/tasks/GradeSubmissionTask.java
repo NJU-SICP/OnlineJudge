@@ -12,6 +12,8 @@ import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.WaitContainerResultCallback;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.model.ContainerConfig;
+import com.github.dockerjava.api.model.HostConfig;
+import org.apache.catalina.Host;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -27,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmissionTask> {
 
@@ -99,9 +102,14 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
             args.add(String.format("%s.json", UUID.randomUUID()));
             String containerId = client.createContainerCmd(imageId)
                     .withEntrypoint(args.toArray(new String[0]))
+                    .withNetworkDisabled(true)
+                    .withHostConfig(new HostConfig()
+                            .withCpuShares(1)
+                            .withMemory(256L * 1024 * 1024)
+                            .withMemorySwappiness(0L))
                     .exec().getId();
-            logBuilder.append(String.format("%.2fs Created Docker container.\n  ID: %s\n  RF: %s\n",
-                    (double)stopWatch.getTime() / 1000, containerId, args.get(args.size() - 1)));
+            logBuilder.append(String.format("%05.2fs Created Docker container.\n   ID: %s\n   RF: %s\n",
+                    (double) stopWatch.getTime() / 1000, containerId, args.get(args.size() - 1)));
 
             Path temp = Files.createTempFile("grader-tar", ".tar");
             Path json = Files.createTempFile("grader-json", ".json");
@@ -115,22 +123,27 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
                 }
                 tarOutputStream.closeArchiveEntry();
             }
-            logBuilder.append(String.format("%.2fs Submit file copied to container.\n", (double)stopWatch.getTime() / 1000));
+            logBuilder.append(String.format("%05.2fs Submit file copied to container.\n", (double) stopWatch.getTime() / 1000));
 
             client.copyArchiveToContainerCmd(containerId)
                     .withTarInputStream(Files.newInputStream(temp))
                     .withRemotePath("/workdir")
                     .exec();
             client.startContainerCmd(containerId).exec();
-            logBuilder.append(String.format("%.2fs Docker container started.\n", (double)stopWatch.getTime() / 1000));
-            client.waitContainerCmd(containerId).exec(new WaitContainerResultCallback()).awaitStatusCode();
-            logBuilder.append(String.format("%.2fs Docker container stopped.\n", (double)stopWatch.getTime() / 1000));
+            logBuilder.append(String.format("%05.2fs Docker container started.\n", (double) stopWatch.getTime() / 1000));
+            if (!client.waitContainerCmd(containerId)
+                    .exec(new WaitContainerResultCallback())
+                    .awaitCompletion(60, TimeUnit.SECONDS)) {
+                logBuilder.append(String.format("%05.2fs Docker container timeout.\n", (double) stopWatch.getTime() / 1000));
+                throw new Exception("判题容器执行程序超时。");
+            }
+            logBuilder.append(String.format("%05.2fs Docker container stopped.\n", (double) stopWatch.getTime() / 1000));
 
             try (InputStream resultStream = client.copyArchiveFromContainerCmd(containerId, String.format("/workdir/%s", args.get(args.size() - 1))).exec();
                  TarArchiveInputStream tarInputStream = new TarArchiveInputStream(resultStream)) {
-                logBuilder.append(String.format("%.2fs Result file retrieved from container.\n", (double)stopWatch.getTime() / 1000));
+                logBuilder.append(String.format("%05.2fs Result file retrieved from container.\n", (double) stopWatch.getTime() / 1000));
                 client.removeContainerCmd(containerId).exec(); // remove container after getting data
-                logBuilder.append(String.format("%.2fs Docker container removed.\n", (double)stopWatch.getTime() / 1000));
+                logBuilder.append(String.format("%05.2fs Docker container removed.\n", (double) stopWatch.getTime() / 1000));
                 ArchiveEntry entry = tarInputStream.getNextEntry();
                 if (entry == null || !tarInputStream.canReadEntryData(entry)) {
                     logger.error(String.format("GradeSubmission failed: result json does not exist %s", assignment));
@@ -143,7 +156,7 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
                 }
             }
             Result result = (new ObjectMapper()).readValue(json.toFile(), Result.class);
-            logBuilder.append(String.format("%.2fs Grade process complete.\n", (double)stopWatch.getTime() / 1000));
+            logBuilder.append(String.format("%05.2fs Grade process complete.\n", (double) stopWatch.getTime() / 1000));
             result.setLog(logBuilder.toString());
             if (result.getScore() == null) {
                 result.setScore(result.getDetails().stream().mapToInt(Result.ScoreDetail::getScore).sum());
