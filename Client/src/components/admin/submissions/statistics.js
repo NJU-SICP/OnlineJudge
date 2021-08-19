@@ -1,13 +1,18 @@
 import React, {useEffect, useState} from "react";
-import {Col, Row, Statistic, Typography} from "antd";
+import {Button, Col, Drawer, Row, Statistic, Typography} from "antd";
 import http from "../../../http";
+import AdminSubmissionUserList from "./userlist";
 
 const AdminSubmissionStatistics = ({assignment}) => {
     const [count, setCount] = useState(null);
     const [graded, setGraded] = useState(null);
     const [submitted, setSubmitted] = useState(null);
     const [notSubmitted, setNotSubmitted] = useState(null);
-    const [statistics, setStatistics] = useState(null);
+    const [statistics1, setStatistics1] = useState(null);
+    const [statistics2, setStatistics2] = useState(null);
+
+    const [submittedDrawerVisible, setSubmittedDrawerVisible] = useState(false);
+    const [notSubmittedDrawerVisible, setNotSubmittedDrawerVisible] = useState(false);
 
     useEffect(() => {
         http()
@@ -50,10 +55,20 @@ const AdminSubmissionStatistics = ({assignment}) => {
         http()
             .get(`/submissions/scores/statistics`, {
                 params: {
-                    assignmentId: assignment.id
+                    assignmentId: assignment.id,
+                    unique: false
                 }
             })
-            .then((res) => setStatistics(res.data))
+            .then((res) => setStatistics1(res.data))
+            .catch((err) => console.error(err));
+        http()
+            .get(`/submissions/scores/statistics`, {
+                params: {
+                    assignmentId: assignment.id,
+                    unique: true
+                }
+            })
+            .then((res) => setStatistics2(res.data))
             .catch((err) => console.error(err));
     }, [assignment]);
 
@@ -61,29 +76,42 @@ const AdminSubmissionStatistics = ({assignment}) => {
         <Typography.Title level={3}>提交信息</Typography.Title>
         <Row>
             <Col span={8}>
-                <Statistic title="提交数量" loading={count === null} value={count} suffix="次"/>
+                <Statistic title="已评分 / 提交总数量（所有用户）" loading={count === null || graded === null}
+                           value={`${graded} / ${count}`} suffix="次"/>
             </Col>
             <Col span={8}>
-                <Statistic title="已提交人数（仅含学生）" loading={submitted === null || notSubmitted === null}
-                           value={submitted} suffix="人"/>
+                <Statistic title="已提交人数（仅含学生）" loading={submitted === null || notSubmitted === null} value={submitted}
+                           suffix={<>人 <Button type="link" size="small"
+                                               onClick={() => setSubmittedDrawerVisible(true)}>查看列表</Button></>}/>
             </Col>
             <Col span={8}>
-                <Statistic title="未提交人数（仅含学生）" loading={notSubmitted === null}
-                           value={notSubmitted} suffix="人"/>
+                <Statistic title="未提交人数（仅含学生）" loading={notSubmitted === null} value={notSubmitted}
+                           suffix={<>人 <Button type="link" size="small"
+                                               onClick={() => setNotSubmittedDrawerVisible(true)}>查看列表</Button></>}/>
             </Col>
         </Row>
         <Row style={{marginTop: "1em"}}>
             <Col span={8}>
-                <Statistic title="已评分数量" loading={graded === null} value={graded} suffix="次"/>
+                <Statistic title="提交最高分" loading={statistics1 === null}
+                           value={statistics1 && (statistics1.count ? statistics1.max : "暂无数据")}/>
             </Col>
             <Col span={8}>
-                <Statistic title="平均得分" loading={statistics === null}
-                           value={statistics && Number(statistics.average).toFixed(1)}/>
+                <Statistic title="提交平均分" loading={statistics1 === null}
+                           value={statistics1 && (statistics1.count ? Number(statistics1.average).toFixed(2) : "暂无数据")}/>
             </Col>
             <Col span={8}>
-                <Statistic title="最高得分" loading={statistics === null} value={statistics && statistics.max}/>
+                <Statistic title="学生平均分" loading={statistics2 === null}
+                           value={statistics2 && (statistics2.count ? Number(statistics2.average).toFixed(2) : "暂无数据")}/>
             </Col>
         </Row>
+        <Drawer title="已提交用户列表" width={720} visible={submittedDrawerVisible}
+                closable={true} onClose={() => setSubmittedDrawerVisible(false)}>
+            <AdminSubmissionUserList assignment={assignment} submitted={true}/>
+        </Drawer>
+        <Drawer title="未提交用户列表" width={720} visible={notSubmittedDrawerVisible}
+                closable={true} onClose={() => setNotSubmittedDrawerVisible(false)}>
+            <AdminSubmissionUserList assignment={assignment} submitted={false}/>
+        </Drawer>
     </>);
 };
 

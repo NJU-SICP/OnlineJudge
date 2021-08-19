@@ -104,7 +104,8 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
                     .withEntrypoint(args.toArray(new String[0]))
                     .withNetworkDisabled(true)
                     .withHostConfig(new HostConfig()
-                            .withCpuShares(1)
+                            .withCpuPeriod(100000L)
+                            .withCpuQuota(100000L)
                             .withMemory(256L * 1024 * 1024)
                             .withMemorySwappiness(0L))
                     .exec().getId();

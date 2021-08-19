@@ -38,10 +38,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/submissions")
@@ -116,7 +120,7 @@ public class SubmissionController {
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_ALL) and hasAuthority(@Roles.OP_USER_READ)")
     public ResponseEntity<Page<UserInfo>> getUsers(@RequestParam String assignmentId,
                                                    @RequestParam Boolean submitted,
-                                                   @RequestParam String role,
+                                                   @RequestParam(defaultValue = RolesConfig.ROLE_STUDENT) String role,
                                                    @RequestParam(required = false) Integer page,
                                                    @RequestParam(required = false) Integer size) {
         Submission submission = new Submission();
@@ -159,7 +163,8 @@ public class SubmissionController {
     @GetMapping("/scores/statistics")
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF) or hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
     public ResponseEntity<DoubleSummaryStatistics> getAverageScore(@RequestParam String assignmentId,
-                                                                   @RequestParam(required = false) String userId) {
+                                                                   @RequestParam(required = false) String userId,
+                                                                   @RequestParam(required = false) Boolean unique) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (userId != null && !userId.equals(user.getId()) && user.getAuthorities().stream()
                 .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
@@ -168,9 +173,30 @@ public class SubmissionController {
         Submission submission = new Submission();
         submission.setUserId(userId);
         submission.setAssignmentId(assignmentId);
-        DoubleSummaryStatistics statistics = submissionRepository
-                .findAll(Example.of(submission)).stream()
-                .filter(s -> s.getResult() != null && s.getResult().getScore() != null)
+
+        Stream<Submission> stream = null;
+        if (unique == null || !unique) {
+            stream = submissionRepository
+                    .findAll(Example.of(submission)).stream()
+                    .filter(s -> s.getResult() != null && s.getResult().getScore() != null);
+        } else {
+            stream = submissionRepository
+                    .findAll(Example.of(submission)).stream()
+                    .filter(s -> s.getResult() != null && s.getResult().getScore() != null)
+                    .collect(Collectors.toMap(Submission::getUserId, Function.identity(),
+                            BinaryOperator.maxBy(Comparator.comparing(s -> s.getResult().getScore()))))
+                    .values().stream();
+        }
+
+        if (userId == null) {
+            List<String> studentUserIds = userRepository
+                    .findAllByRolesContains(RolesConfig.ROLE_STUDENT).stream()
+                    .map(User::getId)
+                    .collect(Collectors.toList());
+            stream = stream.filter(s -> studentUserIds.contains(s.getUserId()));
+        }
+
+        DoubleSummaryStatistics statistics = stream
                 .map(Submission::getResult)
                 .map(Result::getScore)
                 .mapToDouble(Double::valueOf)

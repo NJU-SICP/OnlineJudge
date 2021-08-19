@@ -18,7 +18,7 @@ const SubmissionTimeline = ({id, submission}) => (
             {submission.result.log &&
             <Timeline.Item>
                 自动评分程序日志：<br/>
-                <pre><code>{submission.result.log}</code></pre>
+                <pre style={{whiteSpace: "pre-wrap"}}><code>{submission.result.log}</code></pre>
             </Timeline.Item>
             }
             {submission.result.error

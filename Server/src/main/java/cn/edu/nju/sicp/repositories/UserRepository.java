@@ -14,6 +14,8 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     List<User> findFirst5ByUsernameStartingWithOrFullNameStartingWith(String prefix1, String prefix2);
 
+    List<User> findAllByRolesContains(String role);
+
     Page<User> findAllByIdInAndRolesContains(List<String> userIds, String role, Pageable pageable);
 
     Page<User> findAllByIdNotInAndRolesContains(List<String> userIds, String role, Pageable pageable);
