@@ -113,7 +113,7 @@ const AdminAssignmentGrader = () => {
                     </Descriptions>
                     {grader !== null && showBuildLog &&
                     <Card style={{marginBottom: 10}}>
-                        <pre><code>{grader.imageBuildLog}</code></pre>
+                        <pre style={{whiteSpace: "pre-wrap"}}><code>{grader.imageBuildLog}</code></pre>
                     </Card>
                     }
                     {grader !== null && <>
