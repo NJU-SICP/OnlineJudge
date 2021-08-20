@@ -3,8 +3,8 @@ import {useLocation, useParams} from "react-router-dom";
 import qs from "qs";
 import http from "../../http";
 
-import {Col, Divider, message, Row, Skeleton, Statistic, Typography, Upload} from "antd";
-import {BookOutlined, InboxOutlined, StopOutlined} from "@ant-design/icons";
+import {Button, Col, Divider, Form, Input, message, Popover, Row, Skeleton, Statistic, Typography, Upload} from "antd";
+import {AuditOutlined, BookOutlined, DeleteOutlined, InboxOutlined, StopOutlined} from "@ant-design/icons";
 import moment from "moment";
 import SubmissionTable from "../submissions/table";
 import {useSelector} from "react-redux";
@@ -16,6 +16,8 @@ const AssignmentView = () => {
     const [assignment, setAssignment] = useState(null);
     const [submissionsPage, setSubmissionsPage] = useState(null);
     const [disabled, setDisabled] = useState(false);
+
+    const [token, setToken] = useState(null);
 
     useEffect(() => {
         http()
@@ -63,7 +65,11 @@ const AssignmentView = () => {
     }, [submissionsPage, fetchSubmissions]);
 
     const beforeUpload = (file) => {
-        return window.confirm(`请确认提交作业和文件名称：\n作业：${assignment.title}\n文件：${file.name}\n点击“确定”提交作业，点击“取消”取消提交。`);
+        return window.confirm(`请确认提交作业和文件名称：\n`
+            + `作业：${assignment.title}\n`
+            + `文件：${file.name}\n`
+            + `点击“确定”提交作业，点击“取消”取消提交。`
+            + (!token ? `` : `\n\n提交后提交密钥会失效。`));
     };
 
     const createSubmission = ({file, onProgress, onSuccess, onError}) => {
@@ -71,6 +77,7 @@ const AssignmentView = () => {
         const formData = new FormData();
         formData.append("assignmentId", id);
         formData.append("file", file);
+        if (typeof token === `string`) formData.append("token", token);
         http()
             .post("/submissions", formData, {
                 headers: {"Content-Type": "multipart/form-data"},
@@ -89,9 +96,16 @@ const AssignmentView = () => {
                         }, ...oldSubmissionPage.content.slice(0, 20 - 1)]
                     };
                 });
+                if (token) {
+                    setToken(null);
+                }
             })
             .catch((err) => {
                 console.error(err);
+                if (token && err.response && err.response.status === 400) {
+                    message.error(`提交失败：${err.response.data.message}`);
+                    setToken(null);
+                }
                 onError(err);
             })
             .finally(() => setDisabled(false));
@@ -104,6 +118,28 @@ const AssignmentView = () => {
                 : <>
                     <Typography.Title level={2}>
                         <BookOutlined/> 作业：{assignment.title}
+                        {!token
+                            ? <>
+                                <Popover placement="left" trigger="click" title="输入提交密钥" content={<>
+                                    <Form layout="inline" onFinish={(values) => setToken(values.token)}>
+                                        <Form.Item name="token" label="密钥" rules={[{required: true, message: "请输入密钥"}]}>
+                                            <Input/>
+                                        </Form.Item>
+                                        <Form.Item>
+                                            <Button type="primary" htmlType="submit">确定</Button>
+                                        </Form.Item>
+                                    </Form>
+                                </>}>
+                                    <Button style={{float: "right"}} type="text">
+                                        <AuditOutlined/> 使用提交密钥
+                                    </Button>
+                                </Popover>
+                            </>
+                            : <>
+                                <Button style={{float: "right"}} type="text" danger onClick={() => setToken(null)}>
+                                    <DeleteOutlined/> 删除提交密钥
+                                </Button>
+                            </>}
                     </Typography.Title>
                     <Row style={{margin: "2em auto"}}>
                         <Col span={6}>
@@ -124,17 +160,18 @@ const AssignmentView = () => {
                     </Row>
                     <Upload.Dragger style={{maxHeight: "5em"}} name="file" accept={assignment.submitFileType}
                                     beforeUpload={beforeUpload} customRequest={createSubmission} maxCount={1}
-                                    disabled={assignment.ended || assignment.submitCountLimit === 0 || disabled}>
-                        {assignment.ended
+                                    disabled={!token && (assignment.ended || assignment.submitCountLimit === 0 || disabled)}>
+                        {(assignment.ended && !token)
                             ? <Typography.Text disabled><StopOutlined/> 作业已截止，无法提交</Typography.Text>
                             : <>
-                                {assignment.submitCountLimit === 0
+                                {(assignment.submitCountLimit === 0 && !token)
                                     ? <Typography.Text type="danger"><StopOutlined/> 此作业不允许自行提交</Typography.Text>
                                     : <Typography.Text>
                                         <InboxOutlined/> 点击或将文件拖拽到此处上传提交
-                                        {assignment.submitCountLimit > 0 &&
+                                        {!token && assignment.submitCountLimit > 0 &&
                                         <span>（剩余{assignment.submitCountLimit - (submissionsPage && submissionsPage.totalElements ? submissionsPage.totalElements : 0)}次提交机会）</span>
                                         }
+                                        {!!token && <Typography.Text type="danger">（使用提交密钥）</Typography.Text>}
                                     </Typography.Text>}
                             </>}
                     </Upload.Dragger>

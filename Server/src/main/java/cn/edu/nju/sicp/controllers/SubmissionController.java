@@ -4,15 +4,12 @@ import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.dtos.SubmissionInfo;
 import cn.edu.nju.sicp.dtos.UserInfo;
-import cn.edu.nju.sicp.models.Assignment;
-import cn.edu.nju.sicp.models.Result;
-import cn.edu.nju.sicp.models.Submission;
-import cn.edu.nju.sicp.models.User;
+import cn.edu.nju.sicp.models.*;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import cn.edu.nju.sicp.repositories.SubmissionRepository;
+import cn.edu.nju.sicp.repositories.TokenRepository;
 import cn.edu.nju.sicp.repositories.UserRepository;
 import cn.edu.nju.sicp.tasks.GradeSubmissionTask;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +56,9 @@ public class SubmissionController {
 
     @Autowired
     private SubmissionRepository submissionRepository;
+
+    @Autowired
+    private TokenRepository tokenRepository;
 
     @Autowired
     private ProjectionFactory projectionFactory;
@@ -231,27 +231,38 @@ public class SubmissionController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交的文件超过作业限制的文件大小。");
         }
 
-        // TODO: support submit by token
-        if (token != null) throw new OperationNotSupportedException("token not supported");
-
-        long limit = assignment.getSubmitCountLimit();
-        if (limit > 0) {
-            Submission submission = new Submission();
-            submission.setUserId(user.getId());
-            submission.setAssignmentId(assignment.getId());
-            long count = submissionRepository.count(Example.of(submission));
-            if (count >= limit) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交次数已达上限。");
+        String createdBy = null; // if submit with token, set to issuer user info, else null
+        if (token != null) {
+            Token example = new Token();
+            example.setToken(token);
+            example.setUserId(user.getId());
+            example.setAssignmentId(assignment.getId());
+            Token _token = tokenRepository.findOne(Example.of(example))
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交密钥不合法。"));
+            User issuer = userRepository.findById(_token.getIssuedBy())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交密钥不合法（内部错误）。"));
+            createdBy = String.format("%s %s", issuer.getUsername(), issuer.getFullName());
+            tokenRepository.delete(_token);
+        } else {
+            long limit = assignment.getSubmitCountLimit();
+            if (limit > 0) {
+                Submission submission = new Submission();
+                submission.setUserId(user.getId());
+                submission.setAssignmentId(assignment.getId());
+                long count = submissionRepository.count(Example.of(submission));
+                if (count >= limit) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交次数已达上限。");
+                }
+            } else if (limit == 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "此作业不允许自行提交。");
             }
-        } else if (limit == 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "此作业不允许自行提交。");
         }
 
         Submission submission = new Submission();
         submission.setUserId(user.getId());
         submission.setAssignmentId(assignment.getId());
         submission.setCreatedAt(new Date());
-        submission.setCreatedBy(null);
+        submission.setCreatedBy(createdBy);
         submission.setGraded(false);
         submission.setResult(null);
         submission = submissionRepository.save(submission);

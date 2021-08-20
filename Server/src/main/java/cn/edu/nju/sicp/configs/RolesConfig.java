@@ -27,6 +27,7 @@ public final class RolesConfig {
     public static final String OP_SUBMISSION_READ_ALL = "OP_SUBMISSION_READ_ALL";
     public static final String OP_SUBMISSION_UPDATE = "OP_SUBMISSION_UPDATE";
     public static final String OP_SUBMISSION_DELETE = "OP_SUBMISSION_DELETE";
+    public static final String OP_SUBMISSION_TOKEN_MANAGE = "OP_SUBMISSION_TOKEN_MANAGE";
 
     private static final HashMap<String, List<String>> grantedAuthoritiesMap;
 
@@ -46,6 +47,7 @@ public final class RolesConfig {
         grantedAuthoritiesMap.put(OP_SUBMISSION_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_SUBMISSION_UPDATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_SUBMISSION_DELETE, List.of(ROLE_ADMIN));
+        grantedAuthoritiesMap.put(OP_SUBMISSION_TOKEN_MANAGE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
     }
 
     public static HashMap<String, List<String>> getGrantedAuthoritiesMap() {

@@ -1,22 +1,23 @@
+import React from "react";
 import {useSelector} from "react-redux";
 import {Route, Redirect, Switch, useLocation} from "react-router-dom";
 
 import {Layout} from "antd";
-import Welcome from "../components/welcome";
+import Header from "../components/header";
 import Menu from "../components/menu";
+import Welcome from "../components/welcome";
+import AssignmentList from "../components/assignments/list";
+import AssignmentView from "../components/assignments/view";
+import UserConfig from "../components/config";
 import AdminUserList from "../components/admin/users/list";
 import AdminUserCreator from "../components/admin/users/creator";
 import AdminUserEditor from "../components/admin/users/editor";
 import AdminAssignmentList from "../components/admin/assignments/list";
 import AdminAssignmentCreator from "../components/admin/assignments/creator";
 import AdminAssignmentEditor from "../components/admin/assignments/editor";
-import AssignmentList from "../components/assignments/list";
-import AssignmentView from "../components/assignments/view";
-import UserConfig from "../components/config";
 import AdminAssignmentGrader from "../components/admin/assignments/grader";
 import AdminSubmissionList from "../components/admin/submissions/list";
-import Header from "../components/header";
-import React from "react";
+import AdminSubmissionTokens from "../components/admin/submissions/tokens";
 
 const MainLayout = () => {
     const location = useLocation();
@@ -40,6 +41,7 @@ const MainLayout = () => {
                                 <Route path="/admin/assignments/:id/grader" children={<AdminAssignmentGrader/>}/>
                                 <Route path="/admin/assignments/:id" children={<AdminAssignmentEditor/>}/>
                                 <Route path="/admin/assignments" children={<AdminAssignmentList/>}/>
+                                <Route path="/admin/submissions/tokens" children={<AdminSubmissionTokens/>}/>
                                 <Route path="/admin/submissions" children={<AdminSubmissionList/>}/>
                                 <Route path="/assignments/:id" children={<AssignmentView/>}/>
                                 <Route path="/assignments" children={<AssignmentList/>}/>

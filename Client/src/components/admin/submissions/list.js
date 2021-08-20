@@ -1,17 +1,19 @@
 import React, {useEffect, useState} from "react";
 import {useHistory, useLocation} from "react-router-dom";
+import {useSelector} from "react-redux";
 import http from "../../../http";
 import qs from "qs";
 import moment from "moment";
 
 import {Button, Checkbox, Divider, Form, Pagination, Skeleton, Table, Typography} from "antd";
-import {PaperClipOutlined} from "@ant-design/icons";
+import {AuditOutlined, PaperClipOutlined} from "@ant-design/icons";
 import AdminUserInfo from "../users/info";
 import AdminAssignmentInfo from "../assignments/info";
 import AdminUserSearch from "../users/search";
 import AdminAssignmentSearch from "../assignments/search";
 
 const AdminSubmissionList = () => {
+    const auth = useSelector((state) => state.auth.value);
     const history = useHistory();
     const location = useLocation();
 
@@ -78,7 +80,7 @@ const AdminSubmissionList = () => {
             title: "评分人",
             key: "gradedBy",
             dataIndex: "result",
-            render: (result) => result?.gradedBy ?? (result?.score ? "自动评分" : "")
+            render: (result) => result?.gradedBy ?? (result?.score !== null ? "自动评分" : "")
         },
         {
             title: "评分时间",
@@ -101,6 +103,11 @@ const AdminSubmissionList = () => {
         <>
             <Typography.Title level={2}>
                 <PaperClipOutlined/> 提交管理
+                {auth.authorities && auth.authorities.indexOf("OP_SUBMISSION_TOKEN_MANAGE") >= 0 &&
+                <Button type="primary" style={{float: "right"}} onClick={() => history.push("/admin/submissions/tokens")}>
+                    <AuditOutlined/> 提交密钥管理
+                </Button>
+                }
             </Typography.Title>
             <Form layout="inline">
                 <Form.Item label="根据用户搜索">
