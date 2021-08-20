@@ -78,6 +78,12 @@ const AdminAssignmentList = () => {
                     评分管理
                 </Button>
                 }
+                {auth.authorities && auth.authorities.indexOf("OP_SUBMISSION_READ_ALL") > 0 &&
+                <Button type="link" size="small"
+                        onClick={() => history.push(`/admin/submissions?assignmentId=${record.id}`)}>
+                    提交查询
+                </Button>
+                }
             </>
         }
     ];

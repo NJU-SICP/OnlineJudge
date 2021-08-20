@@ -7,6 +7,7 @@ import http from "../../http";
 
 import {Button, Pagination, Skeleton, Table, Typography} from "antd";
 import {EditOutlined} from "@ant-design/icons";
+import AssignmentScore from "./score";
 
 const AssignmentList = () => {
     const history = useHistory();
@@ -72,6 +73,11 @@ const AssignmentList = () => {
             key: "percentage",
             dataIndex: "percentage",
             render: (value) => `${value}%`
+        },
+        {
+            title: "最高得分",
+            key: "score",
+            render: (_, record) => <AssignmentScore assignmentId={record.id} totalScore={record.totalScore}/>
         },
         {
             title: "操作",

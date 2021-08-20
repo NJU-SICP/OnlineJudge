@@ -69,7 +69,7 @@ const AdminSubmissionTable = ({assignment}) => {
                 setPage({...res.data, content: list});
             })
             .catch((err) => console.error(err));
-    }, [queryUserId, assignment, queryGraded, location.search]);
+    }, [assignment, queryUserId, queryGraded, location.search]);
 
     useEffect(() => {
         if (!selected) {
@@ -158,7 +158,7 @@ const AdminSubmissionTable = ({assignment}) => {
             title: "时间",
             key: "createdAt",
             dataIndex: "createdAt",
-            render: (time) => moment(time).format("YYYY-MM-DD HH:mm:ss")
+            render: (time) => moment(time).format("MM-DD HH:mm")
         },
         {
             title: "得分",
@@ -202,7 +202,7 @@ const AdminSubmissionTable = ({assignment}) => {
             {!page
                 ? <Skeleton/>
                 : <Row gutter={10}>
-                    <Col span={9}>
+                    <Col md={24} xl={9} style={{marginBottom: "1em"}}>
                         <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false}
                                onRow={(record) => {
                                    return {onClick: () => setSelected(record)};
@@ -216,7 +216,7 @@ const AdminSubmissionTable = ({assignment}) => {
                                         })}/>
                         </div>
                     </Col>
-                    <Col span={15}>
+                    <Col md={24} xl={15}>
                         {!selected
                             ? <p style={{margin: "1em"}}>在左侧列表中点击某次提交来查看详情。</p>
                             : <Affix offsetTop={10}>

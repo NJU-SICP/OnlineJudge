@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useLocation, useParams} from "react-router-dom";
 import qs from "qs";
 import http from "../../http";
@@ -31,7 +31,7 @@ const AssignmentView = () => {
             .catch((err) => console.error(err));
     }, [id, auth]);
 
-    useEffect(() => {
+    const fetchSubmissions = useCallback(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
             .get(`/submissions`, {
@@ -53,7 +53,14 @@ const AssignmentView = () => {
                 setSubmissionsPage({...res.data, content: list});
             })
             .catch((err) => console.error(err));
-    }, [id, auth, location.search]);
+    }, [id, location.search, auth]);
+
+    useEffect(fetchSubmissions, [id, auth, location.search, fetchSubmissions]);
+    useEffect(() => {
+        if (submissionsPage && submissionsPage.content.filter(s => s.result === null).length > 0) {
+            setTimeout(fetchSubmissions, 3000);
+        }
+    }, [submissionsPage, fetchSubmissions]);
 
     const beforeUpload = (file) => {
         return window.confirm(`请确认提交作业和文件名称：\n作业：${assignment.title}\n文件：${file.name}\n点击“确定”提交作业，点击“取消”取消提交。`);
@@ -75,6 +82,7 @@ const AssignmentView = () => {
                 setSubmissionsPage(oldSubmissionPage => {
                     return {
                         ...oldSubmissionPage,
+                        totalElements: oldSubmissionPage.totalElements + 1,
                         content: [{
                             ...res.data,
                             index: oldSubmissionPage.content.length === 0 ? 1 : (oldSubmissionPage.content[0].index + 1)

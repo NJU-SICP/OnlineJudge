@@ -17,16 +17,23 @@ const AdminSubmissionList = () => {
 
     const [queryUserId, setQueryUserId] = useState(null);
     const [queryAssignmentId, setQueryAssignmentId] = useState(null);
+    const [queryAssignmentIdDisabled, setQueryAssignmentIdDisabled] = useState(false);
     const [queryGraded, setQueryGraded] = useState(null);
     const [page, setPage] = useState(null);
 
     useEffect(() => {
+        const assignmentId = qs.parse(location.search, {ignoreQueryPrefix: true}).assignmentId;
+        setQueryAssignmentIdDisabled(typeof assignmentId !== `undefined`);
+    }, [location.search]);
+
+    useEffect(() => {
+        const assignmentId = qs.parse(location.search, {ignoreQueryPrefix: true}).assignmentId;
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
             .get(`/submissions`, {
                 params: {
                     userId: queryUserId,
-                    assignmentId: queryAssignmentId,
+                    assignmentId: assignmentId ?? queryAssignmentId,
                     graded: queryGraded,
                     page: page - 1
                 }
@@ -100,8 +107,8 @@ const AdminSubmissionList = () => {
                     <AdminUserSearch onSelect={(text, option) => setQueryUserId(option.user.id)}/>
                 </Form.Item>
                 <Form.Item label="根据作业搜索">
-                    <AdminAssignmentSearch
-                        onSelect={(text, option) => setQueryAssignmentId(option.assignment.id)}/>
+                    <AdminAssignmentSearch disabled={queryAssignmentIdDisabled}
+                                           onSelect={(text, option) => setQueryAssignmentId(option.assignment.id)}/>
                 </Form.Item>
                 <Form.Item label="根据结果查询">
                     <Checkbox.Group options={[

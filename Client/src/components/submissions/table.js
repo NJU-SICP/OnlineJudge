@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useHistory, useLocation} from "react-router-dom";
 import moment from "moment";
 import http from "../../http";
 
 import {Affix, Card, Col, Pagination, Row, Skeleton, Table, Typography} from "antd";
-import {ArrowRightOutlined} from "@ant-design/icons";
+import {ArrowRightOutlined, LoadingOutlined} from "@ant-design/icons";
 import SubmissionTimeline from "./timeline";
 import Download from "../download";
 
@@ -14,16 +14,33 @@ const SubmissionTable = ({assignment, page}) => {
     const [selected, setSelected] = useState(null);
     const [submission, setSubmission] = useState(null);
 
-    useEffect(() => {
-        if (selected === null) {
-            setSubmission(null);
-        } else {
+    const fetchSubmission = useCallback(() => {
+        if (selected) {
             http()
                 .get(`/submissions/${selected.id}`)
                 .then((res) => setSubmission(res.data))
                 .catch((err) => console.error(err));
         }
     }, [selected]);
+
+    useEffect(() => {
+        if (selected === null) {
+            setSubmission(null);
+        } else {
+            fetchSubmission();
+        }
+    }, [selected, fetchSubmission]);
+
+    useEffect(() => {
+        if (selected && submission && submission.result === null) {
+            const selectedId = selected.id;
+            setTimeout(() => {
+                if (selected.id === selectedId) {
+                    fetchSubmission();
+                }
+            }, 3000);
+        }
+    }, [selected, submission, fetchSubmission]);
 
     const columns = [
         {
@@ -52,7 +69,15 @@ const SubmissionTable = ({assignment, page}) => {
             title: "得分",
             key: "score",
             dataIndex: "result",
-            render: (result) => (result && result.error) ? <Typography.Text type="danger">评分失败</Typography.Text> : result?.score
+            render: (result) => {
+                if (result === null) {
+                    return <LoadingOutlined/>;
+                } else if (result.error === null) {
+                    return result?.score;
+                } else {
+                    return <Typography.Text type="danger">评分失败</Typography.Text>;
+                }
+            }
         },
         {
             title: "查看",
