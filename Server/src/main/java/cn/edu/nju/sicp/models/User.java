@@ -128,6 +128,20 @@ public class User implements UserDetails {
         return true;
     }
 
+    public void setValues(User o) {
+        if (this.getUsername() == null) {
+            this.setUsername(o.getUsername());
+        }
+        this.setFullName(o.getFullName());
+        if (!StringUtils.isEmpty(o.getPassword())) {
+            this.setPassword(o.getPassword());
+        }
+        this.setRoles(o.getRoles());
+        this.setExpires(o.getExpires());
+        this.setEnabled(o.isEnabled());
+        this.setLocked(o.isLocked());
+    }
+
     @Override
     public String toString() {
         return "User{" +

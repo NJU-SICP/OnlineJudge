@@ -17,7 +17,7 @@ const AssignmentList = () => {
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/assignments?page=${page - 1}`)
+            .get(`/assignments/begun?page=${page - 1}`)
             .then((res) => {
                 const list = [];
                 const now = moment();
@@ -35,6 +35,12 @@ const AssignmentList = () => {
 
     const columns = [
         {
+            title: "作业代号",
+            key: "slug",
+            dataIndex: "slug",
+            render: (slug) => <Typography.Text strong>{slug}</Typography.Text>
+        },
+        {
             title: "作业标题",
             key: "title",
             dataIndex: "title",
@@ -46,17 +52,19 @@ const AssignmentList = () => {
             dataIndex: "endTime",
             render: (time, record) => {
                 const ddl = moment(time).locale('zh_cn');
-                if (record.ended) {
-                    return <span><s>{ddl.format("YYYY-MM-DD HH:mm")}</s></span>;
-                } else {
-                    return <span>{ddl.format("YYYY-MM-DD HH:mm")}（{ddl.fromNow()}）</span>;
-                }
+                return <Typography.Text delete={record.ended}>
+                    {ddl.format("YYYY-MM-DD HH:mm")}
+                    {!record.ended && <>（{ddl.fromNow()}）</>}
+                </Typography.Text>;
             }
         },
         {
-            title: "提交类型",
-            key: "submitFileType",
-            render: (text, record) => <span>{record.submitFileType} ({record.submitFileSize} MiB)</span>
+            title: "提交文件",
+            key: "submitFile",
+            render: (text, record) => <>
+                <code>{record.submitFileName}{record.submitFileType}</code>{" "}
+                ({record.submitFileSize} MiB)
+            </>
         },
         {
             title: "提交次数",
@@ -85,7 +93,7 @@ const AssignmentList = () => {
             render: (text, record) => (
                 <>
                     <Button type={record.ended ? "text" : "link"} size="small"
-                            onClick={() => history.push(`/assignments/${record.id}`)}>
+                            onClick={() => history.push(`/assignments/${record.slug ?? record.id}`)}>
                         查看
                     </Button>
                 </>

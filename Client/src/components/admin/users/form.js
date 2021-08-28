@@ -22,10 +22,11 @@ const AdminUserForm = ({initialValues, onFinish, disabled}) => {
             </Form.Item>
             <Form.Item name="roles" label="角色" rules={[{required: true, message: "请选择至少一个角色"}]}>
                 <Checkbox.Group options={[
-                    {label: "管理 [ROLE_ADMIN]", value: "ROLE_ADMIN"},
+                    {label: "管理 [ROLE_ADMIN]", value: "ROLE_ADMIN", disabled: true},
                     {label: "教师 [ROLE_TEACHER]", value: "ROLE_TEACHER"},
                     {label: "助教 [ROLE_STAFF]", value: "ROLE_STAFF"},
-                    {label: "学生 [ROLE_STUDENT]", value: "ROLE_STUDENT"}
+                    {label: "学生 [ROLE_STUDENT]", value: "ROLE_STUDENT"},
+                    {label: "访客 [ROLE_GUEST]", value: "ROLE_GUEST"}
                 ]} disabled={disabled}/>
             </Form.Item>
             <Form.Item name="expires" label="过期日（如为空值则该用户不会过期）">

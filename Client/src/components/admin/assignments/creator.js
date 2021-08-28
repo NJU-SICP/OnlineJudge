@@ -11,11 +11,13 @@ const AdminAssignmentCreator = () => {
     const [disabled, setDisabled] = useState(false);
 
     const initialValues = {
+        slug: "",
         title: "",
         beginTime: null,
         endTime: null,
+        submitFileName: "",
         submitFileType: null,
-        submitFileSize: 10,
+        submitFileSize: 1,
         submitCountLimit: null,
         totalScore: 0,
         percentage: 0
@@ -25,9 +27,11 @@ const AdminAssignmentCreator = () => {
         setDisabled(true);
         http()
             .post("/assignments", {
+                slug: values.slug,
                 title: values.title,
-                beginTime: moment(values.rangeTime[0]),
-                endTime: moment(values.rangeTime[1]),
+                beginTime: moment(values.rangeTime[0]).set({seconds: 0}),
+                endTime: moment(values.rangeTime[1]).set({seconds: 0}),
+                submitFileName: values.submitFileName,
                 submitFileType: values.submitFileType,
                 submitFileSize: values.submitFileSize,
                 submitCountLimit: values.submitCountLimit,

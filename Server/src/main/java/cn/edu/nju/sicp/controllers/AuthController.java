@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -31,43 +32,50 @@ public class AuthController {
     @Autowired
     private AuthenticationManager manager;
 
+    private final JwtTokenUtils jwtTokenUtils;
     private final Logger logger;
 
-    public AuthController() {
-        logger = LoggerFactory.getLogger(AuthController.class);
+    public AuthController(JwtTokenUtils jwtTokenUtils) {
+        this.jwtTokenUtils = jwtTokenUtils;
+        this.logger = LoggerFactory.getLogger(AuthController.class);
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> userLogin(@RequestBody LoginRequest request) {
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword(), new ArrayList<>());
+        UsernamePasswordAuthenticationToken token =
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword(), new ArrayList<>());
         try {
             Authentication authentication = manager.authenticate(token);
             if (authentication.isAuthenticated()) {
                 User user = (User) authentication.getPrincipal();
-                logger.info(String.format("UserLogin %s", user));
-                return new ResponseEntity<>(new LoginResponse(user), HttpStatus.OK);
+                logger.info(String.format("UserLogin platform=%s %s", request.getPlatform(), user));
+                return new ResponseEntity<>(new LoginResponse(user, jwtTokenUtils), HttpStatus.OK);
             } else {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (BadCredentialsException e) {
-            logger.info(String.format("UserLogin failed={%s} username={%s}", e.getMessage(), request.getUsername()));
+            logger.info(String.format("UserLogin platform=%s failed={%s} username={%s}",
+                    request.getPlatform(), e.getMessage(), request.getUsername()));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "账号或密码不正确，请重试。");
         } catch (AuthenticationException e) {
-            logger.info(String.format("UserLogin failed={%s} username={%s}", e.getMessage(), request.getUsername()));
+            logger.info(String.format("UserLogin platform=%s failed={%s} username={%s}",
+                    request.getPlatform(), e.getMessage(), request.getUsername()));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户被禁用或锁定，请联系管理员。");
         }
     }
 
-    @PutMapping("/password")
-    public ResponseEntity<String> userSetPassword(@RequestBody SetPasswordRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "无法验证用户身份，请重新登录。");
-        }
+    @PostMapping("/refresh")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<LoginResponse> userLoginRefresh(@RequestBody LoginRequest request) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        logger.info(String.format("UserLogin refresh platform=%s %s", request.getPlatform(), user));
+        return new ResponseEntity<>(new LoginResponse(user, jwtTokenUtils), HttpStatus.OK);
+    }
 
-        String username = (String) authentication.getPrincipal();
-        User user = repository.findByUsername(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "输入的信息不正确，请重试。"));
+    @PutMapping("/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> userSetPassword(@RequestBody SetPasswordRequest request) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!user.validatePassword(request.oldPassword)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "输入的信息不正确，请重试。");
         }
@@ -83,6 +91,7 @@ public class AuthController {
 
         private String username;
         private String password;
+        private String platform;
 
         public String getUsername() {
             return username;
@@ -100,6 +109,14 @@ public class AuthController {
             this.password = password;
         }
 
+        public String getPlatform() {
+            return platform;
+        }
+
+        public void setPlatform(String platform) {
+            this.platform = platform;
+        }
+
     }
 
     static class LoginResponse {
@@ -110,16 +127,18 @@ public class AuthController {
         private final Collection<String> roles;
         private final Collection<String> authorities;
         private final String token;
+        private final Date issued;
         private final Date expires;
 
-        public LoginResponse(User user) {
+        public LoginResponse(User user, JwtTokenUtils utils) {
             userId = user.getId();
             username = user.getUsername();
             fullName = user.getFullName();
             roles = user.getRoles();
             authorities = user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
-            token = JwtTokenUtils.createJwtToken(user);
-            expires = JwtTokenUtils.parseJwtToken(token).getExpiration();
+            token = utils.createJwtToken(user);
+            issued = new Date();
+            expires = utils.parseJwtToken(token).getExpiration();
         }
 
         public String getUserId() {
@@ -144,6 +163,10 @@ public class AuthController {
 
         public String getToken() {
             return token;
+        }
+
+        public Date getIssued() {
+            return issued;
         }
 
         public Date getExpires() {

@@ -11,11 +11,17 @@ const AdminAssignmentForm = ({initialValues, onFinish, disabled}) => {
                 <Input value={initialValues.id} disabled/>
             </Form.Item>
             }
+            <Form.Item name="slug" label="代号" rules={[{required: true, message: "请输入代号"}]}>
+                <Input value={initialValues.slug} placeholder="如lab00，hw01等" disabled={disabled}/>
+            </Form.Item>
             <Form.Item name="title" label="标题" rules={[{required: true, message: "请输入标题"}]}>
                 <Input value={initialValues.title} disabled={disabled}/>
             </Form.Item>
             <Form.Item name="rangeTime" label="时间" rules={[{required: true, message: "请输入时间"}]}>
                 <DatePicker.RangePicker showTime format="YYYY-MM-DD HH:mm" disabled={disabled}/>
+            </Form.Item>
+            <Form.Item name="submitFileName" label="文件名称" rules={[{required: true, message: "请输入文件名称"}]}>
+                <Input placeholder="不包含扩展名，例如lab00、submit等"/>
             </Form.Item>
             <Form.Item name="submitFileType" label="文件类型" rules={[{required: true, message: "请选择文件类型"}]}>
                 <Radio.Group>
@@ -25,7 +31,7 @@ const AdminAssignmentForm = ({initialValues, onFinish, disabled}) => {
                 </Radio.Group>
             </Form.Item>
             <Form.Item name="submitFileSize" label="文件大小" rules={[{required: true, message: "请输入文件大小"}]}>
-                <InputNumber min="0" max="100" formatter={(value) => `${value}MiB`}/>
+                <InputNumber min="1" max="10" formatter={(value) => `${value}MiB`}/>
             </Form.Item>
             <Form.Item name="submitCountLimit" label="提交次数" rules={[{required: true, message: "请选择提交次数"}]}>
                 <Select disabled={disabled}>

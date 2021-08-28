@@ -64,12 +64,14 @@ const AdminUserEditor = () => {
             <Typography.Title level={2}>
                 编辑用户
                 {auth.authorities && auth.authorities.indexOf("OP_USER_DELETE") >= 0 &&
-                <Popconfirm title="确定要删除用户吗？" onConfirm={deleteUser}
-                            okText="删除" okType="danger" cancelText="取消">
-                    <Button style={{float: "right"}} type="danger" disabled={disabled}>
-                        <DeleteOutlined/> 删除用户
-                    </Button>
-                </Popconfirm>
+                <div style={{float: "right"}}>
+                    <Popconfirm title="确定要删除用户吗？" onConfirm={deleteUser}
+                                okText="删除" okType="danger" cancelText="取消">
+                        <Button type="danger" disabled={disabled}>
+                            <DeleteOutlined/> 删除用户
+                        </Button>
+                    </Popconfirm>
+                </div>
                 }
             </Typography.Title>
             {!user

@@ -4,6 +4,7 @@
 **.log
 
 !Client
+!Ok
 !Server
 !.gitignore
 !README.MD

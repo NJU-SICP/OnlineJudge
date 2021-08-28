@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.SyncTaskExecutor;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -67,7 +68,7 @@ public class AssignmentController {
         this.logger = LoggerFactory.getLogger(AssignmentController.class);
     }
 
-    @GetMapping()
+    @GetMapping("/begun")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_BEGUN)")
     public ResponseEntity<Page<AssignmentInfo>> listBegunAssignments(@RequestParam(required = false) Integer page,
                                                                      @RequestParam(required = false) Integer size) {
@@ -99,10 +100,10 @@ public class AssignmentController {
         return new ResponseEntity<>(infos, HttpStatus.OK);
     }
 
-    @GetMapping("/all")
+    @GetMapping("/")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
-    public ResponseEntity<Page<AssignmentInfo>> listAllAssignments(@RequestParam(required = false) Integer page,
-                                                                   @RequestParam(required = false) Integer size) {
+    public ResponseEntity<Page<AssignmentInfo>> listAssignments(@RequestParam(required = false) Integer page,
+                                                                @RequestParam(required = false) Integer size) {
         Page<AssignmentInfo> infos = repository
                 .findAll(PageRequest.of(page == null || page < 0 ? 0 : page,
                         size == null || size < 0 ? 20 : size,
@@ -111,10 +112,20 @@ public class AssignmentController {
         return new ResponseEntity<>(infos, HttpStatus.OK);
     }
 
+    @GetMapping("/all")
+    @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
+    public ResponseEntity<List<AssignmentInfo>> listAllAssignments() {
+        List<AssignmentInfo> infos = repository
+                .findAll(Sort.by(Sort.Direction.DESC, "endTime")).stream()
+                .map(a -> projectionFactory.createProjection(AssignmentInfo.class, a))
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(infos, HttpStatus.OK);
+    }
+
     @GetMapping("/search")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
     public ResponseEntity<List<AssignmentInfo>> searchAssignments(@RequestParam String prefix) {
-        List<Assignment> assignments = repository.findFirst5ByTitleStartingWith(prefix);
+        List<Assignment> assignments = repository.findFirst5ByTitleStartingWithOrSlugStartingWith(prefix, prefix);
         return new ResponseEntity<>(assignments.stream()
                 .map(assignment -> projectionFactory.createProjection(AssignmentInfo.class, assignment))
                 .collect(Collectors.toList()), HttpStatus.OK);
@@ -123,7 +134,7 @@ public class AssignmentController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_BEGUN) or hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
     public ResponseEntity<Assignment> viewAssignment(@PathVariable String id) {
-        Assignment assignment = repository.findById(id)
+        Assignment assignment = repository.findOneByIdOrSlug(id, id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (assignment.getBeginTime() != null && (new Date()).before(assignment.getBeginTime())) {
             if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
@@ -205,9 +216,9 @@ public class AssignmentController {
             assignment.setGrader(grader);
             repository.save(assignment);
 
+            logger.info(String.format("SetAssignmentGrader %s by %s", assignment, user));
             BuildImageTask task = new BuildImageTask(grader, repository, dockerConfig.getInstance());
             buildImageExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
-            logger.info(String.format("SetAssignmentGrader %s by %s", assignment, user));
             return new ResponseEntity<>(grader, HttpStatus.CREATED);
         } catch (IOException e) {
             logger.error(String.format("SetAssignmentGrader failed: %s %s by %s", e.getMessage(), assignment, user));
@@ -222,7 +233,6 @@ public class AssignmentController {
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Grader grader = assignment.getGrader();
-        removeImageExecutor.execute(new RemoveImageTask(grader, dockerConfig.getInstance()));
 
         try {
             Files.deleteIfExists(Paths.get(grader.getFilePath()));
@@ -233,6 +243,7 @@ public class AssignmentController {
         assignment.setGrader(null);
         repository.save(assignment);
         logger.info(String.format("DeleteAssignmentGrader %s by %s", assignment, user));
+        removeImageExecutor.execute(new RemoveImageTask(grader, dockerConfig.getInstance()));
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 

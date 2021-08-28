@@ -9,9 +9,11 @@ public class Assignment {
     @Id
     private String id;
 
+    private String slug;
     private String title;
     private Date beginTime;
     private Date endTime;
+    private String submitFileName;
     private String submitFileType;
     private Long submitFileSize;
     private Long submitCountLimit;
@@ -21,6 +23,14 @@ public class Assignment {
 
     public String getId() {
         return id;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 
     public String getTitle() {
@@ -45,6 +55,14 @@ public class Assignment {
 
     public void setEndTime(Date endTime) {
         this.endTime = endTime;
+    }
+
+    public String getSubmitFileName() {
+        return submitFileName;
+    }
+
+    public void setSubmitFileName(String submitFileName) {
+        this.submitFileName = submitFileName;
     }
 
     public String getSubmitFileType() {
@@ -96,9 +114,11 @@ public class Assignment {
     }
 
     public void setValues(Assignment o) {
+        this.slug = o.getSlug();
         this.title = o.getTitle();
         this.beginTime = o.getBeginTime();
         this.endTime = o.getEndTime();
+        this.submitFileName = o.getSubmitFileName();
         this.submitFileType = o.getSubmitFileType();
         this.submitFileSize = o.getSubmitFileSize();
         this.submitCountLimit = o.getSubmitCountLimit();
@@ -110,9 +130,11 @@ public class Assignment {
     public String toString() {
         return "Assignment{" +
                 "id='" + id + '\'' +
+                ", slug='" + slug + '\'' +
                 ", title='" + title + '\'' +
                 ", beginTime=" + beginTime +
                 ", endTime=" + endTime +
+                ", submitFileName='" + submitFileName + '\'' +
                 ", submitFileType='" + submitFileType + '\'' +
                 ", submitFileSize=" + submitFileSize +
                 ", submitCountLimit=" + submitCountLimit +

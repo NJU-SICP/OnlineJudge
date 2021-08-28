@@ -26,7 +26,7 @@ const AssignmentScore = ({assignmentId, totalScore}) => {
             ? <LoadingOutlined/>
             : <>
                 {statistics.count === 0
-                    ? <span>尚未提交</span>
+                    ? <span>N/A</span>
                     : <span>{statistics.max} / {totalScore}</span>}
             </>}
     </>);

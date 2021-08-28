@@ -13,9 +13,9 @@ import com.github.dockerjava.api.command.WaitContainerResultCallback;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.HostConfig;
-import org.apache.catalina.Host;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
@@ -30,6 +30,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmissionTask> {
 
@@ -81,7 +83,7 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
             retry.add(Calendar.MINUTE, 5);
 
             Result result = new Result();
-            result.setError("管理员配置了自动测试，但测评镜像尚未编译完成或编译失败，稍后将重新测试。");
+            result.setError("管理员配置了自动测试，但测评镜像尚未编译完成或编译失败，请联系管理员或重新提交（OJ暂不支持自动重新测试）。");
             result.setRetryAt(retry.getTime());
             result.setGradedAt(new Date());
             submission.setResult(result);
@@ -89,6 +91,7 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
             return;
         }
 
+        logger.info(String.format("GradeSubmission start: %s", submission));
         StringBuilder logBuilder = new StringBuilder();
         StopWatch stopWatch = new StopWatch();
         try {
@@ -116,13 +119,33 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
             Path json = Files.createTempFile("grader-json", ".json");
             Path file = Paths.get(submission.getFilePath());
             try (FileOutputStream tempOutputStream = new FileOutputStream(temp.toFile());
-                 ArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(tempOutputStream);) {
-                ArchiveEntry entry = tarOutputStream.createArchiveEntry(file.toFile(), file.getFileName().toString());
-                tarOutputStream.putArchiveEntry(entry);
-                try (InputStream inputStream = Files.newInputStream(file)) {
-                    IOUtils.copy(inputStream, tarOutputStream);
+                 ArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(tempOutputStream)) {
+                if (Objects.equals(assignment.getSubmitFileType(), ".zip")) {
+                    // zip archive
+                    try (ZipFile zipFile = new ZipFile(file.toFile())) {
+                        Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+                        while (zipEntries.hasMoreElements()) {
+                            ZipEntry zipEntry = zipEntries.nextElement();
+                            TarArchiveEntry archiveEntry = new TarArchiveEntry(zipEntry.getName());
+                            archiveEntry.setSize(zipEntry.getSize());
+                            tarOutputStream.putArchiveEntry(archiveEntry);
+                            try (InputStream inputStream = zipFile.getInputStream(zipEntry)) {
+                                IOUtils.copy(inputStream, tarOutputStream);
+                            }
+                            tarOutputStream.closeArchiveEntry();
+                        }
+                    }
+                } else {
+                    // single file (.pdf or .py)
+                    String name = assignment.getSubmitFileName() + assignment.getSubmitFileType();
+                    TarArchiveEntry entry = new TarArchiveEntry(name);
+                    entry.setSize(file.toFile().length());
+                    tarOutputStream.putArchiveEntry(entry);
+                    try (InputStream inputStream = Files.newInputStream(file)) {
+                        IOUtils.copy(inputStream, tarOutputStream);
+                    }
+                    tarOutputStream.closeArchiveEntry();
                 }
-                tarOutputStream.closeArchiveEntry();
             }
             logBuilder.append(String.format("%05.2fs Submit file copied to container.\n", (double) stopWatch.getTime() / 1000));
 
@@ -150,7 +173,6 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
                     logger.error(String.format("GradeSubmission failed: result json does not exist %s", assignment));
                     throw new Exception("进行测试后测试程序没有保存结果或保存的结果已损坏。");
                 } else {
-                    logger.info("Entry: " + entry.getName());
                     try (OutputStream jsonStream = Files.newOutputStream(json)) {
                         IOUtils.copy(tarInputStream, jsonStream);
                     }
@@ -194,6 +216,8 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
         } finally {
             repository.save(submission);
             stopWatch.stop();
+            logger.info(String.format("GradeSubmission finish: elapsed=%05.2fs %s",
+                    (double) stopWatch.getTime() / 1000, submission));
         }
     }
 

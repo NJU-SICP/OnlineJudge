@@ -24,7 +24,7 @@ const AdminAssignmentSearch = ({disabled, onSelect, ...props}) => {
 
     return (
         <AutoComplete options={options} onSearch={onSearch} onSelect={onSelect} disabled={disabled}>
-            <Input.Search placeholder="输入作业标题搜索作业" {...props} />
+            <Input.Search placeholder="输入作业代号或标题搜索作业" {...props} />
         </AutoComplete>
     );
 };

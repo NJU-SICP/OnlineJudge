@@ -42,7 +42,7 @@ const Welcome = () => {
             <Typography.Title level={2}>
                 <HomeOutlined/> 系统主页
             </Typography.Title>
-            <p>欢迎访问SICP Online Judge，您已经以{fullName}（{username}）的身份登录。</p>
+            <p>欢迎访问SICP Online Judge，您已经以 {username} {fullName} 的身份登录。</p>
             {assignments && <Calendar dateCellRender={dateCellRender} onChange={setQueryDate}/>}
         </>
     );

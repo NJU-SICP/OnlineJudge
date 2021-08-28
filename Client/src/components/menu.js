@@ -3,7 +3,14 @@ import {useSelector} from "react-redux";
 import {useHistory} from "react-router-dom";
 
 import {Menu as AntMenu} from "antd";
-import {EditOutlined, HomeOutlined, PaperClipOutlined, UserSwitchOutlined} from "@ant-design/icons";
+import {
+    CloudServerOutlined,
+    EditOutlined,
+    HomeOutlined,
+    PaperClipOutlined,
+    TableOutlined,
+    UserSwitchOutlined
+} from "@ant-design/icons";
 
 const Menu = () => {
     const history = useHistory();
@@ -50,6 +57,20 @@ const Menu = () => {
                     <AntMenu.Item key="/admin/submissions" icon={<PaperClipOutlined/>}
                                   onClick={() => redirect("/admin/submissions")}>
                         提交管理
+                    </AntMenu.Item>
+                    }
+                    {auth.authorities.indexOf("OP_BACKUP_READ_ALL") >= 0 &&
+                    <AntMenu.Item key="/admin/backups" icon={<CloudServerOutlined/>}
+                                  onClick={() => redirect("/admin/backups")}>
+                        备份查询
+                    </AntMenu.Item>
+                    }
+                    {auth.authorities.indexOf("OP_USER_READ") >= 0 &&
+                    auth.authorities.indexOf("OP_ASSIGNMENT_READ_ALL") >= 0 &&
+                    auth.authorities.indexOf("OP_SUBMISSION_READ_ALL") >= 0 &&
+                    <AntMenu.Item key="/admin/score-table" icon={<TableOutlined/>}
+                                  onClick={() => redirect("/admin/score-table")}>
+                        成绩查询
                     </AntMenu.Item>
                     }
                 </AntMenu.ItemGroup>

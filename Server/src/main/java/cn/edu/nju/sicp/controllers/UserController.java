@@ -1,5 +1,6 @@
 package cn.edu.nju.sicp.controllers;
 
+import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.dtos.UserInfo;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.UserRepository;
@@ -18,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,6 +51,16 @@ public class UserController {
         return new ResponseEntity<>(infos, HttpStatus.OK);
     }
 
+    @GetMapping("/all")
+    @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
+    public ResponseEntity<List<UserInfo>> listAllUsers() {
+        List<UserInfo> infos = repository
+                .findAll(Sort.by(Sort.Direction.ASC, "username")).stream()
+                .map(u -> projectionFactory.createProjection(UserInfo.class, u))
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(infos, HttpStatus.OK);
+    }
+
     @GetMapping("/search")
     @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
     public ResponseEntity<List<UserInfo>> searchUsers(@RequestParam String prefix) {
@@ -69,30 +81,41 @@ public class UserController {
     @PreAuthorize("hasAuthority(@Roles.OP_USER_CREATE)")
     public ResponseEntity<User> createUser(@RequestBody User createdUser) {
         User user = new User();
-        user.setUsername(createdUser.getUsername());
-        user.setFullName(createdUser.getFullName());
-        user.setPassword(createdUser.getPassword());
-        user.setRoles(createdUser.getRoles());
-        user.setExpires(createdUser.getExpires());
-        user.setEnabled(createdUser.isEnabled());
-        user.setLocked(createdUser.isLocked());
+        user.setValues(createdUser);
         repository.save(user);
         logger.info(String.format("CreateUser %s by %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
         return new ResponseEntity<>(user, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/import")
+    @PreAuthorize("hasAuthority(@Roles.OP_USER_CREATE)")
+    public ResponseEntity<List<UserInfo>> importUsers(@RequestBody List<User> createdUsers) {
+        List<User> users = new ArrayList<>();
+        for (User createdUser : createdUsers) {
+            User user = repository.findByUsername(createdUser.getUsername())
+                    .orElseGet(() -> {
+                        User u = new User();
+                        u.setValues(createdUser);
+                        repository.save(u);
+                        return u;
+                    });
+            users.add(user);
+        }
+        List<UserInfo> infos = users.stream()
+                .map(u -> projectionFactory.createProjection(UserInfo.class, u))
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(infos, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_USER_UPDATE)")
     public ResponseEntity<User> updateUser(@PathVariable String id, @RequestBody User updatedUser) {
         User user = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        user.setFullName(updatedUser.getFullName());
-        if (!StringUtils.isEmpty(updatedUser.getPassword())) {
-            user.setPassword(updatedUser.getPassword());
+        if (!user.getRoles().contains(RolesConfig.ROLE_ADMIN) &&
+                updatedUser.getRoles().contains(RolesConfig.ROLE_ADMIN)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不允许通过API赋予管理员权限。");
         }
-        user.setRoles(updatedUser.getRoles());
-        user.setExpires(updatedUser.getExpires());
-        user.setEnabled(updatedUser.isEnabled());
-        user.setLocked(updatedUser.isLocked());
+        user.setValues(updatedUser);
         repository.save(user);
         logger.info(String.format("UpdateUser %s by %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
         return new ResponseEntity<>(user, HttpStatus.OK);

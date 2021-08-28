@@ -1,0 +1,14 @@
+{
+    "name": "Lab00",
+    "endpoint": "lab00",
+    "src": [
+        "lab00.py"
+    ],
+    "tests": {
+        "lab00.py:add": "doctest"
+    },
+    "protocols": [
+        "grading",
+        "scoring"
+    ]
+}

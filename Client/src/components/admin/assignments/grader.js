@@ -3,7 +3,7 @@ import {useHistory, useParams} from "react-router-dom";
 import http from "../../../http";
 
 import {Button, Card, Descriptions, Divider, message, Popconfirm, Skeleton, Typography, Upload} from "antd";
-import {DashboardOutlined, EditOutlined, UploadOutlined} from "@ant-design/icons";
+import {DashboardOutlined, DeleteOutlined, EditOutlined, RedoOutlined, UploadOutlined} from "@ant-design/icons";
 import AdminSubmissionTable from "../submissions/table";
 import AdminAssignmentInfo from "./info";
 import AdminSubmissionStatistics from "../submissions/statistics";
@@ -59,7 +59,7 @@ const AdminAssignmentGrader = () => {
         setDisabled(true);
         http()
             .delete(`/assignments/${id}/grader`)
-            .then((res) => {
+            .then(() => {
                 setGrader(null);
                 message.success("删除评分文件成功！");
             })
@@ -67,22 +67,33 @@ const AdminAssignmentGrader = () => {
             .finally(() => setDisabled(false));
     };
 
+    const rejudgeAllSubmissions = () => {
+        http()
+            .post(`/submissions/rejudge`, {
+                assignmentId: assignment.id
+            })
+            .then((res) => {
+                message.success(`已提交${res.data.length}份提交的重测请求，请刷新页面！`);
+            })
+            .catch((err) => console.error(err));
+    };
+
     return (
         <>
             <Typography.Title level={2}>
                 <DashboardOutlined/> 评分管理
-                <Button style={{float: "right"}} type="primary"
-                        onClick={() => history.push(`/admin/assignments/${id}`)}>
-                    <EditOutlined/> 编辑作业
-                </Button>
+                <div style={{float: "right"}}>
+                    <Button type="primary" onClick={() => history.push(`/admin/assignments/${id}`)}>
+                        <EditOutlined/> 编辑作业
+                    </Button>
+                </div>
             </Typography.Title>
             {!assignment
                 ? <Skeleton/>
                 : <>
                     <Descriptions>
                         <Descriptions.Item label="作业名称">
-                            <code>{id}</code>
-                            （<AdminAssignmentInfo assignmentId={id}/>）
+                            <AdminAssignmentInfo assignmentId={id}/>
                         </Descriptions.Item>
                         <Descriptions.Item label="作业总分" span={2}>
                             满分{assignment.totalScore}，总评占比{assignment.percentage}%
@@ -104,10 +115,17 @@ const AdminAssignmentGrader = () => {
                                         查看编译日志
                                     </Typography.Link>
                                     <Popconfirm title="确定要删除自动评分文件吗？" onConfirm={deleteGrader}>
-                                        <Typography.Link type="danger" style={{marginLeft: 20}}>
-                                            删除自动评分文件
+                                        <Typography.Link type="danger" style={{marginLeft: "1.5em"}}>
+                                            <DeleteOutlined/> 删除自动评分文件
                                         </Typography.Link>
                                     </Popconfirm>
+                                    {assignment && assignment.grader !== null &&
+                                    <Popconfirm title="确定要对本作业的提交全部重测吗？" onConfirm={rejudgeAllSubmissions}>
+                                        <Typography.Link type="danger" style={{marginLeft: "1.5em"}}>
+                                            <RedoOutlined/> 重测全部提交
+                                        </Typography.Link>
+                                    </Popconfirm>
+                                    }
                                 </>}
                         </Descriptions.Item>
                     </Descriptions>

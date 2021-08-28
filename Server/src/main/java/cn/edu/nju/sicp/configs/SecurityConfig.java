@@ -1,8 +1,10 @@
 package cn.edu.nju.sicp.configs;
 
 import cn.edu.nju.sicp.jwt.JwtAuthorizationFilter;
+import cn.edu.nju.sicp.jwt.JwtTokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
@@ -41,6 +43,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
+    public JwtTokenUtils jwtTokenUtils() {
+        return new JwtTokenUtils();
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setMaxAge(3600L);
@@ -69,7 +76,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .addFilterBefore(new JwtAuthorizationFilter(authenticationManager(), userDetailsService()),
+                .addFilterBefore(new JwtAuthorizationFilter(authenticationManager(),
+                                userDetailsService(),
+                                jwtTokenUtils()),
                         UsernamePasswordAuthenticationFilter.class);
     }
 

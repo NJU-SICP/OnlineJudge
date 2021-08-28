@@ -10,6 +10,7 @@ import cn.edu.nju.sicp.repositories.SubmissionRepository;
 import cn.edu.nju.sicp.repositories.TokenRepository;
 import cn.edu.nju.sicp.repositories.UserRepository;
 import cn.edu.nju.sicp.tasks.GradeSubmissionTask;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,10 +36,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.DoubleSummaryStatistics;
-import java.util.List;
+import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -87,12 +85,14 @@ public class SubmissionController {
                                                                 @RequestParam(required = false) Integer size) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!user.getId().equals(userId) && user.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
+        Assignment assignment = assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId).orElse(null);
+
         Submission submission = new Submission();
         submission.setUserId(userId);
-        submission.setAssignmentId(assignmentId);
+        submission.setAssignmentId(assignment == null ? null : assignment.getId());
         submission.setGraded(graded);
         Page<SubmissionInfo> infos = submissionRepository
                 .findAll(Example.of(submission),
@@ -108,9 +108,10 @@ public class SubmissionController {
     public ResponseEntity<Long> countSubmissions(@RequestParam(required = false) String userId,
                                                  @RequestParam(required = false) String assignmentId,
                                                  @RequestParam(required = false) Boolean graded) {
+        Assignment assignment = assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId).orElse(null);
         Submission submission = new Submission();
         submission.setUserId(userId);
-        submission.setAssignmentId(assignmentId);
+        submission.setAssignmentId(assignment == null ? null : assignment.getId());
         submission.setGraded(graded);
         long count = submissionRepository.count(Example.of(submission));
         return new ResponseEntity<>(count, HttpStatus.OK);
@@ -123,8 +124,9 @@ public class SubmissionController {
                                                    @RequestParam(defaultValue = RolesConfig.ROLE_STUDENT) String role,
                                                    @RequestParam(required = false) Integer page,
                                                    @RequestParam(required = false) Integer size) {
+        Assignment assignment = assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId).orElse(null);
         Submission submission = new Submission();
-        submission.setAssignmentId(assignmentId);
+        submission.setAssignmentId(assignment == null ? null : assignment.getId());
         List<String> userIds = submissionRepository
                 .findAll(Example.of(submission)).stream()
                 .map(Submission::getUserId).collect(Collectors.toList());
@@ -146,8 +148,9 @@ public class SubmissionController {
     public ResponseEntity<Long> countUsers(@RequestParam String assignmentId,
                                            @RequestParam Boolean submitted,
                                            @RequestParam String role) {
+        Assignment assignment = assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId).orElse(null);
         Submission submission = new Submission();
-        submission.setAssignmentId(assignmentId);
+        submission.setAssignmentId(assignment == null ? null : assignment.getId());
         List<String> userIds = submissionRepository
                 .findAll(Example.of(submission)).stream()
                 .map(Submission::getUserId).collect(Collectors.toList());
@@ -167,12 +170,14 @@ public class SubmissionController {
                                                                    @RequestParam(required = false) Boolean unique) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (userId != null && !userId.equals(user.getId()) && user.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
+        Assignment assignment = assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId).orElse(null);
+
         Submission submission = new Submission();
         submission.setUserId(userId);
-        submission.setAssignmentId(assignmentId);
+        submission.setAssignmentId(assignment == null ? null : assignment.getId());
 
         Stream<Submission> stream = null;
         if (unique == null || !unique) {
@@ -211,7 +216,7 @@ public class SubmissionController {
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!submission.getUserId().equals(user.getId()) && user.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         return new ResponseEntity<>(submission, HttpStatus.OK);
@@ -221,14 +226,17 @@ public class SubmissionController {
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_CREATE)")
     public ResponseEntity<Submission> createSubmission(@RequestPart("assignmentId") String assignmentId,
                                                        @RequestPart(value = "token", required = false) String token,
-                                                       @RequestPart("file") MultipartFile file)
-            throws OperationNotSupportedException {
+                                                       @RequestPart("file") MultipartFile file) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Assignment assignment = assignmentRepository.findById(assignmentId)
+        Assignment assignment = assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         if (file.getSize() > assignment.getSubmitFileSize() * 1024 * 1024) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交的文件超过作业限制的文件大小。");
+        } else if (!Objects.equals("." + FilenameUtils.getExtension(file.getOriginalFilename()), assignment.getSubmitFileType())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交的文件类型不符合作业限制的文件类型。");
+        } else if ((new Date()).after(assignment.getEndTime())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交时间晚于作业截止时间。");
         }
 
         String createdBy = null; // if submit with token, set to issuer user info, else null
@@ -282,8 +290,14 @@ public class SubmissionController {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法存储提交文件。");
         }
 
+        int priority = GradeSubmissionTask.PRIORITY_NORM;
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR, 12);
+        if (calendar.getTime().after(assignment.getEndTime())) {
+            priority = GradeSubmissionTask.PRIORITY_HIGH;
+        }
         GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository,
-                dockerConfig.getInstance());
+                dockerConfig.getInstance(), priority);
         gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
         return new ResponseEntity<>(submission, HttpStatus.CREATED);
     }
@@ -309,27 +323,14 @@ public class SubmissionController {
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         submissionRepository.delete(submission);
+
+        try {
+            Files.delete(Paths.get(submission.getFilePath()));
+        } catch (Exception ignored) {
+        }
+
         logger.info(String.format("DeleteSubmission %s by %s", submission, user));
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
-    @PostMapping("/{id}/rejudge")
-    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_UPDATE)")
-    public ResponseEntity<Submission> rejudgeSubmission(@PathVariable String id) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Submission submission = submissionRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        submission.setGraded(false);
-        submission.setResult(null);
-        submissionRepository.save(submission);
-
-        Assignment assignment = assignmentRepository.findById(submission.getAssignmentId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
-        GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository,
-                dockerConfig.getInstance(), GradeSubmissionTask.PRIORITY_LOW);
-        gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
-        logger.info(String.format("RejudgeSubmission %s by %s", submission, user));
-        return new ResponseEntity<>(submission, HttpStatus.OK);
     }
 
     @GetMapping("/{id}/download")
@@ -352,4 +353,30 @@ public class SubmissionController {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取提交文件。");
         }
     }
+
+    @PostMapping("/rejudge")
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_UPDATE)")
+    public ResponseEntity<List<SubmissionInfo>> rejudgeSubmissions(@RequestBody Submission example) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        List<Submission> submissions = submissionRepository.findAll(Example.of(example));
+        for (Submission submission : submissions) {
+            submission.setGraded(false);
+            submission.setResult(null);
+            submissionRepository.save(submission);
+
+            logger.info(String.format("RejudgeSubmission %s by %s", submission, user));
+            Assignment assignment = assignmentRepository.findById(submission.getAssignmentId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
+            GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository,
+                    dockerConfig.getInstance(), GradeSubmissionTask.PRIORITY_LOW);
+            gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
+        }
+
+        List<SubmissionInfo> infos = submissions.stream()
+                .map(s -> projectionFactory.createProjection(SubmissionInfo.class, s))
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(infos, HttpStatus.OK);
+    }
+
 }

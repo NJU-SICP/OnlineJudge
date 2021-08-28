@@ -36,7 +36,7 @@ const AdminAssignmentInfo = ({assignmentId}) => {
                          onClick={() => history.push(`/admin/assignments/${assignmentId}`)}>
             {!assignment
                 ? <><code>{assignmentId.substr(-8)}</code><LoadingOutlined/></>
-                : <>{assignment.title ?? "作业不存在"}</>}
+                : <>{assignment.title ? `[${assignment.slug}] ${assignment.title}` : "作业不存在"}</>}
         </Typography.Link>
     </>);
 };

@@ -3,12 +3,12 @@ import {useDispatch, useSelector} from "react-redux";
 import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 import moment from "moment";
+import {set} from "../store/auth";
+import http from "../http";
+import config from "../config";
 
 import {Layout, Form, Input, Button, Alert, Typography, Divider, Row, Col, List} from "antd";
 import {CloseOutlined, CopyrightOutlined, HomeOutlined, LinkOutlined, UserOutlined} from "@ant-design/icons";
-
-import {set} from "../store/auth";
-import http from "../http";
 import Time from "../components/time";
 
 const AuthLayout = () => {
@@ -25,7 +25,8 @@ const AuthLayout = () => {
         http()
             .post("/auth/login", {
                 username: credentials.username,
-                password: credentials.password
+                password: credentials.password,
+                platform: `web-${config.version}`
             })
             .then((res) => {
                 dispatch(set(res.data));
@@ -66,7 +67,8 @@ const AuthLayout = () => {
         <Layout style={{paddingTop: "10vh", paddingBottom: "10vh", paddingLeft: "10vw", paddingRight: "10vw"}}>
             <Typography.Title level={1}>SICP Online Judge</Typography.Title>
             <Typography.Text>
-                当前服务器时间：<Time/></Typography.Text>
+                当前服务器时间：<Time/>
+            </Typography.Text>
             <Divider/>
             <Row gutter={24}>
                 <Col xs={24} md={16}>
@@ -122,7 +124,7 @@ const AuthLayout = () => {
                         <List.Item>
                             <Typography.Text>
                                 <CopyrightOutlined style={{marginRight: "1em"}}/>
-                                <span>南京大学 版权所有</span>
+                                <span>南京大学 版权所有 [{config.version}]</span>
                             </Typography.Text>
                         </List.Item>
                     </List>

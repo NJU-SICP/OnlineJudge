@@ -4,6 +4,7 @@ import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.models.Grader;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.DockerClientException;
+import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.Container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +34,12 @@ public class RemoveImageTask implements Runnable {
         try {
             List<Container> containers = client.listContainersCmd().withShowAll(true).exec();
             containers.forEach((container) -> {
-                if (Objects.equals(container.getImageId(), imageId)) {
-                    client.stopContainerCmd(container.getId()).withTimeout(0).exec();
+                if (Objects.equals(container.getImage(), imageId)) {
+                    logger.info(String.format("RemoveImage will remove container %s", container.getId()));
+                    try {
+                        client.stopContainerCmd(container.getId()).withTimeout(0).exec();
+                    } catch (NotModifiedException ignored) {
+                    }
                     client.removeContainerCmd(container.getId()).withForce(true).withRemoveVolumes(true).exec();
                 }
             });

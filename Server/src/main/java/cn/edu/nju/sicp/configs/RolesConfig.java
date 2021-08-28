@@ -12,6 +12,7 @@ public final class RolesConfig {
     public static final String ROLE_TEACHER = "ROLE_TEACHER";
     public static final String ROLE_STAFF = "ROLE_STAFF";
     public static final String ROLE_STUDENT = "ROLE_STUDENT";
+    public static final String ROLE_GUEST = "ROLE_GUEST";
 
     public static final String OP_USER_CREATE = "OP_USER_CREATE";
     public static final String OP_USER_READ = "OP_USER_READ";
@@ -28,6 +29,10 @@ public final class RolesConfig {
     public static final String OP_SUBMISSION_UPDATE = "OP_SUBMISSION_UPDATE";
     public static final String OP_SUBMISSION_DELETE = "OP_SUBMISSION_DELETE";
     public static final String OP_SUBMISSION_TOKEN_MANAGE = "OP_SUBMISSION_TOKEN_MANAGE";
+    public static final String OP_BACKUP_READ_SELF = "OP_BACKUP_READ_SELF";
+    public static final String OP_BACKUP_READ_ALL = "OP_BACKUP_READ_ALL";
+    public static final String OP_BACKUP_CREATE = "OP_BACKUP_CREATE";
+    public static final String OP_BACKUP_DELETE = "OP_BACKUP_DELETE";
 
     private static final HashMap<String, List<String>> grantedAuthoritiesMap;
 
@@ -38,16 +43,20 @@ public final class RolesConfig {
         grantedAuthoritiesMap.put(OP_USER_UPDATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_USER_DELETE, List.of(ROLE_ADMIN, ROLE_TEACHER));
         grantedAuthoritiesMap.put(OP_ASSIGNMENT_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER));
-        grantedAuthoritiesMap.put(OP_ASSIGNMENT_READ_BEGUN, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT));
+        grantedAuthoritiesMap.put(OP_ASSIGNMENT_READ_BEGUN, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));
         grantedAuthoritiesMap.put(OP_ASSIGNMENT_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_ASSIGNMENT_UPDATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_ASSIGNMENT_DELETE, List.of(ROLE_ADMIN, ROLE_TEACHER));
-        grantedAuthoritiesMap.put(OP_SUBMISSION_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT));
-        grantedAuthoritiesMap.put(OP_SUBMISSION_READ_SELF, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT));
+        grantedAuthoritiesMap.put(OP_SUBMISSION_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));
+        grantedAuthoritiesMap.put(OP_SUBMISSION_READ_SELF, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));
         grantedAuthoritiesMap.put(OP_SUBMISSION_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_SUBMISSION_UPDATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_SUBMISSION_DELETE, List.of(ROLE_ADMIN));
         grantedAuthoritiesMap.put(OP_SUBMISSION_TOKEN_MANAGE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
+        grantedAuthoritiesMap.put(OP_BACKUP_READ_SELF, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));
+        grantedAuthoritiesMap.put(OP_BACKUP_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
+        grantedAuthoritiesMap.put(OP_BACKUP_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));
+        grantedAuthoritiesMap.put(OP_BACKUP_DELETE, List.of(ROLE_ADMIN));
     }
 
     public static HashMap<String, List<String>> getGrantedAuthoritiesMap() {

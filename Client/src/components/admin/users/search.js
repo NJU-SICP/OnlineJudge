@@ -2,7 +2,7 @@ import React, {useState} from "react";
 import {AutoComplete, Input} from "antd";
 import http from "../../../http";
 
-const AdminUserSearch = ({onSelect, ...props}) => {
+const AdminUserSearch = ({disabled, onSelect, ...props}) => {
     const [options, setOptions] = useState([]);
 
     const onSearch = (value) => {
@@ -23,7 +23,7 @@ const AdminUserSearch = ({onSelect, ...props}) => {
     };
 
     return (
-        <AutoComplete options={options} onSearch={onSearch} onSelect={onSelect}>
+        <AutoComplete options={options} onSearch={onSearch} onSelect={onSelect} disabled={disabled}>
             <Input.Search placeholder="输入学号或姓名搜索用户" {...props} />
         </AutoComplete>
     );

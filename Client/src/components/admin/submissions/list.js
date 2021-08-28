@@ -18,23 +18,29 @@ const AdminSubmissionList = () => {
     const location = useLocation();
 
     const [queryUserId, setQueryUserId] = useState(null);
+    const [queryUserIdDisabled, setQueryUserIdDisabled] = useState(false);
     const [queryAssignmentId, setQueryAssignmentId] = useState(null);
     const [queryAssignmentIdDisabled, setQueryAssignmentIdDisabled] = useState(false);
     const [queryGraded, setQueryGraded] = useState(null);
     const [page, setPage] = useState(null);
 
     useEffect(() => {
-        const assignmentId = qs.parse(location.search, {ignoreQueryPrefix: true}).assignmentId;
+        const query = qs.parse(location.search, {ignoreQueryPrefix: true});
+        const userId = query.userId;
+        const assignmentId = query.assignmentId;
+        setQueryUserIdDisabled(typeof userId !== `undefined`);
         setQueryAssignmentIdDisabled(typeof assignmentId !== `undefined`);
     }, [location.search]);
 
     useEffect(() => {
-        const assignmentId = qs.parse(location.search, {ignoreQueryPrefix: true}).assignmentId;
+        const query = qs.parse(location.search, {ignoreQueryPrefix: true});
+        const userId = query.userId;
+        const assignmentId = query.assignmentId;
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
             .get(`/submissions`, {
                 params: {
-                    userId: queryUserId,
+                    userId: userId ?? queryUserId,
                     assignmentId: assignmentId ?? queryAssignmentId,
                     graded: queryGraded,
                     page: page - 1
@@ -104,14 +110,17 @@ const AdminSubmissionList = () => {
             <Typography.Title level={2}>
                 <PaperClipOutlined/> 提交管理
                 {auth.authorities && auth.authorities.indexOf("OP_SUBMISSION_TOKEN_MANAGE") >= 0 &&
-                <Button type="primary" style={{float: "right"}} onClick={() => history.push("/admin/submissions/tokens")}>
-                    <AuditOutlined/> 提交密钥管理
-                </Button>
+                <div style={{float: "right"}}>
+                    <Button type="primary" onClick={() => history.push("/admin/submissions/tokens")}>
+                        <AuditOutlined/> 提交密钥管理
+                    </Button>
+                </div>
                 }
             </Typography.Title>
             <Form layout="inline">
                 <Form.Item label="根据用户搜索">
-                    <AdminUserSearch onSelect={(text, option) => setQueryUserId(option.user.id)}/>
+                    <AdminUserSearch disabled={queryUserIdDisabled}
+                                     onSelect={(text, option) => setQueryUserId(option.user.id)}/>
                 </Form.Item>
                 <Form.Item label="根据作业搜索">
                     <AdminAssignmentSearch disabled={queryAssignmentIdDisabled}

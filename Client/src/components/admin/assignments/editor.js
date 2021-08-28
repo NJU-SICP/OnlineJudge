@@ -23,8 +23,8 @@ const AdminAssignmentEditor = () => {
                 ...res.data,
                 id: id,
                 rangeTime: [
-                    moment(res.data.beginTime),
-                    moment(res.data.endTime)
+                    moment(res.data.beginTime).set({seconds: 0}),
+                    moment(res.data.endTime).set({seconds: 0})
                 ]
             }))
             .catch((err) => console.error(err));
@@ -34,9 +34,11 @@ const AdminAssignmentEditor = () => {
         setDisabled(true);
         http()
             .put(`/assignments/${id}`, {
+                slug: values.slug,
                 title: values.title,
                 beginTime: moment(values.rangeTime[0]),
                 endTime: moment(values.rangeTime[1]),
+                submitFileName: values.submitFileName,
                 submitFileType: values.submitFileType,
                 submitFileSize: values.submitFileSize,
                 submitCountLimit: values.submitCountLimit,
@@ -69,12 +71,14 @@ const AdminAssignmentEditor = () => {
             <Typography.Title level={2}>
                 编辑作业
                 {auth.authorities && auth.authorities.indexOf("OP_ASSIGNMENT_DELETE") >= 0 &&
-                <Popconfirm title="确定要删除作业吗？" onConfirm={deleteAssignment}
-                            okText="删除" okType="danger" cancelText="取消">
-                    <Button style={{float: "right"}} type="danger" disabled={disabled}>
-                        <DeleteOutlined/> 删除作业
-                    </Button>
-                </Popconfirm>
+                <div style={{float: "right"}}>
+                    <Popconfirm title="确定要删除作业吗？" onConfirm={deleteAssignment}
+                                okText="删除" okType="danger" cancelText="取消">
+                        <Button type="danger" disabled={disabled}>
+                            <DeleteOutlined/> 删除作业
+                        </Button>
+                    </Popconfirm>
+                </div>
                 }
             </Typography.Title>
             {!user

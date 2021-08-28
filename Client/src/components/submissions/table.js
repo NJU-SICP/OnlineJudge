@@ -112,7 +112,7 @@ const SubmissionTable = ({assignment, page}) => {
                                     <Card title={`提交 #${selected.index}`}
                                           extra={
                                               <Download link={`/submissions/${selected.id}/download`}
-                                                        name={`${selected.id}${assignment.submitFileType}`}/>
+                                                        name={`${assignment.submitFileName}-${selected.id}${assignment.submitFileType}`}/>
                                           }>
                                         {!submission
                                             ? <Skeleton/>

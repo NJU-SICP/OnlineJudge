@@ -15,15 +15,15 @@ const SubmissionTimeline = ({id, submission}) => {
                 {moment(submission.createdAt).format(" YYYY-MM-DD HH:mm:ss ")}
                 收到提交，编号为 <code>{id.substr(-8)}</code>。
             </Timeline.Item>
-            {submission.result !== null && <>
-                {submission.result.log &&
-                <Timeline.Item>
-                    自动评分程序日志：<br/>
-                    <pre style={{whiteSpace: "pre-wrap"}}><code>{submission.result.log}</code></pre>
-                </Timeline.Item>
-                }
+            {submission.result && <>
                 {submission.result.error
                     ? <>
+                        {submission.result.log &&
+                        <Timeline.Item>
+                            自动评分程序日志：<br/>
+                            <pre style={{whiteSpace: "pre-wrap"}}><code>{submission.result.log}</code></pre>
+                        </Timeline.Item>
+                        }
                         <Timeline.Item color="red" className="ant-timeline-item-last">
                             自动评分遇到错误：{submission.result.error}<br/>
                             错误报告时间：{moment(submission.result.gradedAt).format(" YYYY-MM-DD HH:mm:ss ")}，请与管理员联系进行排查。

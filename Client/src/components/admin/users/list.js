@@ -5,7 +5,7 @@ import qs from "qs";
 import http from "../../../http";
 
 import {Button, Pagination, Skeleton, Table, Tag, Typography} from "antd";
-import {PlusOutlined, UserSwitchOutlined} from "@ant-design/icons";
+import {ImportOutlined, PlusOutlined, UserSwitchOutlined} from "@ant-design/icons";
 
 const AdminUserList = () => {
     const auth = useSelector((state) => state.auth.value);
@@ -78,11 +78,16 @@ const AdminUserList = () => {
         <>
             <Typography.Title level={2}>
                 <UserSwitchOutlined/> 用户管理
-                {auth.authorities && auth.authorities.indexOf("OP_USER_CREATE") >= 0 &&
-                <Button style={{float: "right"}} onClick={() => history.push("/admin/users/create")}>
-                    <PlusOutlined/> 添加用户
-                </Button>
-                }
+                {auth.authorities && auth.authorities.indexOf("OP_USER_CREATE") >= 0 && <>
+                    <div style={{float: "right"}}>
+                        <Button onClick={() => history.push("/admin/users/create")}>
+                            <PlusOutlined/> 添加用户
+                        </Button>
+                        <Button onClick={() => history.push("/admin/users/import")}>
+                            <ImportOutlined/> 导入用户
+                        </Button>
+                    </div>
+                </>}
             </Typography.Title>
             {page === null
                 ? <Skeleton/>

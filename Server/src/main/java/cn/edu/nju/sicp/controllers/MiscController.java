@@ -17,4 +17,9 @@ public class MiscController {
         return new ResponseEntity<>(new Date(), HttpStatus.OK);
     }
 
+    @GetMapping("/ok-client/version")
+    public ResponseEntity<String> getOkClientVersion() {
+        return new ResponseEntity<>("NJU-SICP-v1.2.0", HttpStatus.OK);
+    }
+
 }

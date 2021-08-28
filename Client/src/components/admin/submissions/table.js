@@ -122,10 +122,12 @@ const AdminSubmissionTable = ({assignment}) => {
 
     const rejudgeSubmission = () => {
         http()
-            .post(`/submissions/${selected.id}/rejudge`)
+            .post(`/submissions/rejudge`, {
+                id: selected.id
+            })
             .then((res) => {
                 message.success("已提交重测请求！");
-                setSubmission(res.data);
+                setSubmission(res.data[0]);
             })
             .catch((err) => console.error(err));
     };

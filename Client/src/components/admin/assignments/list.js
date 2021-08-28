@@ -17,12 +17,17 @@ const AdminAssignmentList = () => {
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/assignments/all?page=${page - 1}`)
+            .get(`/assignments/?page=${page - 1}`)
             .then((res) => setPage(res.data))
             .catch((err) => console.error(err));
     }, [location.search]);
 
     const columns = [
+        {
+            title: "代号",
+            key: "slug",
+            dataIndex: "slug"
+        },
         {
             title: "标题",
             key: "title",
@@ -32,18 +37,29 @@ const AdminAssignmentList = () => {
             title: "开始时间",
             key: "beginTime",
             dataIndex: "beginTime",
-            render: (time) => moment(time).format("YYYY-MM-DD HH:mm:ss")
+            render: (time) => {
+                return <Typography.Text delete={moment().isAfter(time)}>
+                    {moment(time).format("YYYY-MM-DD HH:mm:ss")}
+                </Typography.Text>;
+            }
         },
         {
             title: "结束时间",
             key: "endTime",
             dataIndex: "endTime",
-            render: (time) => moment(time).format("YYYY-MM-DD HH:mm:ss")
+            render: (time) => {
+                return <Typography.Text delete={moment().isAfter(time)}>
+                    {moment(time).format("YYYY-MM-DD HH:mm:ss")}
+                </Typography.Text>;
+            }
         },
         {
-            title: "提交类型",
-            key: "submitFileType",
-            render: (text, record) => <span>{record.submitFileType} ({record.submitFileSize} MiB)</span>
+            title: "提交文件",
+            key: "submitFile",
+            render: (text, record) => <>
+                <code>{record.submitFileName}{record.submitFileType}</code>{" "}
+                ({record.submitFileSize} MiB)
+            </>
         },
         {
             title: "提交次数",
@@ -96,9 +112,11 @@ const AdminAssignmentList = () => {
             <Typography.Title level={2}>
                 <EditOutlined/> 作业管理
                 {auth.authorities && auth.authorities.indexOf("OP_ASSIGNMENT_CREATE") >= 0 &&
-                <Button style={{float: "right"}} onClick={() => history.push("/admin/assignments/create")}>
-                    <PlusOutlined/> 添加作业
-                </Button>
+                <div style={{float: "right"}}>
+                    <Button onClick={() => history.push("/admin/assignments/create")}>
+                        <PlusOutlined/> 添加作业
+                    </Button>
+                </div>
                 }
             </Typography.Title>
             {!page

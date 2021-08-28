@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {BrowserRouter, Route, Switch} from "react-router-dom";
+import {HashRouter, Route, Switch} from "react-router-dom";
 
 import {Provider} from "react-redux";
 import store from "./store";
@@ -22,14 +22,14 @@ ReactDOM.render(
     <React.StrictMode>
         <Provider store={store}>
             <ConfigProvider locale={zhCN}>
-                <BrowserRouter>
+                <HashRouter>
                     <Layout style={{minHeight: "100vh"}}>
                         <Switch>
                             <Route path="/auth/login" children={<AuthLayout/>}/>
                             <Route path="/" children={<MainLayout/>}/>
                         </Switch>
                     </Layout>
-                </BrowserRouter>
+                </HashRouter>
             </ConfigProvider>
         </Provider>
     </React.StrictMode>,

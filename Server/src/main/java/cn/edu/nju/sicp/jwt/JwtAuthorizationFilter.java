@@ -2,6 +2,7 @@ package cn.edu.nju.sicp.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,10 +21,14 @@ import java.io.IOException;
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
     private final UserDetailsService service;
+    private final JwtTokenUtils utils;
 
-    public JwtAuthorizationFilter(AuthenticationManager manager, UserDetailsService service) {
+    public JwtAuthorizationFilter(AuthenticationManager manager,
+                                  UserDetailsService service,
+                                  JwtTokenUtils utils) {
         super(manager);
         this.service = service;
+        this.utils = utils;
     }
 
     @Override
@@ -49,12 +54,14 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     }
 
     private UsernamePasswordAuthenticationToken getAuthenticationToken(String token) throws ExpiredJwtException {
-        Claims claims = JwtTokenUtils.parseJwtToken(token);
-        String username = claims.getSubject();
         try {
+            Claims claims = utils.parseJwtToken(token);
+            String username = claims.getSubject();
             UserDetails userDetails = service.loadUserByUsername(username);
             return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        } catch (UsernameNotFoundException e) {
+        } catch (Exception e) {
+            if (e.getClass().equals(ExpiredJwtException.class)) throw e;
+            logger.error(String.format("Cannot verify jwt token: %s", e.getMessage()));
             return null;
         }
     }

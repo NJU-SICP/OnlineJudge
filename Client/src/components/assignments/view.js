@@ -1,22 +1,30 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {useLocation, useParams} from "react-router-dom";
+import {useHistory, useLocation, useParams} from "react-router-dom";
 import qs from "qs";
 import http from "../../http";
 
 import {Button, Col, Divider, Form, Input, message, Popover, Row, Skeleton, Statistic, Typography, Upload} from "antd";
-import {AuditOutlined, BookOutlined, DeleteOutlined, InboxOutlined, StopOutlined} from "@ant-design/icons";
+import {
+    AuditOutlined,
+    BookOutlined,
+    CloudServerOutlined,
+    DeleteOutlined,
+    InboxOutlined,
+    StopOutlined
+} from "@ant-design/icons";
 import moment from "moment";
 import SubmissionTable from "../submissions/table";
 import {useSelector} from "react-redux";
 
 const AssignmentView = () => {
-    const {id} = useParams();
-    const location = useLocation();
     const auth = useSelector((state) => state.auth.value);
+    const {id} = useParams();
+    const history = useHistory();
+    const location = useLocation();
+
     const [assignment, setAssignment] = useState(null);
     const [submissionsPage, setSubmissionsPage] = useState(null);
     const [disabled, setDisabled] = useState(false);
-
     const [token, setToken] = useState(null);
 
     useEffect(() => {
@@ -34,12 +42,13 @@ const AssignmentView = () => {
     }, [id, auth]);
 
     const fetchSubmissions = useCallback(() => {
+        if (!assignment) return;
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
             .get(`/submissions`, {
                 params: {
                     userId: auth.userId,
-                    assignmentId: id,
+                    assignmentId: assignment.id,
                     page: page - 1
                 }
             })
@@ -55,7 +64,7 @@ const AssignmentView = () => {
                 setSubmissionsPage({...res.data, content: list});
             })
             .catch((err) => console.error(err));
-    }, [id, location.search, auth]);
+    }, [assignment, location.search, auth]);
 
     useEffect(fetchSubmissions, [id, auth, location.search, fetchSubmissions]);
     useEffect(() => {
@@ -118,28 +127,34 @@ const AssignmentView = () => {
                 : <>
                     <Typography.Title level={2}>
                         <BookOutlined/> 作业：{assignment.title}
-                        {!token
-                            ? <>
-                                <Popover placement="left" trigger="click" title="输入提交密钥" content={<>
-                                    <Form layout="inline" onFinish={(values) => setToken(values.token)}>
-                                        <Form.Item name="token" label="密钥" rules={[{required: true, message: "请输入密钥"}]}>
-                                            <Input/>
-                                        </Form.Item>
-                                        <Form.Item>
-                                            <Button type="primary" htmlType="submit">确定</Button>
-                                        </Form.Item>
-                                    </Form>
-                                </>}>
-                                    <Button style={{float: "right"}} type="text">
-                                        <AuditOutlined/> 使用提交密钥
+                        <div style={{float: "right"}}>
+                            <Button type="link" onClick={() => history.push(`/assignments/${id}/backups`)}>
+                                <CloudServerOutlined/> 查看备份列表
+                            </Button>
+                            {!token
+                                ? <>
+                                    <Popover placement="left" trigger="click" title="输入提交密钥" content={<>
+                                        <Form layout="inline" onFinish={(values) => setToken(values.token)}>
+                                            <Form.Item name="token" label="密钥"
+                                                       rules={[{required: true, message: "请输入密钥"}]}>
+                                                <Input/>
+                                            </Form.Item>
+                                            <Form.Item>
+                                                <Button type="primary" htmlType="submit">确定</Button>
+                                            </Form.Item>
+                                        </Form>
+                                    </>}>
+                                        <Button type="text">
+                                            <AuditOutlined/> 使用提交密钥
+                                        </Button>
+                                    </Popover>
+                                </>
+                                : <>
+                                    <Button type="text" danger onClick={() => setToken(null)}>
+                                        <DeleteOutlined/> 删除提交密钥
                                     </Button>
-                                </Popover>
-                            </>
-                            : <>
-                                <Button style={{float: "right"}} type="text" danger onClick={() => setToken(null)}>
-                                    <DeleteOutlined/> 删除提交密钥
-                                </Button>
-                            </>}
+                                </>}
+                        </div>
                     </Typography.Title>
                     <Row style={{margin: "2em auto"}}>
                         <Col span={6}>
@@ -149,8 +164,8 @@ const AssignmentView = () => {
                             <Statistic title="总评占比" value={assignment.percentage} suffix="%"/>
                         </Col>
                         <Col span={6}>
-                            <Statistic title="提交类型"
-                                       value={`${assignment.submitFileType} (${assignment.submitFileSize} MiB)`}/>
+                            <Statistic title="提交文件"
+                                       value={`${assignment.submitFileName}${assignment.submitFileType} (${assignment.submitFileSize} MiB)`}/>
                         </Col>
                         <Col span={6}>
                             <Statistic title="提交次数" loading={!submissionsPage}

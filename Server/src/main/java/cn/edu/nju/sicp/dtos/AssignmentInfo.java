@@ -10,11 +10,15 @@ public interface AssignmentInfo {
 
     String getId();
 
+    String getSlug();
+
     String getTitle();
 
     Date getBeginTime();
 
     Date getEndTime();
+
+    String getSubmitFileName();
 
     String getSubmitFileType();
 

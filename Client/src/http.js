@@ -4,7 +4,7 @@ import {message} from "antd";
 
 const http = () => {
     const options = {
-        baseURL: config.baseURL,
+        baseURL: config.baseNames.api,
         headers: {
             "Content-Type": "application/json"
         }
