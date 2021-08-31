@@ -1,5 +1,6 @@
 package cn.edu.nju.sicp.controllers;
 
+import cn.edu.nju.sicp.configs.S3Config;
 import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.models.Backup;
@@ -12,7 +13,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Example;
@@ -26,12 +26,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.Objects;
 
@@ -45,11 +45,13 @@ public class BackupController {
     @Autowired
     private BackupRepository backupRepository;
 
-    private final String dataPath;
+    private final String s3Bucket;
+    private final S3Client s3Client;
     private final Logger logger;
 
-    public BackupController(@Value("${spring.application.data-path}") String dataPath) {
-        this.dataPath = dataPath;
+    public BackupController(S3Config s3Config) {
+        this.s3Bucket = s3Config.getBucket();
+        this.s3Client = s3Config.getInstance();
         this.logger = LoggerFactory.getLogger(BackupController.class);
     }
 
@@ -101,10 +103,11 @@ public class BackupController {
         }
 
         try {
-            Path path = Paths.get(backup.getFilePath());
-            InputStreamResource resource = new InputStreamResource(new FileInputStream(path.toFile()));
+            String key = backup.getKey();
+            InputStream stream = s3Client.getObject(builder -> builder.bucket(s3Bucket).key(key).build(), (r, i) -> i);
+            InputStreamResource resource = new InputStreamResource(stream);
             return new ResponseEntity<>(resource, HttpStatus.OK);
-        } catch (IOException e) {
+        } catch (S3Exception e) {
             logger.error(String.format("DownloadSubmission failed: %s %s by %s", e.getMessage(), backup, user));
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取备份文件。");
         }
@@ -124,11 +127,17 @@ public class BackupController {
         Assignment assignment = assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        Backup backup = null;
+        Backup example = new Backup();
+        example.setUserId(user.getId());
+        example.setAssignmentId(assignment.getId());
+        long count = backupRepository.count(Example.of(example));
+
+        Backup backup;
         try {
-            backup =new Backup();
+            backup = new Backup();
             backup.setUserId(user.getId());
             backup.setAssignmentId(assignment.getId());
+            backup.setKey(String.format("backups/%s-%s-%s.zip", user.getUsername(), assignment.getSlug(), count + 1));
             backup.setAnalytics(new ObjectMapper().readValue(analytics, Backup.Analytics.class));
             backup.setCreatedAt(new Date());
             backupRepository.save(backup);
@@ -138,18 +147,18 @@ public class BackupController {
         }
 
         try {
-            Path path = Paths.get(dataPath, "backups", backup.getId(), "backup.zip");
-            if (Files.notExists(path.getParent())) {
-                Files.createDirectories(path.getParent());
+            String key = backup.getKey();
+            try {
+                s3Client.headBucket(builder -> builder.bucket(s3Bucket).build());
+            } catch (NoSuchBucketException e) {
+                s3Client.createBucket(builder -> builder.bucket(s3Bucket).build());
             }
-            file.transferTo(path);
-            backup.setFilePath(path.toString());
-            backupRepository.save(backup);
-            logger.info(String.format("CreateBackup %s by %s", backup, user));
-        } catch (IOException e) {
-            logger.error(String.format("CreateBackup failed: %s %s by %s", e.getMessage(), backup, user));
+            s3Client.putObject(builder -> builder.bucket(s3Bucket).key(key).build(),
+                    RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        } catch (S3Exception | IOException e) {
+            logger.error(String.format("CreateBackup failed: %s %s by %s", e.getMessage(), backup, user), e);
             backupRepository.delete(backup);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法存储提交文件。");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取或存储备份文件。");
         }
 
         return new ResponseEntity<>(backup, HttpStatus.OK);
@@ -164,8 +173,10 @@ public class BackupController {
         backupRepository.delete(backup);
 
         try {
-            Files.delete(Paths.get(backup.getFilePath()));
-        } catch (Exception ignored) {
+            String key = backup.getKey();
+            s3Client.deleteObject(builder -> builder.bucket(s3Bucket).key(key).build());
+        } catch (S3Exception e) {
+            logger.error(String.format("DeleteBackup failed: %s %s by %s", e.getMessage(), backup, user), e);
         }
 
         logger.info(String.format("DeleteBackup %s by %s", backup, user));

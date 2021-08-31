@@ -16,7 +16,7 @@ public class Backup {
     private String userId;
     private String assignmentId;
 
-    private String filePath;
+    private String key;
     private Analytics analytics;
     private Date createdAt;
 
@@ -40,12 +40,12 @@ public class Backup {
         this.assignmentId = assignmentId;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getKey() {
+        return key;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public Analytics getAnalytics() {
@@ -70,7 +70,7 @@ public class Backup {
                 "id='" + id + '\'' +
                 ", userId='" + userId + '\'' +
                 ", assignmentId='" + assignmentId + '\'' +
-                ", filePath='" + filePath + '\'' +
+                ", key='" + key + '\'' +
                 ", createdAt=" + createdAt +
                 '}';
     }

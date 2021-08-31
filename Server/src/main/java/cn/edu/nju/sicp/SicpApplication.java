@@ -3,6 +3,7 @@ package cn.edu.nju.sicp;
 import cn.edu.nju.sicp.configs.AdminConfig;
 import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
+import cn.edu.nju.sicp.configs.S3Config;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.models.Submission;
 import cn.edu.nju.sicp.models.User;
@@ -26,6 +27,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.util.List;
 import java.util.Optional;
@@ -63,9 +67,11 @@ public class SicpApplication {
         @Autowired
         private ThreadPoolTaskExecutor gradeSubmissionExecutor;
 
+        private final S3Config s3Config;
         private final Logger logger;
 
-        public StartupRunner() {
+        public StartupRunner(S3Config s3Config) {
+            this.s3Config = s3Config;
             this.logger = LoggerFactory.getLogger(StartupRunner.class);
         }
 
@@ -73,6 +79,7 @@ public class SicpApplication {
         public void run(String... args) {
             applyAdminConfig();
             applyDockerConfig();
+            applyS3Config();
             createBuildImageTasks();
             createGradeSubmissionTasks();
         }
@@ -99,7 +106,7 @@ public class SicpApplication {
                 admin.setRoles(List.of(RolesConfig.ROLE_ADMIN));
                 repository.save(admin);
             } catch (Exception e) {
-                logger.error(String.format("Cannot apply: %s %s", e.getClass().getName(), e.getMessage()));
+                logger.error(String.format("Cannot apply: %s", e.getMessage()));
                 throw e;
             }
             logger.info("Apply admin config OK");
@@ -110,10 +117,26 @@ public class SicpApplication {
             try {
                 dockerConfig.getInstance().pingCmd().exec();
             } catch (Exception e) {
-                logger.error(String.format("Cannot apply: %s %s", e.getClass().getName(), e.getMessage()));
+                logger.error(String.format("Cannot apply: %s", e.getMessage()));
                 throw e;
             }
             logger.info("Apply docker config OK");
+        }
+
+        private void applyS3Config() {
+            logger.info(String.format("Applying s3 config %s", s3Config));
+            try {
+                S3Client s3Client = s3Config.getInstance();
+                try {
+                    s3Client.headBucket(builder -> builder.bucket(s3Config.getBucket()).build());
+                } catch (NoSuchBucketException e) {
+                    s3Client.createBucket(builder -> builder.bucket(s3Config.getBucket()).build());
+                }
+            } catch (S3Exception e) {
+                logger.error(String.format("Cannot apply: %s", e.getMessage()));
+                throw e;
+            }
+            logger.info("Apply s3 config OK");
         }
 
         private void createBuildImageTasks() {
