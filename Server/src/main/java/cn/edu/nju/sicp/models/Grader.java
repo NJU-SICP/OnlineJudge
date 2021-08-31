@@ -1,14 +1,12 @@
 package cn.edu.nju.sicp.models;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Set;
 
 public class Grader {
 
     private String assignmentId;
-    private String filePath;
+    private String key;
     private Set<String> imageTags;
     private String imageId;
     private String imageBuildLog;
@@ -23,12 +21,12 @@ public class Grader {
         this.assignmentId = assignmentId;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getKey() {
+        return key;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public Set<String> getImageTags() {
@@ -74,7 +72,7 @@ public class Grader {
     @Override
     public String toString() {
         return "Grader{" +
-                "dockerfilePath='" + filePath + '\'' +
+                "key='" + key + '\'' +
                 ", imageTags=" + imageTags +
                 ", imageId='" + imageId + '\'' +
                 ", imageBuildError='" + imageBuildError + '\'' +

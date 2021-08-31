@@ -2,6 +2,7 @@ package cn.edu.nju.sicp.controllers;
 
 import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
+import cn.edu.nju.sicp.configs.S3Config;
 import cn.edu.nju.sicp.dtos.SubmissionInfo;
 import cn.edu.nju.sicp.dtos.UserInfo;
 import cn.edu.nju.sicp.models.*;
@@ -15,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -29,13 +29,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
-import javax.naming.OperationNotSupportedException;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.InputStream;
 import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -68,11 +66,13 @@ public class SubmissionController {
     @Autowired
     private DockerConfig dockerConfig;
 
-    private final String dataPath;
+    private final String s3Bucket;
+    private final S3Client s3Client;
     private final Logger logger;
 
-    public SubmissionController(@Value("${spring.application.data-path}") String dataPath) {
-        this.dataPath = dataPath;
+    public SubmissionController(S3Config s3Config) {
+        this.s3Bucket = s3Config.getBucket();
+        this.s3Client = s3Config.getInstance();
         this.logger = LoggerFactory.getLogger(SubmissionController.class);
     }
 
@@ -130,7 +130,7 @@ public class SubmissionController {
         List<String> userIds = submissionRepository
                 .findAll(Example.of(submission)).stream()
                 .map(Submission::getUserId).collect(Collectors.toList());
-        Page<User> users = null;
+        Page<User> users;
         PageRequest pageRequest = PageRequest.of(page == null || page < 0 ? 0 : page,
                 size == null || size < 0 ? 20 : size,
                 Sort.by(Sort.Direction.ASC, "id"));
@@ -154,7 +154,7 @@ public class SubmissionController {
         List<String> userIds = submissionRepository
                 .findAll(Example.of(submission)).stream()
                 .map(Submission::getUserId).collect(Collectors.toList());
-        Long count = null;
+        long count;
         if (submitted) {
             count = userRepository.countAllByIdInAndRolesContains(userIds, role);
         } else {
@@ -179,7 +179,7 @@ public class SubmissionController {
         submission.setUserId(userId);
         submission.setAssignmentId(assignment == null ? null : assignment.getId());
 
-        Stream<Submission> stream = null;
+        Stream<Submission> stream;
         if (unique == null || !unique) {
             stream = submissionRepository
                     .findAll(Example.of(submission)).stream()
@@ -267,9 +267,16 @@ public class SubmissionController {
             }
         }
 
+        Submission example = new Submission();
+        example.setUserId(user.getId());
+        example.setAssignmentId(assignment.getId());
+        long count = submissionRepository.count(Example.of(example));
+
         Submission submission = new Submission();
         submission.setUserId(user.getId());
         submission.setAssignmentId(assignment.getId());
+        submission.setKey(String.format("submissions/%s-%s-%s%s", user.getUsername(),
+                assignment.getSlug(), count, assignment.getSubmitFileType()));
         submission.setCreatedAt(new Date());
         submission.setCreatedBy(createdBy);
         submission.setGraded(false);
@@ -277,19 +284,16 @@ public class SubmissionController {
         submission = submissionRepository.save(submission);
 
         try {
-            Path path = Paths.get(dataPath, "submissions", submission.getId(), "submit" + assignment.getSubmitFileType());
-            if (Files.notExists(path.getParent())) {
-                Files.createDirectories(path.getParent());
-            }
-            file.transferTo(path);
-            submission.setFilePath(path.toString());
-            submissionRepository.save(submission);
-            logger.info(String.format("CreateSubmission %s by %s", submission, user));
-        } catch (IOException e) {
-            logger.error(String.format("CreateSubmission failed: %s %s by %s", e.getMessage(), submission, user));
+            String key = submission.getKey();
+            software.amazon.awssdk.core.sync.RequestBody requestBody =
+                    software.amazon.awssdk.core.sync.RequestBody.fromInputStream(file.getInputStream(), file.getSize());
+            s3Client.putObject(builder -> builder.bucket(s3Bucket).key(key).build(), requestBody);
+        } catch (S3Exception | IOException e) {
+            logger.error(String.format("CreateSubmission failed: %s %s by %s", e.getMessage(), submission, user), e);
             submissionRepository.delete(submission);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法存储提交文件。");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取或存储提交文件。");
         }
+        logger.info(String.format("CreateSubmission %s by %s", submission, user));
 
         int priority = GradeSubmissionTask.PRIORITY_NORM;
         Calendar calendar = Calendar.getInstance();
@@ -298,7 +302,7 @@ public class SubmissionController {
             priority = GradeSubmissionTask.PRIORITY_HIGH;
         }
         GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository,
-                dockerConfig.getInstance(), priority);
+                s3Bucket, s3Client, dockerConfig.getInstance(), priority);
         gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
         return new ResponseEntity<>(submission, HttpStatus.CREATED);
     }
@@ -326,8 +330,10 @@ public class SubmissionController {
         submissionRepository.delete(submission);
 
         try {
-            Files.delete(Paths.get(submission.getFilePath()));
-        } catch (Exception ignored) {
+            String key = submission.getKey();
+            s3Client.deleteObject(builder -> builder.bucket(s3Bucket).key(key).build());
+        } catch (S3Exception e) {
+            logger.error(String.format("DeleteSubmission failed: %s %s by %s", e.getMessage(), submission, user), e);
         }
 
         logger.info(String.format("DeleteSubmission %s by %s", submission, user));
@@ -346,11 +352,12 @@ public class SubmissionController {
         }
 
         try {
-            Path path = Paths.get(submission.getFilePath());
-            InputStreamResource resource = new InputStreamResource(new FileInputStream(path.toFile()));
+            String key = submission.getKey();
+            InputStream stream = s3Client.getObject(builder -> builder.bucket(s3Bucket).key(key).build());
+            InputStreamResource resource = new InputStreamResource(stream);
             return new ResponseEntity<>(resource, HttpStatus.OK);
-        } catch (IOException e) {
-            logger.error(String.format("DownloadSubmission failed: %s %s by %s", e.getMessage(), submission, user));
+        } catch (S3Exception e) {
+            logger.error(String.format("DownloadSubmission failed: %s %s by %s", e.getMessage(), submission, user), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取提交文件。");
         }
     }
@@ -370,7 +377,7 @@ public class SubmissionController {
             Assignment assignment = assignmentRepository.findById(submission.getAssignmentId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
             GradeSubmissionTask task = new GradeSubmissionTask(assignment, submission, submissionRepository,
-                    dockerConfig.getInstance(), GradeSubmissionTask.PRIORITY_LOW);
+                    s3Bucket, s3Client, dockerConfig.getInstance(), GradeSubmissionTask.PRIORITY_LOW);
             gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
         }
 

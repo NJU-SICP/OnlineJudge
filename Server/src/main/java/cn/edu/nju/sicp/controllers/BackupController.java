@@ -91,28 +91,6 @@ public class BackupController {
         return new ResponseEntity<>(backup, HttpStatus.OK);
     }
 
-    @GetMapping("/{id}/download")
-    @PreAuthorize("hasAuthority(@Roles.OP_BACKUP_READ_SELF) or hasAuthority(@Roles.OP_BACKUP_READ_ALL)")
-    public ResponseEntity<Resource> downloadBackup(@PathVariable String id) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Backup backup = backupRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!backup.getUserId().equals(user.getId()) && user.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_BACKUP_READ_ALL))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        try {
-            String key = backup.getKey();
-            InputStream stream = s3Client.getObject(builder -> builder.bucket(s3Bucket).key(key).build(), (r, i) -> i);
-            InputStreamResource resource = new InputStreamResource(stream);
-            return new ResponseEntity<>(resource, HttpStatus.OK);
-        } catch (S3Exception e) {
-            logger.error(String.format("DownloadSubmission failed: %s %s by %s", e.getMessage(), backup, user));
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取备份文件。");
-        }
-    }
-
 
     @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize("hasAuthority(@Roles.OP_BACKUP_CREATE)")
@@ -142,17 +120,12 @@ public class BackupController {
             backup.setCreatedAt(new Date());
             backupRepository.save(backup);
         } catch (JsonProcessingException e) {
-            logger.error(String.format("CreateBackup failed: %s by %s", e.getMessage(), user));
+            logger.error(String.format("CreateBackup failed: %s by %s", e.getMessage(), user), e);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "无法处理提交数据。");
         }
 
         try {
             String key = backup.getKey();
-            try {
-                s3Client.headBucket(builder -> builder.bucket(s3Bucket).build());
-            } catch (NoSuchBucketException e) {
-                s3Client.createBucket(builder -> builder.bucket(s3Bucket).build());
-            }
             s3Client.putObject(builder -> builder.bucket(s3Bucket).key(key).build(),
                     RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
         } catch (S3Exception | IOException e) {
@@ -181,6 +154,28 @@ public class BackupController {
 
         logger.info(String.format("DeleteBackup %s by %s", backup, user));
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping("/{id}/download")
+    @PreAuthorize("hasAuthority(@Roles.OP_BACKUP_READ_SELF) or hasAuthority(@Roles.OP_BACKUP_READ_ALL)")
+    public ResponseEntity<Resource> downloadBackup(@PathVariable String id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Backup backup = backupRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!backup.getUserId().equals(user.getId()) && user.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_BACKUP_READ_ALL))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        try {
+            String key = backup.getKey();
+            InputStream stream = s3Client.getObject(builder -> builder.bucket(s3Bucket).key(key).build());
+            InputStreamResource resource = new InputStreamResource(stream);
+            return new ResponseEntity<>(resource, HttpStatus.OK);
+        } catch (S3Exception e) {
+            logger.error(String.format("DownloadSubmission failed: %s %s by %s", e.getMessage(), backup, user), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取备份文件。");
+        }
     }
 
 }

@@ -11,7 +11,7 @@ public class Submission {
 
     private String userId;
     private String assignmentId;
-    private String filePath;
+    private String key;
     private Date createdAt;
     private String createdBy;
     private Boolean graded;
@@ -37,12 +37,12 @@ public class Submission {
         this.assignmentId = assignmentId;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getKey() {
+        return key;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public Date getCreatedAt() {
@@ -83,7 +83,7 @@ public class Submission {
                 "id='" + id + '\'' +
                 ", userId='" + userId + '\'' +
                 ", assignmentId='" + assignmentId + '\'' +
-                ", filePath='" + filePath + '\'' +
+                ", key='" + key + '\'' +
                 ", createdAt=" + createdAt +
                 ", createdBy='" + createdBy + '\'' +
                 ", graded=" + graded +

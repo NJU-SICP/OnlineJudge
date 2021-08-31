@@ -2,6 +2,7 @@ package cn.edu.nju.sicp.controllers;
 
 import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
+import cn.edu.nju.sicp.configs.S3Config;
 import cn.edu.nju.sicp.dtos.AssignmentInfo;
 import cn.edu.nju.sicp.models.Grader;
 import cn.edu.nju.sicp.models.Assignment;
@@ -13,11 +14,9 @@ import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.SyncTaskExecutor;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -30,11 +29,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -60,11 +58,13 @@ public class AssignmentController {
     @Autowired
     private DockerConfig dockerConfig;
 
-    private final String dataPath;
+    private final String s3Bucket;
+    private final S3Client s3Client;
     private final Logger logger;
 
-    public AssignmentController(@Value("${spring.application.data-path}") String dataPath) {
-        this.dataPath = dataPath;
+    public AssignmentController(S3Config s3Config) {
+        this.s3Bucket = s3Config.getBucket();
+        this.s3Client = s3Config.getInstance();
         this.logger = LoggerFactory.getLogger(AssignmentController.class);
     }
 
@@ -194,36 +194,42 @@ public class AssignmentController {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (assignment.getGrader() != null) {
-            removeImageExecutor.execute(new RemoveImageTask(assignment.getGrader(), dockerConfig.getInstance()));
-            assignment.setGrader(null);
-        }
-        repository.save(assignment);
+
+        String date = DateFormatUtils.format(new Date(), "yyyyMMdd-HHmmss");
+        Grader grader = new Grader();
+        grader.setAssignmentId(id);
+        grader.setKey(String.format("graders/%s-%s.zip", assignment.getSlug(), date));
+        grader.setImageTags(Set.of(String.format("grader-%s:%s", assignment.getSlug(), date)));
 
         try {
-            Grader grader = new Grader();
-            grader.setAssignmentId(id);
-
-            Path path = Paths.get(dataPath, "assignments", id, "grader.zip");
-            if (Files.notExists(path.getParent())) {
-                Files.createDirectories(path.getParent());
-            }
-            file.transferTo(path);
-
-            grader.setFilePath(path.toString());
-            grader.setImageTags(Set.of(String.format("grader-%s:%s", id,
-                    DateFormatUtils.format(new Date(), "yyyyMMdd-HHmmss"))));
-            assignment.setGrader(grader);
-            repository.save(assignment);
-
-            logger.info(String.format("SetAssignmentGrader %s by %s", assignment, user));
-            BuildImageTask task = new BuildImageTask(grader, repository, dockerConfig.getInstance());
-            buildImageExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
-            return new ResponseEntity<>(grader, HttpStatus.CREATED);
-        } catch (IOException e) {
-            logger.error(String.format("SetAssignmentGrader failed: %s %s by %s", e.getMessage(), assignment, user));
+            String key = grader.getKey();
+            software.amazon.awssdk.core.sync.RequestBody requestBody =
+                    software.amazon.awssdk.core.sync.RequestBody.fromInputStream(file.getInputStream(), file.getSize());
+            s3Client.putObject(builder -> builder.bucket(s3Bucket).key(key).build(), requestBody);
+        } catch (S3Exception | IOException e) {
+            logger.error(String.format("SetAssignmentGrader put failed: %s %s by %s",
+                    e.getMessage(), assignment, user), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        if (assignment.getGrader() != null) {
+            try {
+                String key = assignment.getGrader().getKey();
+                s3Client.deleteObject(builder -> builder.bucket(s3Bucket).key(key).build());
+                removeImageExecutor.execute(new RemoveImageTask(assignment.getGrader(), dockerConfig.getInstance()));
+            } catch (S3Exception e) {
+                logger.error(String.format("SetAssignmentGrader remove failed: %s %s by %s",
+                        e.getMessage(), assignment, user), e);
+            }
+            assignment.setGrader(null);
+        }
+        assignment.setGrader(grader);
+        repository.save(assignment);
+
+        logger.info(String.format("SetAssignmentGrader %s by %s", assignment, user));
+        BuildImageTask task = new BuildImageTask(assignment, repository, s3Bucket, s3Client, dockerConfig.getInstance());
+        buildImageExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
+        return new ResponseEntity<>(grader, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}/grader")
@@ -235,15 +241,17 @@ public class AssignmentController {
         Grader grader = assignment.getGrader();
 
         try {
-            Files.deleteIfExists(Paths.get(grader.getFilePath()));
-        } catch (IOException e) {
-            logger.error(String.format("DeleteAssignmentGrader failed: %s %s by %s", e.getMessage(), assignment, user));
+            String key = grader.getKey();
+            s3Client.deleteObject(builder -> builder.bucket(s3Bucket).key(key).build());
+            removeImageExecutor.execute(new RemoveImageTask(grader, dockerConfig.getInstance()));
+        } catch (S3Exception e) {
+            logger.error(String.format("DeleteAssignmentGrader failed: %s %s by %s",
+                    e.getMessage(), assignment, user), e);
         }
 
         assignment.setGrader(null);
         repository.save(assignment);
         logger.info(String.format("DeleteAssignmentGrader %s by %s", assignment, user));
-        removeImageExecutor.execute(new RemoveImageTask(grader, dockerConfig.getInstance()));
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 

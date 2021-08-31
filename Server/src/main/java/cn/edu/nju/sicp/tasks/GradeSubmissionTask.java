@@ -23,6 +23,7 @@ import org.apache.commons.lang.time.StopWatch;
 import org.bson.json.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -32,6 +33,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmissionTask> {
 
@@ -43,25 +45,33 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
     private final Assignment assignment;
     private final Submission submission;
     private final SubmissionRepository repository;
+    private final String s3Bucket;
+    private final S3Client s3Client;
     private final DockerClient client;
     private final Logger logger;
 
     public GradeSubmissionTask(Assignment assignment,
                                Submission submission,
                                SubmissionRepository repository,
+                               String s3Bucket,
+                               S3Client s3Client,
                                DockerClient client) {
-        this(assignment, submission, repository, client, PRIORITY_NORM);
+        this(assignment, submission, repository, s3Bucket, s3Client, client, PRIORITY_NORM);
     }
 
     public GradeSubmissionTask(Assignment assignment,
                                Submission submission,
                                SubmissionRepository repository,
+                               String s3Bucket,
+                               S3Client s3Client,
                                DockerClient client,
                                int priority) {
         this.assignment = assignment;
         this.submission = submission;
         this.repository = repository;
         this.priority = priority;
+        this.s3Bucket = s3Bucket;
+        this.s3Client = s3Client;
         this.client = client;
         this.logger = LoggerFactory.getLogger(GradeSubmissionTask.class);
     }
@@ -98,7 +108,7 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
             stopWatch.start();
             InspectImageResponse inspect = client.inspectImageCmd(imageId).exec();
             ContainerConfig config = inspect.getConfig();
-            List<String> args = new ArrayList<>(List.of("/usr/bin/python3", "checker.py"));
+            List<String> args = new ArrayList<>(List.of("/usr/bin/python3", "ok", "--score", "--score-out"));
             if (config != null && config.getEntrypoint() != null) {
                 args = new ArrayList<>(List.of(config.getEntrypoint()));
             }
@@ -117,21 +127,19 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
 
             Path temp = Files.createTempFile("grader-tar", ".tar");
             Path json = Files.createTempFile("grader-json", ".json");
-            Path file = Paths.get(submission.getFilePath());
+            String key = submission.getKey();
             try (FileOutputStream tempOutputStream = new FileOutputStream(temp.toFile());
-                 ArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(tempOutputStream)) {
+                 ArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(tempOutputStream);
+                 InputStream s3Stream = s3Client.getObject(builder -> builder.bucket(s3Bucket).key(key).build())) {
                 if (Objects.equals(assignment.getSubmitFileType(), ".zip")) {
                     // zip archive
-                    try (ZipFile zipFile = new ZipFile(file.toFile())) {
-                        Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
-                        while (zipEntries.hasMoreElements()) {
-                            ZipEntry zipEntry = zipEntries.nextElement();
+                    try (ZipInputStream zipInputStream = new ZipInputStream(s3Stream)) {
+                        ZipEntry zipEntry;
+                        while ((zipEntry = zipInputStream.getNextEntry()) != null) {
                             TarArchiveEntry archiveEntry = new TarArchiveEntry(zipEntry.getName());
                             archiveEntry.setSize(zipEntry.getSize());
                             tarOutputStream.putArchiveEntry(archiveEntry);
-                            try (InputStream inputStream = zipFile.getInputStream(zipEntry)) {
-                                IOUtils.copy(inputStream, tarOutputStream);
-                            }
+                            IOUtils.copy(zipInputStream, tarOutputStream);
                             tarOutputStream.closeArchiveEntry();
                         }
                     }
@@ -139,11 +147,9 @@ public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmission
                     // single file (.pdf or .py)
                     String name = assignment.getSubmitFileName() + assignment.getSubmitFileType();
                     TarArchiveEntry entry = new TarArchiveEntry(name);
-                    entry.setSize(file.toFile().length());
+                    entry.setSize(s3Stream.available());
                     tarOutputStream.putArchiveEntry(entry);
-                    try (InputStream inputStream = Files.newInputStream(file)) {
-                        IOUtils.copy(inputStream, tarOutputStream);
-                    }
+                    IOUtils.copy(s3Stream, tarOutputStream);
                     tarOutputStream.closeArchiveEntry();
                 }
             }

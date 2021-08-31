@@ -1,5 +1,7 @@
 package cn.edu.nju.sicp;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import cn.edu.nju.sicp.configs.AdminConfig;
 import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
@@ -23,10 +25,8 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.data.domain.Example;
-import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -77,6 +77,9 @@ public class SicpApplication {
 
         @Override
         public void run(String... args) {
+            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+            loggerContext.getLogger("org.mongodb.driver").setLevel(Level.ERROR);
+
             applyAdminConfig();
             applyDockerConfig();
             applyS3Config();
@@ -145,7 +148,8 @@ public class SicpApplication {
                     .filter(a -> a.getGrader() != null && a.getGrader().getImageId() == null)
                     .collect(Collectors.toList());
             for (Assignment assignment : assignments) {
-                BuildImageTask task = new BuildImageTask(assignment.getGrader(), assignmentRepository, dockerConfig.getInstance());
+                BuildImageTask task = new BuildImageTask(assignment, assignmentRepository,
+                        s3Config.getBucket(), s3Config.getInstance(), dockerConfig.getInstance());
                 buildImageExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
                 logger.info(String.format("BuildImage %s", assignment));
             }
@@ -167,7 +171,8 @@ public class SicpApplication {
                         submission.setResult(null);
                         submissionRepository.save(submission);
                         GradeSubmissionTask task = new GradeSubmissionTask(optionalAssignment.get(),
-                                submission, submissionRepository, dockerConfig.getInstance(), GradeSubmissionTask.PRIORITY_LOW);
+                                submission, submissionRepository, s3Config.getBucket(), s3Config.getInstance(),
+                                dockerConfig.getInstance(), GradeSubmissionTask.PRIORITY_LOW);
                         gradeSubmissionExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
                         logger.info(String.format("RejudgeSubmission %s", submission));
                     }

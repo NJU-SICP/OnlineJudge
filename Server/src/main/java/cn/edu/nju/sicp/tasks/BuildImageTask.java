@@ -9,6 +9,8 @@ import com.github.dockerjava.api.model.BuildResponseItem;
 import net.lingala.zip4j.ZipFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -20,44 +22,52 @@ import java.util.Optional;
 
 public class BuildImageTask implements Runnable {
 
-    private final Logger logger;
-    private final Grader grader;
+    private final Assignment assignment;
     private final AssignmentRepository repository;
+    private final String s3Bucket;
+    private final S3Client s3Client;
     private final DockerClient client;
+    private final Logger logger;
 
-    public BuildImageTask(Grader grader, AssignmentRepository repository, DockerClient client) {
-        this.logger = LoggerFactory.getLogger(BuildImageTask.class);
-        this.grader = grader;
+    public BuildImageTask(Assignment assignment,
+                          AssignmentRepository repository,
+                          String s3Bucket,
+                          S3Client s3Client,
+                          DockerClient client) {
+        this.assignment = assignment;
         this.repository = repository;
+        this.s3Bucket = s3Bucket;
+        this.s3Client = s3Client;
         this.client = client;
+        this.logger = LoggerFactory.getLogger(BuildImageTask.class);
     }
 
     public void run() {
-        Optional<Assignment> optionalAssignment = repository.findById(grader.getAssignmentId());
-        if (optionalAssignment.isEmpty()) {
-            logger.error(String.format("BuildImage error: assignment %s is not present", grader.getAssignmentId()));
-            return;
-        }
-        Assignment assignment = optionalAssignment.get();
-        Grader grader = assignment.getGrader();
         StringBuilder logBuilder = new StringBuilder();
         logger.info(String.format("BuildImage start: %s", assignment));
 
         try {
+            String key = assignment.getGrader().getKey();
             Path path = Files.createTempDirectory("sicp-build-workdir");
-            (new ZipFile(Paths.get(grader.getFilePath()).toFile())).extractAll(path.toString());
-            logBuilder.append(String.format("Extracted dockerfile archive to %s\n", path.toString()));
+            Path temp = Paths.get(path.toString(), "temp.zip");
+
+            s3Client.getObject(builder -> builder.bucket(s3Bucket).key(key).build(),
+                    ResponseTransformer.toFile(temp.toFile()));
+            (new ZipFile(temp.toFile())).extractAll(path.toString());
+            Files.delete(temp);
+            logBuilder.append(String.format("Extracted dockerfile archive to %s\n", path));
+
             try {
                 String imageId = client.buildImageCmd(path.toFile())
                         .withNoCache(true)
-                        .withTags(grader.getImageTags())
+                        .withTags(assignment.getGrader().getImageTags())
                         .exec(new BuildImageResultCallback() {
                             @Override
                             public void onNext(BuildResponseItem item) {
                                 String stream = item.getStream();
                                 if (stream != null) {
                                     logBuilder.append(stream);
-                                    grader.setImageBuildLog(logBuilder.toString());
+                                    assignment.getGrader().setImageBuildLog(logBuilder.toString());
                                     repository.save(assignment);
                                 }
                                 super.onNext(item);
@@ -65,15 +75,13 @@ public class BuildImageTask implements Runnable {
                         })
                         .awaitImageId();
                 Date imageBuiltAt = new Date();
-                grader.setImageId(imageId);
-                grader.setImageBuiltAt(imageBuiltAt);
-                logger.info(String.format("BuildImage succeed at %s %s", imageBuiltAt, assignment));
+                assignment.getGrader().setImageId(imageId);
+                assignment.getGrader().setImageBuiltAt(imageBuiltAt);
                 logBuilder.append(String.format("BuildImage succeed at %s %s", imageBuiltAt, assignment));
             } catch (Exception e) {
-                String error = String.format("BuildImage failed: %s %s %s", e.getClass().getName(), e.getMessage(), assignment);
-                logger.error(error);
+                String error = String.format("BuildImage failed: %s %s", e.getClass().getName(), e.getMessage());
                 logBuilder.append(error);
-                grader.setImageBuildError(error);
+                assignment.getGrader().setImageBuildError(error);
             } finally {
                 Files.walk(path)
                         .sorted(Comparator.reverseOrder())
@@ -81,13 +89,18 @@ public class BuildImageTask implements Runnable {
                         .forEach(File::delete);
             }
         } catch (Exception e) {
-            String error = String.format("BuildImage failed: %s %s %s", e.getClass().getName(), e.getMessage(), assignment);
-            logger.error(error);
+            String error = String.format("BuildImage failed: %s %s", e.getClass().getName(), e.getMessage());
             logBuilder.append(error);
-            grader.setImageBuildError(error);
+            assignment.getGrader().setImageBuildError(error);
         } finally {
-            grader.setImageBuildLog(logBuilder.toString());
+            assignment.getGrader().setImageBuildLog(logBuilder.toString());
             repository.save(assignment);
+            if (assignment.getGrader().getImageBuildError() == null) {
+                logger.info(String.format("BuildImage succeed at %s %s",
+                        assignment.getGrader().getImageBuiltAt(), assignment));
+            } else {
+                logger.error(String.format("%s %s", assignment.getGrader().getImageBuildError(), assignment));
+            }
         }
     }
 
