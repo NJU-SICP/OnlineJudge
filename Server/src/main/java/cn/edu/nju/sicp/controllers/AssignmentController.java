@@ -198,7 +198,7 @@ public class AssignmentController {
         String date = DateFormatUtils.format(new Date(), "yyyyMMdd-HHmmss");
         Grader grader = new Grader();
         grader.setAssignmentId(id);
-        grader.setKey(String.format("graders/%s-%s.zip", assignment.getSlug(), date));
+        grader.setKey(String.format("graders/%s/%s.zip", assignment.getSlug(), date));
         grader.setImageTags(Set.of(String.format("grader-%s:%s", assignment.getSlug(), date)));
 
         try {

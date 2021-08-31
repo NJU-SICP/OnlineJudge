@@ -26,6 +26,7 @@ import SubmissionTimeline from "../../submissions/timeline";
 import AdminSubmissionGrader from "./grader";
 import AdminUserInfo from "../users/info";
 import AdminUserSearch from "../users/search";
+import Download from "../../download";
 
 const AdminSubmissionTable = ({assignment}) => {
     const auth = useSelector((state) => state.auth.value);
@@ -132,17 +133,6 @@ const AdminSubmissionTable = ({assignment}) => {
             .catch((err) => console.error(err));
     };
 
-    const downloadSubmission = () => {
-        http()
-            .get(`/submissions/${selected.id}/download`, {
-                responseType: "blob"
-            })
-            .then((res) => {
-                saveAs(res.data, `${selected.id}${assignment.submitFileType}`);
-            })
-            .catch((err) => console.error(err));
-    };
-
     const columns = [
         {
             title: "编号",
@@ -233,9 +223,7 @@ const AdminSubmissionTable = ({assignment}) => {
                                                     </Button>
                                                 </Popconfirm>
                                                 }
-                                                <Button type="link" size="small" onClick={downloadSubmission}>
-                                                    <DownloadOutlined/> 下载文件
-                                                </Button>
+                                                <Download link={`/submissions/${selected.id}/download`} name={submission.key}/>
                                             </>}>
                                         <SubmissionTimeline id={selected.id} submission={submission}/>
                                         {assignment.grader === null &&

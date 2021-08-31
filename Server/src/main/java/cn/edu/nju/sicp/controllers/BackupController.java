@@ -115,7 +115,7 @@ public class BackupController {
             backup = new Backup();
             backup.setUserId(user.getId());
             backup.setAssignmentId(assignment.getId());
-            backup.setKey(String.format("backups/%s-%s-%s.zip", user.getUsername(), assignment.getSlug(), count + 1));
+            backup.setKey(String.format("backups/%s/%s/%s.zip", assignment.getSlug(), user.getUsername(), count + 1));
             backup.setAnalytics(new ObjectMapper().readValue(analytics, Backup.Analytics.class));
             backup.setCreatedAt(new Date());
             backupRepository.save(backup);

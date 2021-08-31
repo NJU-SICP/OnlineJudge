@@ -47,6 +47,12 @@ const BackupList = () => {
             render: (id) => <code>{id.substr(-8)}</code>
         },
         {
+            title: "文件",
+            key: "key",
+            dataIndex: "key",
+            render: (key) => key.replace(/backups\//, "")
+        },
+        {
             title: "时间",
             key: "time",
             dataIndex: "analytics",
@@ -58,8 +64,7 @@ const BackupList = () => {
             render: (text, record) => <>
                 {!assignment
                     ? <LoadingOutlined/>
-                    : <Download name={`backup-${assignment.slug}-${record.id}.zip`}
-                                link={`/backups/${record.id}/download`}/>}
+                    : <Download link={`/backups/${record.id}/download`} name={record.key}/>}
             </>
         }
     ];

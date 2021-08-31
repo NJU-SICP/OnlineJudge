@@ -275,8 +275,8 @@ public class SubmissionController {
         Submission submission = new Submission();
         submission.setUserId(user.getId());
         submission.setAssignmentId(assignment.getId());
-        submission.setKey(String.format("submissions/%s-%s-%s%s", user.getUsername(),
-                assignment.getSlug(), count, assignment.getSubmitFileType()));
+        submission.setKey(String.format("submissions/%s/%s/%s%s", assignment.getSlug(),
+                user.getUsername(), count, assignment.getSubmitFileType()));
         submission.setCreatedAt(new Date());
         submission.setCreatedBy(createdBy);
         submission.setGraded(false);

@@ -55,6 +55,12 @@ const AdminBackupList = () => {
             render: (id) => <AdminAssignmentInfo assignmentId={id}/>
         },
         {
+            title: "文件",
+            key: "key",
+            dataIndex: "key",
+            render: (key) => key.replace(/backups\//, "")
+        },
+        {
             title: "生成时间",
             key: "time",
             dataIndex: "analytics",
@@ -70,7 +76,7 @@ const AdminBackupList = () => {
             title: "操作",
             key: "actions",
             render: (text, record) => <>
-                <Download name={`backup-${record.id}.zip`} link={`/backups/${record.id}/download`}/>
+                <Download link={`/backups/${record.id}/download`} name={record.key}/>
             </>
         }
     ];

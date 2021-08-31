@@ -109,15 +109,15 @@ const SubmissionTable = ({assignment, page}) => {
                             {!selected
                                 ? <p style={{margin: "1em"}}>在左侧列表中点击某次提交来查看详情。</p>
                                 : <Affix offsetTop={10}>
-                                    <Card title={`提交 #${selected.index}`}
-                                          extra={
-                                              <Download link={`/submissions/${selected.id}/download`}
-                                                        name={`${assignment.submitFileName}-${selected.id}${assignment.submitFileType}`}/>
-                                          }>
-                                        {!submission
-                                            ? <Skeleton/>
-                                            : <SubmissionTimeline id={selected.id} submission={submission}/>}
-                                    </Card>
+                                    {!submission
+                                        ? <Skeleton/>
+                                        : <Card
+                                            title={`提交 #${selected.index}`}
+                                            extra={
+                                                <Download link={`/submissions/${selected.id}/download`} name={submission.key}/>
+                                        }>
+                                            <SubmissionTimeline id={selected.id} submission={submission}/>
+                                    </Card>}
                                 </Affix>}
                         </Col>
                     </Row>
