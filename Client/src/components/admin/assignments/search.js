@@ -14,8 +14,8 @@ const AdminAssignmentSearch = ({disabled, onSelect, ...props}) => {
             })
             .then((res) => setOptions(res.data.map(assignment => {
                 return {
-                    label: <p>{assignment.title}</p>,
-                    value: `${assignment.title} [${assignment.id}]`,
+                    label: <p>{assignment.slug} {assignment.title}</p>,
+                    value: `${assignment.slug} ${assignment.title} [${assignment.id}]`,
                     assignment: assignment
                 };
             })))
