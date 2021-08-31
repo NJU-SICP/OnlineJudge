@@ -235,7 +235,7 @@ public class SubmissionController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交的文件超过作业限制的文件大小。");
         } else if (!Objects.equals("." + FilenameUtils.getExtension(file.getOriginalFilename()), assignment.getSubmitFileType())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交的文件类型不符合作业限制的文件类型。");
-        } else if ((new Date()).after(assignment.getEndTime())) {
+        } else if (token == null && (new Date()).after(assignment.getEndTime())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交时间晚于作业截止时间。");
         }
 
@@ -249,6 +249,7 @@ public class SubmissionController {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交密钥不合法。"));
             User issuer = userRepository.findById(_token.getIssuedBy())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交密钥不合法（内部错误）。"));
+            logger.info(String.format("ConsumeToken %s", _token));
             createdBy = String.format("%s %s", issuer.getUsername(), issuer.getFullName());
             tokenRepository.delete(_token);
         } else {
