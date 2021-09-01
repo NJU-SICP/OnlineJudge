@@ -3,7 +3,6 @@ import {useSelector} from "react-redux";
 import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 import moment from "moment";
-import {saveAs} from "file-saver";
 import http from "../../../http";
 
 import {
@@ -21,7 +20,7 @@ import {
     Table,
     Typography
 } from "antd";
-import {ArrowRightOutlined, DownloadOutlined, RedoOutlined} from "@ant-design/icons";
+import {ArrowRightOutlined, RedoOutlined} from "@ant-design/icons";
 import SubmissionTimeline from "../../submissions/timeline";
 import AdminSubmissionGrader from "./grader";
 import AdminUserInfo from "../users/info";

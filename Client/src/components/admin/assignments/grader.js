@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useHistory, useParams} from "react-router-dom";
 import http from "../../../http";
 
@@ -16,12 +16,12 @@ const AdminAssignmentGrader = () => {
     const [disabled, setDisabled] = useState(null);
     const [showBuildLog, setShowBuildLog] = useState(false);
 
-    const fetchGrader = () => {
+    const fetchGrader = useCallback(() => {
         http()
             .get(`/assignments/${id}/grader`)
             .then((res) => setGrader(res.data))
             .catch((err) => console.error(err));
-    };
+    }, [id]);
 
     useEffect(() => {
         http()
@@ -29,7 +29,7 @@ const AdminAssignmentGrader = () => {
             .then((res) => setAssignment({...res.data, id}))
             .catch((err) => console.error(err));
         fetchGrader();
-    }, [id]);
+    }, [id, fetchGrader]);
 
     useEffect(() => {
         if (grader != null && (!grader.imageId || !grader.imageBuildError)) {
