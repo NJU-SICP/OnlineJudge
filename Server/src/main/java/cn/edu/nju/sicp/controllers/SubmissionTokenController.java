@@ -5,7 +5,6 @@ import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.TokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -23,12 +22,11 @@ import java.util.UUID;
 @RequestMapping("/submissions/tokens")
 public class SubmissionTokenController {
 
-    @Autowired
-    private TokenRepository repository;
-
+    private final TokenRepository tokenRepository;
     private final Logger logger;
 
-    public SubmissionTokenController() {
+    public SubmissionTokenController(TokenRepository tokenRepository) {
+        this.tokenRepository = tokenRepository;
         this.logger = LoggerFactory.getLogger(SubmissionTokenController.class);
     }
 
@@ -36,7 +34,7 @@ public class SubmissionTokenController {
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_TOKEN_MANAGE)")
     public ResponseEntity<Page<Token>> listTokens(@RequestParam(required = false) Integer page,
                                                   @RequestParam(required = false) Integer size) {
-        Page<Token> tokens = repository
+        Page<Token> tokens = tokenRepository
                 .findAll(PageRequest.of(page == null || page < 0 ? 0 : page,
                         size == null || size < 0 ? 20 : size, Sort.by(Sort.Direction.DESC, "issuedAt")));
         return new ResponseEntity<>(tokens, HttpStatus.OK);
@@ -51,8 +49,8 @@ public class SubmissionTokenController {
         token.setToken(UUID.randomUUID().toString());
         token.setIssuedBy(user.getId());
         token.setIssuedAt(new Date());
-        repository.save(token);
-        logger.info(String.format("CreateToken %s by %s", token, user));
+        tokenRepository.save(token);
+        logger.info(String.format("CreateToken %s %s", token, user));
         return new ResponseEntity<>(token, HttpStatus.CREATED);
     }
 
@@ -60,9 +58,9 @@ public class SubmissionTokenController {
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_TOKEN_MANAGE)")
     public ResponseEntity<Token> deleteToken(@PathVariable String id) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Token token = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        repository.delete(token);
-        logger.info(String.format("DeleteToken %s by %s", token, user));
+        Token token = tokenRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        tokenRepository.delete(token);
+        logger.info(String.format("DeleteToken %s %s", token, user));
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 

@@ -46,6 +46,7 @@ public class AssignmentService {
             String bucket = s3Config.getBucket();
             String key = grader.getKey();
             s3.deleteObject(builder -> builder.bucket(bucket).key(key).build());
+            logger.debug(String.format("Delete grader file %s", key));
         }
     }
 

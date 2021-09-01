@@ -2,8 +2,7 @@ package cn.edu.nju.sicp.configs;
 
 import cn.edu.nju.sicp.jwt.JwtAuthorizationFilter;
 import cn.edu.nju.sicp.jwt.JwtTokenUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import cn.edu.nju.sicp.services.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
@@ -26,9 +25,11 @@ import java.util.Collections;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
-    @Qualifier("userDetailsServiceImpl")
-    private UserDetailsService service;
+    private final UserDetailsService service;
+
+    public SecurityConfig(UserDetailsServiceImpl service) {
+        this.service = service;
+    }
 
     @Bean
     public BCryptPasswordEncoder encoder() {

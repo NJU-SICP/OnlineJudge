@@ -6,7 +6,6 @@ import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -26,15 +25,13 @@ import java.util.stream.Collectors;
 @RequestMapping("/users")
 public class UserController {
 
-    @Autowired
-    private UserRepository repository;
-
-    @Autowired
-    private ProjectionFactory projectionFactory;
-
+    private final UserRepository userRepository;
+    private final ProjectionFactory projectionFactory;
     private final Logger logger;
 
-    public UserController() {
+    public UserController(UserRepository userRepository, ProjectionFactory projectionFactory) {
+        this.userRepository = userRepository;
+        this.projectionFactory = projectionFactory;
         this.logger = LoggerFactory.getLogger(UserController.class);
     }
 
@@ -42,7 +39,7 @@ public class UserController {
     @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
     public ResponseEntity<Page<UserInfo>> listUsers(@RequestParam(required = false) Integer page,
                                                     @RequestParam(required = false) Integer size) {
-        Page<UserInfo> infos = repository
+        Page<UserInfo> infos = userRepository
                 .findAll(PageRequest.of(page == null || page < 0 ? 0 : page,
                         size == null || size < 0 ? 20 : size,
                         Sort.by(Sort.Direction.ASC, "username")))
@@ -53,7 +50,7 @@ public class UserController {
     @GetMapping("/all")
     @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
     public ResponseEntity<List<UserInfo>> listAllUsers() {
-        List<UserInfo> infos = repository
+        List<UserInfo> infos = userRepository
                 .findAll(Sort.by(Sort.Direction.ASC, "username")).stream()
                 .map(u -> projectionFactory.createProjection(UserInfo.class, u))
                 .collect(Collectors.toList());
@@ -63,7 +60,7 @@ public class UserController {
     @GetMapping("/search")
     @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
     public ResponseEntity<List<UserInfo>> searchUsers(@RequestParam String prefix) {
-        List<User> users = repository.findFirst5ByUsernameStartingWithOrFullNameStartingWith(prefix, prefix);
+        List<User> users = userRepository.findFirst5ByUsernameStartingWithOrFullNameStartingWith(prefix, prefix);
         return new ResponseEntity<>(users.stream()
                 .map(user -> projectionFactory.createProjection(UserInfo.class, user))
                 .collect(Collectors.toList()), HttpStatus.OK);
@@ -72,7 +69,7 @@ public class UserController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
     public ResponseEntity<User> viewUser(@PathVariable String id) {
-        User user = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        User user = userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
@@ -81,8 +78,8 @@ public class UserController {
     public ResponseEntity<User> createUser(@RequestBody User createdUser) {
         User user = new User();
         user.setValues(createdUser);
-        repository.save(user);
-        logger.info(String.format("CreateUser %s by %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
+        userRepository.save(user);
+        logger.info(String.format("CreateUser %s %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
@@ -91,11 +88,11 @@ public class UserController {
     public ResponseEntity<List<UserInfo>> importUsers(@RequestBody List<User> createdUsers) {
         List<User> users = new ArrayList<>();
         for (User createdUser : createdUsers) {
-            User user = repository.findByUsername(createdUser.getUsername())
+            User user = userRepository.findByUsername(createdUser.getUsername())
                     .orElseGet(() -> {
                         User u = new User();
                         u.setValues(createdUser);
-                        repository.save(u);
+                        userRepository.save(u);
                         return u;
                     });
             users.add(user);
@@ -109,23 +106,23 @@ public class UserController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_USER_UPDATE)")
     public ResponseEntity<User> updateUser(@PathVariable String id, @RequestBody User updatedUser) {
-        User user = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        User user = userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!user.getRoles().contains(RolesConfig.ROLE_ADMIN) &&
                 updatedUser.getRoles().contains(RolesConfig.ROLE_ADMIN)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不允许通过API赋予管理员权限。");
         }
         user.setValues(updatedUser);
-        repository.save(user);
-        logger.info(String.format("UpdateUser %s by %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
+        userRepository.save(user);
+        logger.info(String.format("UpdateUser %s %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_USER_DELETE)")
     public ResponseEntity<Void> deleteUser(@PathVariable String id) {
-        User user = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        repository.delete(user);
-        logger.info(String.format("DeleteUser %s by %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
+        User user = userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        userRepository.delete(user);
+        logger.info(String.format("DeleteUser %s %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 

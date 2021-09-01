@@ -33,10 +33,7 @@ public class SubmissionService {
         String key = submission.getKey();
         RequestBody requestBody = RequestBody.fromInputStream(stream, size);
         s3.putObject(builder -> builder.bucket(bucket).key(key).build(), requestBody);
-
-        String exchange = AmqpConfig.directExchangeName;
-        String routingKey = AmqpConfig.gradeSubmissionQueueName;
-        rabbitTemplate.convertAndSend(exchange, routingKey, submission.getId());
+        logger.debug(String.format("Put submission file %s", key));
     }
 
     public InputStream getSubmissionFile(Submission submission) throws S3Exception {
@@ -51,6 +48,7 @@ public class SubmissionService {
         String bucket = s3Config.getBucket();
         String key = submission.getKey();
         s3.deleteObject(builder -> builder.bucket(bucket).key(key).build());
+        logger.debug(String.format("Delete submission file %s", key));
     }
 
     public void sendGradeSubmissionMessage(Submission submission) throws AmqpException {

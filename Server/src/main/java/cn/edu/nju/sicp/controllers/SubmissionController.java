@@ -295,12 +295,11 @@ public class SubmissionController {
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         try {
-            service.deleteSubmissionFile(submission);
             logger.info(String.format("DeleteSubmission %s %s", submission, user));
+            submissionRepository.delete(submission);
+            service.deleteSubmissionFile(submission);
         } catch (Exception e) {
             logger.error(String.format("%s %s %s", e.getMessage(), submission, user), e);
-        } finally {
-            submissionRepository.delete(submission);
         }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

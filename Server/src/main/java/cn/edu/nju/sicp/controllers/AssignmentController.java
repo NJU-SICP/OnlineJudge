@@ -217,13 +217,13 @@ public class AssignmentController {
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         try {
+            logger.info(String.format("DeleteAssignmentGrader %s %s", assignment, user));
             service.sendRemoveImageMessage(assignment);
             service.deleteGraderFile(assignment);
-            logger.info(String.format("DeleteAssignmentGrader %s %s", assignment, user));
+            assignment.setGrader(null);
+            repository.save(assignment);
         } catch (Exception e) {
             logger.error(String.format("%s %s %s", e.getMessage(), assignment, user), e);
-        } finally {
-            repository.save(assignment);
         }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

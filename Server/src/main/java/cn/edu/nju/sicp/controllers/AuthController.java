@@ -5,7 +5,6 @@ import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,30 +25,29 @@ import java.util.stream.Collectors;
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired
-    private UserRepository repository;
-
-    @Autowired
-    private AuthenticationManager manager;
-
-    private final JwtTokenUtils jwtTokenUtils;
+    private final UserRepository repository;
+    private final AuthenticationManager manager;
+    private final JwtTokenUtils utils;
     private final Logger logger;
 
-    public AuthController(JwtTokenUtils jwtTokenUtils) {
-        this.jwtTokenUtils = jwtTokenUtils;
+    public AuthController(UserRepository repository, AuthenticationManager manager,
+            JwtTokenUtils utils) {
+        this.repository = repository;
+        this.manager = manager;
+        this.utils = utils;
         this.logger = LoggerFactory.getLogger(AuthController.class);
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> userLogin(@RequestBody LoginRequest request) {
-        UsernamePasswordAuthenticationToken token =
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword(), new ArrayList<>());
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                request.getUsername(), request.getPassword(), new ArrayList<>());
         try {
             Authentication authentication = manager.authenticate(token);
             if (authentication.isAuthenticated()) {
                 User user = (User) authentication.getPrincipal();
                 logger.info(String.format("UserLogin platform=%s %s", request.getPlatform(), user));
-                return new ResponseEntity<>(new LoginResponse(user, jwtTokenUtils), HttpStatus.OK);
+                return new ResponseEntity<>(new LoginResponse(user, utils), HttpStatus.OK);
             } else {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -69,7 +67,7 @@ public class AuthController {
     public ResponseEntity<LoginResponse> userLoginRefresh(@RequestBody LoginRequest request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         logger.info(String.format("UserLogin refresh platform=%s %s", request.getPlatform(), user));
-        return new ResponseEntity<>(new LoginResponse(user, jwtTokenUtils), HttpStatus.OK);
+        return new ResponseEntity<>(new LoginResponse(user, utils), HttpStatus.OK);
     }
 
     @PutMapping("/password")
@@ -135,7 +133,8 @@ public class AuthController {
             username = user.getUsername();
             fullName = user.getFullName();
             roles = user.getRoles();
-            authorities = user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+            authorities = user.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
             token = utils.createJwtToken(user);
             issued = new Date();
             expires = utils.parseJwtToken(token).getExpiration();
