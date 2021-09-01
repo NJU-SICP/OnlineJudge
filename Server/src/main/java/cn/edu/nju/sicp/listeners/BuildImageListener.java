@@ -8,9 +8,11 @@ import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageResultCallback;
 import com.github.dockerjava.api.model.BuildResponseItem;
+import com.github.dockerjava.api.model.PruneType;
 import com.rabbitmq.client.Channel;
 
 import net.lingala.zip4j.ZipFile;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -27,6 +29,8 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class BuildImageListener implements ChannelAwareMessageListener {
@@ -68,6 +72,13 @@ public class BuildImageListener implements ChannelAwareMessageListener {
             Path path = Files.createTempDirectory("sicp-build-workdir");
             Path temp = Paths.get(path.toString(), "temp.zip");
 
+            if (dockerConfig.getRegistryUrl() != null) {
+                String repo = assignment.getGrader().getImageRepository();
+                repo = String.format("%s/%s", dockerConfig.getRegistryUrl(), repo);
+                assignment.getGrader().setImageRepository(repo);
+                repository.save(assignment);
+            }
+
             s3.getObject(builder -> builder.bucket(s3Config.getBucket()).key(key).build(),
                     ResponseTransformer.toFile(temp.toFile()));
             try (ZipFile zipFile = new ZipFile(temp.toFile())) {
@@ -77,9 +88,14 @@ public class BuildImageListener implements ChannelAwareMessageListener {
             logBuilder.append(String.format("Extracted dockerfile archive to %s\n", path));
 
             try {
+                docker.pruneCmd(PruneType.IMAGES).exec();
+
+                String imageTag = String.format("%s:%s",
+                        assignment.getGrader().getImageRepository(),
+                        assignment.getGrader().getImageTag());
                 String imageId = docker.buildImageCmd(path.toFile())
                         .withNoCache(true)
-                        .withTags(assignment.getGrader().getImageTags())
+                        .withTags(Set.of(imageTag))
                         .exec(new BuildImageResultCallback() {
                             @Override
                             public void onNext(BuildResponseItem item) {
@@ -91,7 +107,18 @@ public class BuildImageListener implements ChannelAwareMessageListener {
                                 }
                                 super.onNext(item);
                             }
-                        }).awaitImageId();
+                        }).awaitImageId(5, TimeUnit.MINUTES);
+                logBuilder.append(String.format("Built image %s\n", imageId));
+
+                if (dockerConfig.getRegistryUrl() != null) {
+                    docker.pushImageCmd(assignment.getGrader().getImageRepository())
+                            .withTag(assignment.getGrader().getImageTag())
+                            .start()
+                            .awaitCompletion();
+                    logBuilder.append(
+                            String.format("Pushed image to %s\n", dockerConfig.getRegistryUrl()));
+                }
+
                 Date imageBuiltAt = new Date();
                 assignment.getGrader().setImageId(imageId);
                 assignment.getGrader().setImageBuiltAt(imageBuiltAt);
@@ -99,8 +126,8 @@ public class BuildImageListener implements ChannelAwareMessageListener {
                 logBuilder.append(String.format("Succeed at %s", imageBuiltAt));
             } catch (Exception e) {
                 logger.error(String.format("%s %s", e.getMessage(), assignment), e);
-                String error =
-                        String.format("Failed: %s %s", e.getClass().getName(), e.getMessage());
+                String error = String.format("\nFailed: %s %s\n%s", e.getClass().getName(),
+                        e.getMessage(), ExceptionUtils.getStackTrace(e));
                 logBuilder.append(error);
                 assignment.getGrader().setImageBuildError(error);
             } finally {
@@ -111,7 +138,8 @@ public class BuildImageListener implements ChannelAwareMessageListener {
             }
         } catch (Exception e) {
             logger.error(String.format("%s %s", e.getMessage(), assignment), e);
-            String error = String.format("Failed: %s %s", e.getClass().getName(), e.getMessage());
+            String error = String.format("\nFailed: %s %s\n%s", e.getClass().getName(),
+                    e.getMessage(), ExceptionUtils.getStackTrace(e));
             logBuilder.append(error);
             assignment.getGrader().setImageBuildError(error);
         } finally {

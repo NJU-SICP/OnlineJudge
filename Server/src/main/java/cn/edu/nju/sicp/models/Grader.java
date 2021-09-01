@@ -1,14 +1,14 @@
 package cn.edu.nju.sicp.models;
 
 import java.util.Date;
-import java.util.Set;
 
 public class Grader {
 
     private String assignmentId;
     private String key;
-    private Set<String> imageTags;
     private String imageId;
+    private String imageRepository;
+    private String imageTag;
     private String imageBuildLog;
     private String imageBuildError;
     private Date imageBuiltAt;
@@ -29,20 +29,28 @@ public class Grader {
         this.key = key;
     }
 
-    public Set<String> getImageTags() {
-        return imageTags;
-    }
-
-    public void setImageTags(Set<String> imageTags) {
-        this.imageTags = imageTags;
-    }
-
     public String getImageId() {
         return imageId;
     }
 
     public void setImageId(String imageId) {
         this.imageId = imageId;
+    }
+
+    public String getImageRepository() {
+      return imageRepository;
+    }
+
+    public void setImageRepository(String imageRepository) {
+      this.imageRepository = imageRepository;
+    }
+    
+    public String getImageTag() {
+      return imageTag;
+    }
+
+    public void setImageTag(String imageTag) {
+      this.imageTag = imageTag;
     }
 
     public String getImageBuildLog() {
@@ -73,8 +81,9 @@ public class Grader {
     public String toString() {
         return "Grader{" +
                 "key='" + key + '\'' +
-                ", imageTags=" + imageTags +
                 ", imageId='" + imageId + '\'' +
+                ", imageRepository='" + imageRepository + '\'' +
+                ", imageTag='" + imageTag + '\'' +
                 ", imageBuildError='" + imageBuildError + '\'' +
                 ", imageBuiltAt=" + imageBuiltAt +
                 '}';

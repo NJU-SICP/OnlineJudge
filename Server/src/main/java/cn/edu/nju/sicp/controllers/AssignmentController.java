@@ -26,7 +26,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -193,7 +192,8 @@ public class AssignmentController {
         Grader grader = new Grader();
         grader.setAssignmentId(id);
         grader.setKey(String.format("graders/%s/%s.zip", assignment.getSlug(), date));
-        grader.setImageTags(Set.of(String.format("grader-%s:%s", assignment.getSlug(), date)));
+        grader.setImageRepository(String.format("sicp/%s", assignment.getSlug()));
+        grader.setImageTag(date);
         assignment.setGrader(grader);
         repository.save(assignment);
 

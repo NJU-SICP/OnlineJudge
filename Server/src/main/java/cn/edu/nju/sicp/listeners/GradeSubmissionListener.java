@@ -14,6 +14,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.WaitContainerResultCallback;
 import com.github.dockerjava.api.exception.DockerClientException;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.HostConfig;
 import com.rabbitmq.client.Channel;
@@ -24,6 +25,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.bson.json.JsonParseException;
 import org.slf4j.Logger;
@@ -92,16 +94,36 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
 
         String imageId = grader.getImageId();
         if (imageId == null) {
-            Calendar retry = Calendar.getInstance();
-            retry.add(Calendar.MINUTE, 5);
-
             Result result = new Result();
-            result.setError("管理员配置了自动测试，但测评镜像尚未编译完成或编译失败，请联系管理员或重新提交（OJ暂不支持自动重新测试）。");
-            result.setRetryAt(retry.getTime());
-            result.setGradedAt(new Date());
+            if (grader.getImageBuildError() == null) {
+                Calendar retry = Calendar.getInstance();
+                retry.add(Calendar.MINUTE, 1);
+                result.setError("此作业已配置自动测试，正在准备自动测试镜像。");
+                result.setRetryAt(retry.getTime());
+            } else {
+                result.setError("此作业已配置自动测试，但编译自动测试镜像时遇到错误，请联系管理员修复。");
+            }
             submission.setResult(result);
             submissionRepository.save(submission);
             return;
+        }
+
+        try {
+            docker.inspectImageCmd(imageId).exec();
+        } catch (NotFoundException ignored1) {
+            try {
+                docker.pullImageCmd(grader.getImageRepository())
+                        .withTag(grader.getImageTag())
+                        .start()
+                        .awaitCompletion();
+                docker.inspectImageCmd(imageId).exec();
+            } catch (Exception ignored2) {
+                Result result = new Result();
+                result.setError("此作业已配置自动测试，但无法获取自动测试镜像，请联系管理员修复。");
+                submission.setResult(result);
+                submissionRepository.save(submission);
+                return;
+            }
         }
 
         logger.info(String.format("GradeSubmission start: %s", submission));
@@ -214,29 +236,29 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             submission.setResult(result);
         } catch (JsonParseException | JsonMappingException e) {
             Result result = new Result();
-            result.setLog(String.format("%s\n\n%s: %s", logBuilder, e.getClass().getName(),
-                    e.getMessage()));
+            result.setLog(String.format("%s\n\n%s: %s\n%s", logBuilder, e.getClass().getName(),
+                    e.getMessage(), ExceptionUtils.getStackTrace(e)));
             result.setError("判题程序的返回结果无法阅读。");
             result.setGradedAt(new Date());
             submission.setResult(result);
         } catch (IOException e) {
             Result result = new Result();
-            result.setLog(String.format("%s\n\n%s: %s", logBuilder, e.getClass().getName(),
-                    e.getMessage()));
+            result.setLog(String.format("%s\n\n%s: %s\n%s", logBuilder, e.getClass().getName(),
+                    e.getMessage(), ExceptionUtils.getStackTrace(e)));
             result.setError("判题程序执行中遇到IO错误。");
             result.setGradedAt(new Date());
             submission.setResult(result);
         } catch (DockerClientException e) {
             Result result = new Result();
-            result.setLog(String.format("%s\n\n%s: %s", logBuilder, e.getClass().getName(),
-                    e.getMessage()));
+            result.setLog(String.format("%s\n\n%s: %s\n%s", logBuilder, e.getClass().getName(),
+                    e.getMessage(), ExceptionUtils.getStackTrace(e)));
             result.setError("判题程序执行中遇到Docker错误。");
             result.setGradedAt(new Date());
             submission.setResult(result);
         } catch (Exception e) {
             Result result = new Result();
-            result.setLog(String.format("%s\n\n%s: %s", logBuilder, e.getClass().getName(),
-                    e.getMessage()));
+            result.setLog(String.format("%s\n\n%s: %s\n%s", logBuilder, e.getClass().getName(),
+                    e.getMessage(), ExceptionUtils.getStackTrace(e)));
             result.setError(e.getMessage());
             result.setGradedAt(new Date());
             submission.setResult(result);
