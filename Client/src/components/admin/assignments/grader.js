@@ -3,7 +3,7 @@ import {useHistory, useParams} from "react-router-dom";
 import http from "../../../http";
 
 import {Button, Card, Descriptions, Divider, message, Popconfirm, Skeleton, Typography, Upload} from "antd";
-import {DashboardOutlined, DeleteOutlined, EditOutlined, RedoOutlined, UploadOutlined} from "@ant-design/icons";
+import {DashboardOutlined, DeleteOutlined, EditOutlined, LoadingOutlined, RedoOutlined, UploadOutlined} from "@ant-design/icons";
 import AdminSubmissionTable from "../submissions/table";
 import AdminAssignmentInfo from "./info";
 import AdminSubmissionStatistics from "../submissions/statistics";
@@ -16,16 +16,26 @@ const AdminAssignmentGrader = () => {
     const [disabled, setDisabled] = useState(null);
     const [showBuildLog, setShowBuildLog] = useState(false);
 
+    const fetchGrader = () => {
+        http()
+            .get(`/assignments/${id}/grader`)
+            .then((res) => setGrader(res.data))
+            .catch((err) => console.error(err));
+    };
+
     useEffect(() => {
         http()
             .get(`/assignments/${id}`)
             .then((res) => setAssignment({...res.data, id}))
             .catch((err) => console.error(err));
-        http()
-            .get(`/assignments/${id}/grader`)
-            .then((res) => setGrader(res.data))
-            .catch((err) => console.error(err));
+        fetchGrader();
     }, [id]);
+
+    useEffect(() => {
+        if (grader != null && (!grader.imageId || !grader.imageBuildError)) {
+            setTimeout(() => fetchGrader(), 2000);
+        }
+    }, [id, grader, fetchGrader]);
 
     const beforeUpload = (file) => {
         return window.confirm(`请确认上传的评分文件，上传后会覆盖现有文件并重新编译容器！\n作业：${assignment.title}\n文件：${file.name}`);
@@ -44,7 +54,7 @@ const AdminAssignmentGrader = () => {
                 onSuccess(res.data);
                 setGrader(res.data);
                 message.success("上传评分文件成功！");
-                if (grader !== null && grader.imageId === null) {
+                if (grader !== null) {
                     setShowBuildLog(true);
                 }
             })
@@ -107,9 +117,15 @@ const AdminAssignmentGrader = () => {
                                         ? <>
                                             {grader.imageBuildError
                                                 ? <>编译失败，请查看编译日志</>
-                                                : <>正在编译Docker镜像 {grader.imageTags}</>}
+                                                : <>
+                                                正在编译Docker镜像 <LoadingOutlined style={{marginLeft:"1em", marginRight: "1em"}} />
+                                                Tag：<code>{grader.imageRepository}:{grader.imageTag}</code>
+                                            </>}
                                         </>
-                                        : <>Docker镜像ID：{grader.imageId} {grader.imageTags}</>}
+                                        : <>
+                                            Docker镜像ID：<code>{grader.imageId}</code>；
+                                            Tag：<code>{grader.imageRepository}:{grader.imageTag}</code>
+                                        </>}
                                     <Typography.Link style={{marginLeft: 20}}
                                                      onClick={() => setShowBuildLog(!showBuildLog)}>
                                         查看编译日志
