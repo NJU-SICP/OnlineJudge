@@ -18,6 +18,10 @@ public class DockerConfig {
     private String host;
     private String tlsVerify;
     private String tlsCertPath;
+    private String registryUrl;
+    private String registryEmail;
+    private String registryUsername;
+    private String registryPassword;
 
     public String getHost() {
         return host;
@@ -43,20 +47,51 @@ public class DockerConfig {
         this.tlsCertPath = tlsCertPath;
     }
 
+    public String getRegistryUrl() {
+        return registryUrl;
+    }
+
+    public void setRegistryUrl(String registryUrl) {
+        this.registryUrl = registryUrl;
+    }
+
+    public String getRegistryEmail() {
+        return registryEmail;
+    }
+
+    public void setRegistryEmail(String registryEmail) {
+        this.registryEmail = registryEmail;
+    }
+
+    public String getRegistryUsername() {
+        return registryUsername;
+    }
+
+    public void setRegistryPassword(String registryPassword) {
+        this.registryPassword = registryPassword;
+    }
+
+    public String getRegistryPassword() {
+        return registryPassword;
+    }
+
+    public void setRegistryUsername(String registryUsername) {
+        this.registryUsername = registryUsername;
+    }
+
     @Override
     public String toString() {
-        return "DockerConfig{" +
-                "host='" + host + '\'' +
-                ", tlsVerify='" + tlsVerify + '\'' +
-                ", tlsCertPath='" + tlsCertPath + '\'' +
-                '}';
+        return String.format("DockerConfig{host='%s', tls='%s', registry='%s'}", host, tlsVerify,
+                registryUrl);
     }
 
     public DockerClient getInstance() {
-        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+        DockerClientConfig config = DefaultDockerClientConfig
+                .createDefaultConfigBuilder()
                 .withDockerHost(host)
                 .withDockerTlsVerify(tlsVerify)
                 .withDockerCertPath(tlsCertPath)
+                .withRegistryUrl(registryUrl)
                 .build();
         DockerHttpClient client = new ApacheDockerHttpClient.Builder()
                 .dockerHost(config.getDockerHost())

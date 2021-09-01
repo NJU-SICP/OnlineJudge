@@ -56,8 +56,8 @@ public class SubmissionService {
         String routingKey = AmqpConfig.gradeSubmissionQueueName;
         String payload = submission.getId();
         rabbitTemplate.convertAndSend(exchange, routingKey, payload);
-        logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s", exchange,
-                routingKey, payload));
+        logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s",
+                exchange, routingKey, payload));
     }
 
 }

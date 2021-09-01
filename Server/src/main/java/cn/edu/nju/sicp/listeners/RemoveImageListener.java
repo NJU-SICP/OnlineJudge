@@ -44,8 +44,10 @@ public class RemoveImageListener implements MessageListener {
                         docker.stopContainerCmd(container.getId()).withTimeout(0).exec();
                     } catch (NotModifiedException ignored) {
                     }
-                    docker.removeContainerCmd(container.getId()).withForce(true)
-                            .withRemoveVolumes(true).exec();
+                    docker.removeContainerCmd(container.getId())
+                            .withForce(true)
+                            .withRemoveVolumes(true)
+                            .exec();
                 }
             });
             docker.removeImageCmd(imageId).withForce(true).exec();

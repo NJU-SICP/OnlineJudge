@@ -77,7 +77,8 @@ public class BuildImageListener implements ChannelAwareMessageListener {
             logBuilder.append(String.format("Extracted dockerfile archive to %s\n", path));
 
             try {
-                String imageId = docker.buildImageCmd(path.toFile()).withNoCache(true)
+                String imageId = docker.buildImageCmd(path.toFile())
+                        .withNoCache(true)
                         .withTags(assignment.getGrader().getImageTags())
                         .exec(new BuildImageResultCallback() {
                             @Override
@@ -103,7 +104,9 @@ public class BuildImageListener implements ChannelAwareMessageListener {
                 logBuilder.append(error);
                 assignment.getGrader().setImageBuildError(error);
             } finally {
-                Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile)
+                Files.walk(path)
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
                         .forEach(File::delete);
             }
         } catch (Exception e) {

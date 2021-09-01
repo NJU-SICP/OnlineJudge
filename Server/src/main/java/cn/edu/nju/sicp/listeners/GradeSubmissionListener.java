@@ -67,8 +67,8 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
         String submissionId = new String(message.getBody());
         try {
             Submission submission = submissionRepository.findById(submissionId).orElseThrow();
-            Assignment assignment =
-                    assignmentRepository.findById(submission.getAssignmentId()).orElseThrow();
+            Assignment assignment = assignmentRepository
+                    .findById(submission.getAssignmentId()).orElseThrow();
             gradeSubmission(assignment, submission);
         } catch (NoSuchElementException ignored) {
         } finally {
@@ -123,10 +123,15 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             }
             args.add(String.format("%s.json", UUID.randomUUID()));
             String containerId = docker.createContainerCmd(imageId)
-                    .withEntrypoint(args.toArray(new String[0])).withNetworkDisabled(true)
-                    .withHostConfig(new HostConfig().withCpuPeriod(100000L).withCpuQuota(100000L)
-                            .withMemory(256L * 1024 * 1024).withMemorySwappiness(0L))
-                    .exec().getId();
+                    .withEntrypoint(args.toArray(new String[0]))
+                    .withNetworkDisabled(true)
+                    .withHostConfig(new HostConfig()
+                            .withCpuPeriod(100000L)
+                            .withCpuQuota(100000L)
+                            .withMemory(256L * 1024 * 1024)
+                            .withMemorySwappiness(0L))
+                    .exec()
+                    .getId();
             logStopWatch.accept(String.format("Created Docker container.\n   ID: %s\n   RF: %s\n",
                     containerId, args.get(args.size() - 1)));
 
@@ -201,12 +206,10 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
                     (double) stopWatch.getTime() / 1000));
             result.setLog(logBuilder.toString());
             if (result.getScore() == null) {
-                result.setScore(
-                        result.getDetails().stream().mapToInt(Result.ScoreDetail::getScore).sum());
+                result.setScore(result.getDetails().stream()
+                        .mapToInt(Result.ScoreDetail::getScore).sum());
             }
-            if (result.getGradedAt() == null) {
-                result.setGradedAt(new Date());
-            }
+            result.setGradedAt(new Date());
             submission.setGraded(true);
             submission.setResult(result);
         } catch (JsonParseException | JsonMappingException e) {

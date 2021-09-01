@@ -55,8 +55,8 @@ public class AssignmentService {
         String routingKey = AmqpConfig.buildImageQueueName;
         String payload = assignment.getId();
         rabbitTemplate.convertAndSend(exchange, routingKey, payload);
-        logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s", exchange,
-                routingKey, payload));
+        logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s",
+                exchange, routingKey, payload));
     }
 
     public void sendRemoveImageMessage(Assignment assignment) throws AmqpException {
@@ -66,8 +66,8 @@ public class AssignmentService {
             String routingKey = AmqpConfig.removeImageQueueName;
             String payload = grader.getImageId();
             rabbitTemplate.convertAndSend(exchange, routingKey, payload);
-            logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s", exchange,
-                    routingKey, payload));
+            logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s",
+                    exchange, routingKey, payload));
         }
     }
 
