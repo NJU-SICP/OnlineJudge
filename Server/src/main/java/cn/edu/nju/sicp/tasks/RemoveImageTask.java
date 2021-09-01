@@ -1,6 +1,5 @@
 package cn.edu.nju.sicp.tasks;
 
-import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.models.Grader;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.DockerClientException;

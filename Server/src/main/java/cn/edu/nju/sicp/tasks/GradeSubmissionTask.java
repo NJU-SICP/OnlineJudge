@@ -28,11 +28,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 public class GradeSubmissionTask implements Runnable, Comparable<GradeSubmissionTask> {

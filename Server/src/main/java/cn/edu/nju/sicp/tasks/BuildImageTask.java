@@ -1,6 +1,5 @@
 package cn.edu.nju.sicp.tasks;
 
-import cn.edu.nju.sicp.models.Grader;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import com.github.dockerjava.api.DockerClient;
@@ -18,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Optional;
 
 public class BuildImageTask implements Runnable {
 
@@ -53,7 +51,9 @@ public class BuildImageTask implements Runnable {
 
             s3Client.getObject(builder -> builder.bucket(s3Bucket).key(key).build(),
                     ResponseTransformer.toFile(temp.toFile()));
-            (new ZipFile(temp.toFile())).extractAll(path.toString());
+            try (ZipFile zipFile = new ZipFile(temp.toFile())) {
+                zipFile.extractAll(path.toString());
+            }
             Files.delete(temp);
             logBuilder.append(String.format("Extracted dockerfile archive to %s\n", path));
 
