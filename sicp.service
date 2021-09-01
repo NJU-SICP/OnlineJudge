@@ -1,0 +1,11 @@
+[Unit]
+Description=SICP Online Judge
+
+[Service]
+Type=Simple
+Restart=no
+WorkingDirectory=/srv/sicp/app
+ExecStart=/usr/bin/java -jar /srv/sicp/app/sicp-CURRENT.jar
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  # NoSQL Database
+  mongo:
+    image: mongo:5
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=
+      - MONGO_INITDB_ROOT_PASSWORD=
+    volumes:
+      - ./data/mongo:/data/db
+    ports:
+      - "127.0.0.1:27017:27017"
+  
+  # Object Storage
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    restart: always
+    environment:
+      - MINIO_ROOT_USER=
+      - MINIO_ROOT_PASSWORD=
+    volumes:
+      - ./data/minio:/data
+    ports:
+      - "127.0.0.1:9001:9001"
+
+  # Message broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=
+      - RABBITMQ_DEFAULT_PASS=
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+  
+  # Docker registry
+  # To restrict access to registry, refer to
+  # https://docs.docker.com/registry/deploying/#restricting-access
+  registry:
+    image: registry:2
+    restart: always
+    volumes:
+      - ./data/registry:/var/lib/registry
+    ports:
+      - "127.0.0.1:5000:5000"

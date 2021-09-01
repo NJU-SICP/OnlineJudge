@@ -8,5 +8,7 @@
 !Server
 !.vscode
 !.gitignore
+!docker-compose.yml
+!sicp.service
 !README.MD
 !LICENSE
