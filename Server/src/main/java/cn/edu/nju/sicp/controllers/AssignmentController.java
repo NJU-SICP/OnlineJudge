@@ -1,22 +1,15 @@
 package cn.edu.nju.sicp.controllers;
 
-import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
-import cn.edu.nju.sicp.configs.S3Config;
 import cn.edu.nju.sicp.dtos.AssignmentInfo;
 import cn.edu.nju.sicp.models.Grader;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
-import cn.edu.nju.sicp.tasks.BuildImageTask;
-import cn.edu.nju.sicp.tasks.RemoveImageTask;
+import cn.edu.nju.sicp.services.AssignmentService;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -29,10 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 
-import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -43,47 +33,37 @@ import java.util.stream.Collectors;
 @RequestMapping("/assignments")
 public class AssignmentController {
 
-    @Autowired
-    private AssignmentRepository repository;
-
-    @Autowired
-    private ProjectionFactory projectionFactory;
-
-    @Autowired
-    private SimpleAsyncTaskExecutor buildImageExecutor;
-
-    @Autowired
-    private SyncTaskExecutor removeImageExecutor;
-
-    @Autowired
-    private DockerConfig dockerConfig;
-
-    private final String s3Bucket;
-    private final S3Client s3Client;
+    private final AssignmentService service;
+    private final AssignmentRepository repository;
+    private final ProjectionFactory projectionFactory;
     private final Logger logger;
 
-    public AssignmentController(S3Config s3Config) {
-        this.s3Bucket = s3Config.getBucket();
-        this.s3Client = s3Config.getInstance();
+    public AssignmentController(AssignmentService service, AssignmentRepository repository,
+            ProjectionFactory projectionFactory) {
+        this.service = service;
+        this.repository = repository;
+        this.projectionFactory = projectionFactory;
         this.logger = LoggerFactory.getLogger(AssignmentController.class);
     }
 
     @GetMapping("/begun")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_BEGUN)")
-    public ResponseEntity<Page<AssignmentInfo>> listBegunAssignments(@RequestParam(required = false) Integer page,
-                                                                     @RequestParam(required = false) Integer size) {
+    public ResponseEntity<Page<AssignmentInfo>> listBegunAssignments(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
         Page<AssignmentInfo> infos = repository
-                .findAllByBeginTimeBefore(new Date(), PageRequest.of(page == null || page < 0 ? 0 : page,
-                        size == null || size < 0 ? 20 : size,
-                        Sort.by(Sort.Direction.DESC, "endTime")))
+                .findAllByBeginTimeBefore(new Date(),
+                        PageRequest.of(page == null || page < 0 ? 0 : page,
+                                size == null || size < 0 ? 20 : size,
+                                Sort.by(Sort.Direction.DESC, "endTime")))
                 .map(a -> projectionFactory.createProjection(AssignmentInfo.class, a));
         return new ResponseEntity<>(infos, HttpStatus.OK);
     }
 
     @GetMapping("/calendar")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_BEGUN)")
-    public ResponseEntity<List<AssignmentInfo>> listBegunAssignmentsByCalendar
-            (@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date date) {
+    public ResponseEntity<List<AssignmentInfo>> listBegunAssignmentsByCalendar(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
         calendar.add(Calendar.MONTH, -1);
@@ -102,8 +82,9 @@ public class AssignmentController {
 
     @GetMapping("/")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
-    public ResponseEntity<Page<AssignmentInfo>> listAssignments(@RequestParam(required = false) Integer page,
-                                                                @RequestParam(required = false) Integer size) {
+    public ResponseEntity<Page<AssignmentInfo>> listAssignments(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
         Page<AssignmentInfo> infos = repository
                 .findAll(PageRequest.of(page == null || page < 0 ? 0 : page,
                         size == null || size < 0 ? 20 : size,
@@ -115,9 +96,8 @@ public class AssignmentController {
     @GetMapping("/all")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
     public ResponseEntity<List<AssignmentInfo>> listAllAssignments() {
-        List<AssignmentInfo> infos = repository
-                .findAll(Sort.by(Sort.Direction.DESC, "endTime")).stream()
-                .map(a -> projectionFactory.createProjection(AssignmentInfo.class, a))
+        List<AssignmentInfo> infos = repository.findAll(Sort.by(Sort.Direction.DESC, "endTime"))
+                .stream().map(a -> projectionFactory.createProjection(AssignmentInfo.class, a))
                 .collect(Collectors.toList());
         return new ResponseEntity<>(infos, HttpStatus.OK);
     }
@@ -125,9 +105,10 @@ public class AssignmentController {
     @GetMapping("/search")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
     public ResponseEntity<List<AssignmentInfo>> searchAssignments(@RequestParam String prefix) {
-        List<Assignment> assignments = repository.findFirst5ByTitleStartingWithOrSlugStartingWith(prefix, prefix);
-        return new ResponseEntity<>(assignments.stream()
-                .map(assignment -> projectionFactory.createProjection(AssignmentInfo.class, assignment))
+        List<Assignment> assignments =
+                repository.findFirst5ByTitleStartingWithOrSlugStartingWith(prefix, prefix);
+        return new ResponseEntity<>(assignments.stream().map(
+                assignment -> projectionFactory.createProjection(AssignmentInfo.class, assignment))
                 .collect(Collectors.toList()), HttpStatus.OK);
     }
 
@@ -152,20 +133,20 @@ public class AssignmentController {
         Assignment assignment = new Assignment();
         assignment.setValues(createdAssignment);
         repository.save(assignment);
-        logger.info(String.format("CreateAssignment %s by %s", assignment, user));
+        logger.info(String.format("CreateAssignment %s %s", assignment, user));
         return new ResponseEntity<>(assignment, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
     public ResponseEntity<Assignment> updateAssignment(@PathVariable String id,
-                                                       @RequestBody Assignment updatedAssignment) {
+            @RequestBody Assignment updatedAssignment) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         assignment.setValues(updatedAssignment);
         repository.save(assignment);
-        logger.info(String.format("UpdateAssignment %s by %s", assignment, user));
+        logger.info(String.format("UpdateAssignment %s %s", assignment, user));
         return new ResponseEntity<>(assignment, HttpStatus.CREATED);
     }
 
@@ -176,7 +157,7 @@ public class AssignmentController {
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         repository.delete(assignment);
-        logger.info(String.format("DeleteAssignment %s by %s", assignment, user));
+        logger.info(String.format("DeleteAssignment %s %s", assignment, user));
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
@@ -190,45 +171,42 @@ public class AssignmentController {
 
     @PostMapping("/{id}/grader")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
-    public ResponseEntity<Grader> setAssignmentGrader(@PathVariable String id, @RequestBody MultipartFile file) {
+    public ResponseEntity<Grader> setAssignmentGrader(@PathVariable String id,
+            @RequestBody MultipartFile file) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (assignment.getGrader() != null) {
+            try {
+                service.sendRemoveImageMessage(assignment);
+                service.deleteGraderFile(assignment);
+            } catch (Exception e) {
+                logger.error(String.format("%s %s %s", e.getMessage(), assignment, user), e);
+            } finally {
+                assignment.setGrader(null);
+                repository.save(assignment);
+            }
+        }
 
         String date = DateFormatUtils.format(new Date(), "yyyyMMdd-HHmmss");
         Grader grader = new Grader();
         grader.setAssignmentId(id);
         grader.setKey(String.format("graders/%s/%s.zip", assignment.getSlug(), date));
         grader.setImageTags(Set.of(String.format("grader-%s:%s", assignment.getSlug(), date)));
-
-        try {
-            String key = grader.getKey();
-            software.amazon.awssdk.core.sync.RequestBody requestBody =
-                    software.amazon.awssdk.core.sync.RequestBody.fromInputStream(file.getInputStream(), file.getSize());
-            s3Client.putObject(builder -> builder.bucket(s3Bucket).key(key).build(), requestBody);
-        } catch (S3Exception | IOException e) {
-            logger.error(String.format("SetAssignmentGrader put failed: %s %s by %s",
-                    e.getMessage(), assignment, user), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        if (assignment.getGrader() != null) {
-            try {
-                String key = assignment.getGrader().getKey();
-                s3Client.deleteObject(builder -> builder.bucket(s3Bucket).key(key).build());
-                removeImageExecutor.execute(new RemoveImageTask(assignment.getGrader(), dockerConfig.getInstance()));
-            } catch (S3Exception e) {
-                logger.error(String.format("SetAssignmentGrader remove failed: %s %s by %s",
-                        e.getMessage(), assignment, user), e);
-            }
-            assignment.setGrader(null);
-        }
         assignment.setGrader(grader);
         repository.save(assignment);
 
-        logger.info(String.format("SetAssignmentGrader %s by %s", assignment, user));
-        BuildImageTask task = new BuildImageTask(assignment, repository, s3Bucket, s3Client, dockerConfig.getInstance());
-        buildImageExecutor.execute(task, AsyncTaskExecutor.TIMEOUT_IMMEDIATE);
+        try {
+            service.uploadGraderFile(assignment, grader, file.getInputStream(), file.getSize());
+            service.sendBuildImageMessage(assignment);
+            logger.info(String.format("SetAssignmentGrader %s %s", assignment, user));
+        } catch (Exception e) {
+            logger.error(String.format("%s %s %s", e.getMessage(), assignment, user), e);
+            assignment.setGrader(null);
+            repository.save(assignment);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return new ResponseEntity<>(grader, HttpStatus.CREATED);
     }
 
@@ -238,20 +216,15 @@ public class AssignmentController {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        Grader grader = assignment.getGrader();
-
         try {
-            String key = grader.getKey();
-            s3Client.deleteObject(builder -> builder.bucket(s3Bucket).key(key).build());
-            removeImageExecutor.execute(new RemoveImageTask(grader, dockerConfig.getInstance()));
-        } catch (S3Exception e) {
-            logger.error(String.format("DeleteAssignmentGrader failed: %s %s by %s",
-                    e.getMessage(), assignment, user), e);
+            service.sendRemoveImageMessage(assignment);
+            service.deleteGraderFile(assignment);
+            logger.info(String.format("DeleteAssignmentGrader %s %s", assignment, user));
+        } catch (Exception e) {
+            logger.error(String.format("%s %s %s", e.getMessage(), assignment, user), e);
+        } finally {
+            repository.save(assignment);
         }
-
-        assignment.setGrader(null);
-        repository.save(assignment);
-        logger.info(String.format("DeleteAssignmentGrader %s by %s", assignment, user));
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 

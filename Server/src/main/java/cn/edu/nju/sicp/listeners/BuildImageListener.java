@@ -1,13 +1,22 @@
-package cn.edu.nju.sicp.tasks;
+package cn.edu.nju.sicp.listeners;
 
+import cn.edu.nju.sicp.configs.DockerConfig;
+import cn.edu.nju.sicp.configs.S3Config;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageResultCallback;
 import com.github.dockerjava.api.model.BuildResponseItem;
+import com.rabbitmq.client.Channel;
+
 import net.lingala.zip4j.ZipFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener;
+import org.springframework.stereotype.Component;
+
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -17,39 +26,49 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.NoSuchElementException;
 
-public class BuildImageTask implements Runnable {
+@Component
+public class BuildImageListener implements ChannelAwareMessageListener {
 
-    private final Assignment assignment;
+    private final S3Config s3Config;
+    private final DockerConfig dockerConfig;
     private final AssignmentRepository repository;
-    private final String s3Bucket;
-    private final S3Client s3Client;
-    private final DockerClient client;
     private final Logger logger;
 
-    public BuildImageTask(Assignment assignment,
-                          AssignmentRepository repository,
-                          String s3Bucket,
-                          S3Client s3Client,
-                          DockerClient client) {
-        this.assignment = assignment;
+    public BuildImageListener(S3Config s3Config, DockerConfig dockerConfig,
+            AssignmentRepository repository) {
+        this.s3Config = s3Config;
+        this.dockerConfig = dockerConfig;
         this.repository = repository;
-        this.s3Bucket = s3Bucket;
-        this.s3Client = s3Client;
-        this.client = client;
-        this.logger = LoggerFactory.getLogger(BuildImageTask.class);
+        this.logger = LoggerFactory.getLogger(BuildImageListener.class);
     }
 
-    public void run() {
-        StringBuilder logBuilder = new StringBuilder();
-        logger.info(String.format("BuildImage start: %s", assignment));
+    @Override
+    public void onMessage(Message message, Channel channel) throws Exception {
+        logger.debug(String.format("Receive AMQP %s", message));
+        String assignmentId = new String(message.getBody());
+        try {
+            Assignment assignment = repository.findById(assignmentId).orElseThrow();
+            buildImage(assignment);
+        } catch (NoSuchElementException ignored) {
+        } finally {
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+        }
+    }
 
+    private void buildImage(Assignment assignment) {
+        S3Client s3 = s3Config.getInstance();
+        DockerClient docker = dockerConfig.getInstance();
+        StringBuilder logBuilder = new StringBuilder();
+
+        logger.info(String.format("BuildImage start: %s", assignment));
         try {
             String key = assignment.getGrader().getKey();
             Path path = Files.createTempDirectory("sicp-build-workdir");
             Path temp = Paths.get(path.toString(), "temp.zip");
 
-            s3Client.getObject(builder -> builder.bucket(s3Bucket).key(key).build(),
+            s3.getObject(builder -> builder.bucket(s3Config.getBucket()).key(key).build(),
                     ResponseTransformer.toFile(temp.toFile()));
             try (ZipFile zipFile = new ZipFile(temp.toFile())) {
                 zipFile.extractAll(path.toString());
@@ -58,8 +77,7 @@ public class BuildImageTask implements Runnable {
             logBuilder.append(String.format("Extracted dockerfile archive to %s\n", path));
 
             try {
-                String imageId = client.buildImageCmd(path.toFile())
-                        .withNoCache(true)
+                String imageId = docker.buildImageCmd(path.toFile()).withNoCache(true)
                         .withTags(assignment.getGrader().getImageTags())
                         .exec(new BuildImageResultCallback() {
                             @Override
@@ -72,35 +90,30 @@ public class BuildImageTask implements Runnable {
                                 }
                                 super.onNext(item);
                             }
-                        })
-                        .awaitImageId();
+                        }).awaitImageId();
                 Date imageBuiltAt = new Date();
                 assignment.getGrader().setImageId(imageId);
                 assignment.getGrader().setImageBuiltAt(imageBuiltAt);
-                logBuilder.append(String.format("BuildImage succeed at %s %s", imageBuiltAt, assignment));
+                logger.info(String.format("BuildImage succeed %s", assignment));
+                logBuilder.append(String.format("Succeed at %s", imageBuiltAt));
             } catch (Exception e) {
-                String error = String.format("BuildImage failed: %s %s", e.getClass().getName(), e.getMessage());
+                logger.error(String.format("%s %s", e.getMessage(), assignment), e);
+                String error =
+                        String.format("Failed: %s %s", e.getClass().getName(), e.getMessage());
                 logBuilder.append(error);
                 assignment.getGrader().setImageBuildError(error);
             } finally {
-                Files.walk(path)
-                        .sorted(Comparator.reverseOrder())
-                        .map(Path::toFile)
+                Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile)
                         .forEach(File::delete);
             }
         } catch (Exception e) {
-            String error = String.format("BuildImage failed: %s %s", e.getClass().getName(), e.getMessage());
+            logger.error(String.format("%s %s", e.getMessage(), assignment), e);
+            String error = String.format("Failed: %s %s", e.getClass().getName(), e.getMessage());
             logBuilder.append(error);
             assignment.getGrader().setImageBuildError(error);
         } finally {
             assignment.getGrader().setImageBuildLog(logBuilder.toString());
             repository.save(assignment);
-            if (assignment.getGrader().getImageBuildError() == null) {
-                logger.info(String.format("BuildImage succeed at %s %s",
-                        assignment.getGrader().getImageBuiltAt(), assignment));
-            } else {
-                logger.error(String.format("%s %s", assignment.getGrader().getImageBuildError(), assignment));
-            }
         }
     }
 
