@@ -48,7 +48,7 @@ const AdminUserEditor = () => {
     const deleteUser = () => {
         setDisabled(true);
         http()
-            .delete(`/repositories/users/${id}`)
+            .delete(`/users/${id}`)
             .then(() => {
                 message.success("删除用户成功！");
                 history.push("/admin/users");
