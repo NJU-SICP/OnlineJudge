@@ -44,8 +44,8 @@ public class SubmissionController {
     private final Logger logger;
 
     public SubmissionController(SubmissionService service, UserRepository userRepository,
-            AssignmentRepository assignmentRepository, SubmissionRepository submissionRepository,
-            TokenRepository tokenRepository, ProjectionFactory projectionFactory) {
+                                AssignmentRepository assignmentRepository, SubmissionRepository submissionRepository,
+                                TokenRepository tokenRepository, ProjectionFactory projectionFactory) {
         this.service = service;
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
@@ -85,10 +85,15 @@ public class SubmissionController {
     }
 
     @GetMapping("/count")
-    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF) or hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
     public ResponseEntity<Long> countSubmissions(@RequestParam(required = false) String userId,
-            @RequestParam(required = false) String assignmentId,
-            @RequestParam(required = false) Boolean graded) {
+                                                 @RequestParam(required = false) String assignmentId,
+                                                 @RequestParam(required = false) Boolean graded) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!user.getId().equals(userId) && user.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         Assignment assignment =
                 assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId).orElse(null);
         Submission submission = new Submission();
@@ -102,10 +107,10 @@ public class SubmissionController {
     @GetMapping("/users")
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_ALL) and hasAuthority(@Roles.OP_USER_READ)")
     public ResponseEntity<Page<UserInfo>> getUsers(@RequestParam String assignmentId,
-            @RequestParam Boolean submitted,
-            @RequestParam(defaultValue = RolesConfig.ROLE_STUDENT) String role,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size) {
+                                                   @RequestParam Boolean submitted,
+                                                   @RequestParam(defaultValue = RolesConfig.ROLE_STUDENT) String role,
+                                                   @RequestParam(required = false) Integer page,
+                                                   @RequestParam(required = false) Integer size) {
         Assignment assignment =
                 assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId).orElse(null);
         Submission submission = new Submission();
@@ -128,7 +133,7 @@ public class SubmissionController {
     @GetMapping("/users/count")
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
     public ResponseEntity<Long> countUsers(@RequestParam String assignmentId,
-            @RequestParam Boolean submitted, @RequestParam String role) {
+                                           @RequestParam Boolean submitted, @RequestParam String role) {
         Assignment assignment =
                 assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId).orElse(null);
         Submission submission = new Submission();
@@ -277,7 +282,7 @@ public class SubmissionController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
     public ResponseEntity<Submission> updateSubmission(@PathVariable String id,
-            @RequestBody Submission updatedSubmission) {
+                                                       @RequestBody Submission updatedSubmission) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
