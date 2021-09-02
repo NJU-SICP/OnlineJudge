@@ -87,6 +87,7 @@ class SubmitProtocol(models.Protocol):
                           .format(self.assignment.endpoint))
 
     def get_submit_limit(self, auth):
+        log.info("fetching assignment")
         address = '{}/{}'.format(self.ASSIGNMENT_ENDPOINT.format(server=self.assignment.server_url),
                                  self.assignment.endpoint)
         headers = {'Authorization': 'Bearer {}'.format(auth['token'])}
@@ -96,6 +97,7 @@ class SubmitProtocol(models.Protocol):
         return response.json()['submitCountLimit']
 
     def get_submit_count(self, auth):
+        log.info("fetch submission count")
         address = '{}/count'.format(self.SUBMISSION_ENDPOINT.format(server=self.assignment.server_url))
         headers = {'Authorization': 'Bearer {}'.format(auth['token'])}
         params = {
