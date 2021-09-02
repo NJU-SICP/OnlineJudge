@@ -32,7 +32,7 @@ const Welcome = () => {
                 .filter(assignment => moment(assignment.endTime).isSame(date, 'day'))
                 .map(assignment => <li key={assignment.id}>
                     <Badge status={moment().isAfter(assignment.endTime) ? "error" : "success"}
-                           text={assignment.title} onClick={() => history.push(`/assignments/${assignment.id}`)}/>
+                           text={assignment.title} onClick={() => history.push(`/assignments/${assignment.slug}`)}/>
                 </li>)}
         </ul>)
     };
