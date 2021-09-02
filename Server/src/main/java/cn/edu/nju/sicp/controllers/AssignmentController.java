@@ -38,7 +38,7 @@ public class AssignmentController {
     private final Logger logger;
 
     public AssignmentController(AssignmentService service, AssignmentRepository repository,
-            ProjectionFactory projectionFactory) {
+                                ProjectionFactory projectionFactory) {
         this.service = service;
         this.repository = repository;
         this.projectionFactory = projectionFactory;
@@ -107,20 +107,24 @@ public class AssignmentController {
         List<Assignment> assignments =
                 repository.findFirst5ByTitleStartingWithOrSlugStartingWith(prefix, prefix);
         return new ResponseEntity<>(assignments.stream().map(
-                assignment -> projectionFactory.createProjection(AssignmentInfo.class, assignment))
+                        assignment -> projectionFactory.createProjection(AssignmentInfo.class, assignment))
                 .collect(Collectors.toList()), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_BEGUN) or hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
     public ResponseEntity<Assignment> viewAssignment(@PathVariable String id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = repository.findOneByIdOrSlug(id, id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (assignment.getBeginTime() != null && (new Date()).before(assignment.getBeginTime())) {
-            if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                    .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
+            if (user.getAuthorities().stream().noneMatch(
+                    a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_READ_ALL))) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
+        }
+        if (user.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_ASSIGNMENT_UPDATE))) {
+            assignment.setGrader(null);
         }
         return new ResponseEntity<>(assignment, HttpStatus.OK);
     }
@@ -139,7 +143,7 @@ public class AssignmentController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
     public ResponseEntity<Assignment> updateAssignment(@PathVariable String id,
-            @RequestBody Assignment updatedAssignment) {
+                                                       @RequestBody Assignment updatedAssignment) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -171,7 +175,7 @@ public class AssignmentController {
     @PostMapping("/{id}/grader")
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_UPDATE)")
     public ResponseEntity<Grader> setAssignmentGrader(@PathVariable String id,
-            @RequestBody MultipartFile file) {
+                                                      @RequestBody MultipartFile file) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
