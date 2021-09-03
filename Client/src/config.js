@@ -6,8 +6,8 @@ const config = {
         auth: "sicp-auth"
     },
     baseNames: {
-        web: isDevelopment ? "" : "/oj",
-        api: isDevelopment ? "https://sicp-api.njujb.com" : "https://sicp-api.njujb.com"
+        web: isDevelopment ? "/" : "/oj",
+        api: isDevelopment ? "http://localhost:8080" : "https://sicp-api.njujb.com"
     }
 };
 

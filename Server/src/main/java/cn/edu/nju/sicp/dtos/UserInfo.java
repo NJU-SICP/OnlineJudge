@@ -22,4 +22,6 @@ public interface UserInfo {
 
     boolean isEnabled();
 
+    Long getGitlabUserId();
+
 }

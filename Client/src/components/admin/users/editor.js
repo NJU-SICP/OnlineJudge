@@ -20,7 +20,10 @@ const AdminUserEditor = () => {
             .then((res) => setUser({
                 ...res.data,
                 id: id,
-                password: ""
+                password: "",
+                gitlab: !res.data.gitlabUserId
+                    ? "未绑定"
+                    : `已绑定：UID=${res.data.gitlabUserId}，Email=${res.data.gitlabUserEmail}`
             }))
             .catch((err) => console.error(err));
     }, [id]);

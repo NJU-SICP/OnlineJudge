@@ -29,6 +29,9 @@ public class User implements UserDetails {
     private boolean enabled;
     private boolean locked;
 
+    private Long gitlabUserId;
+    private String gitlabUserEmail;
+
     public String getId() {
         return id;
     }
@@ -67,6 +70,10 @@ public class User implements UserDetails {
                 this.password = encoder.encode(password);
             }
         }
+    }
+
+    public void clearPassword() {
+        this.password = null;
     }
 
     public Collection<String> getRoles() {
@@ -128,6 +135,22 @@ public class User implements UserDetails {
         return true;
     }
 
+    public Long getGitlabUserId() {
+        return gitlabUserId;
+    }
+
+    public void setGitlabUserId(Long gitlabUserId) {
+        this.gitlabUserId = gitlabUserId;
+    }
+
+    public String getGitlabUserEmail() {
+        return gitlabUserEmail;
+    }
+
+    public void setGitlabUserEmail(String gitlabUserEmail) {
+        this.gitlabUserEmail = gitlabUserEmail;
+    }
+
     public void setValues(User o) {
         if (this.getUsername() == null) {
             this.setUsername(o.getUsername());
@@ -149,9 +172,11 @@ public class User implements UserDetails {
                 ", username='" + username + '\'' +
                 ", fullName='" + fullName + '\'' +
                 ", roles=" + roles +
+                ", expires=" + expires +
                 ", enabled=" + enabled +
                 ", locked=" + locked +
-                ", expires=" + expires +
+                ", gitlabUserId=" + gitlabUserId +
+                ", gitlabUserEmail='" + gitlabUserEmail + '\'' +
                 '}';
     }
 

@@ -1,12 +1,12 @@
-import React, {useEffect} from "react";
-import {useSelector, useDispatch} from "react-redux";
+import React, {useEffect, useState} from "react";
+import {useDispatch, useSelector} from "react-redux";
 import {Route, Redirect, Switch, useLocation} from "react-router-dom";
-import moment from "moment";
-import {set} from "../store/auth";
+import qs from "qs";
 import http from "../http";
 import config from "../config";
+import {set} from "../store/auth";
 
-import {Layout} from "antd";
+import {Layout, Typography} from "antd";
 import Header from "../components/header";
 import Menu from "../components/menu";
 import Welcome from "../components/welcome";
@@ -26,27 +26,66 @@ import AdminSubmissionTokens from "../components/admin/submissions/tokens";
 import AdminBackupList from "../components/admin/backups/list";
 import AdminScoreTable from "../components/admin/score/table";
 import BackupList from "../components/assignments/backups";
+import {LoadingOutlined} from "@ant-design/icons";
 
 const MainLayout = () => {
     const auth = useSelector((state) => state.auth.value);
     const dispatch = useDispatch();
     const location = useLocation();
 
+    const [isOAuthCallback, setOAuthCallBack] = useState(null);
+
+    // Check for oauth callback. If is callback, fetch access token and set to redux.
     useEffect(() => {
-        if (auth && moment(auth.issued).isBefore(moment().subtract(1, "hours"))) {
-            http()
-                .post(`/auth/refresh`, {
+        const params = qs.parse(window.location.search, {ignoreQueryPrefix: true});
+        const isCallBack = !!params.state && params.state.startsWith("oauth") && !!params.code;
+        setOAuthCallBack(isCallBack);
+        if (isCallBack) {
+            const parts = params.state.split("-");
+            if (parts.length !== 3) {
+                window.alert(`无效的状态参数！\n${params.state}`);
+                window.location.href = config.baseNames.web;
+            } else {
+                const url = atob(parts[1]);
+                const redirect = atob(parts[2]);
+                http().post(url, {
+                    token: params.code,
                     platform: `web-${config.version}`
                 })
-                .then((res) => dispatch(set(res.data)))
-                .catch((err) => console.error(err));
+                    .then((res) => {
+                        if (res.status === 200) {
+                            dispatch(set(res.data));
+                        }
+                        window.location.href = `${config.baseNames.web}#${redirect}`;
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                        window.location.href = `${config.baseNames.web}#/auth/login?redirect=${redirect}` +
+                            `&error=${err.response.data.message}`;
+                    });
+            }
         }
-    }, [auth, dispatch]);
+    }, [dispatch]);
 
     return (
         <Route render={() =>
             !auth
-                ? <Redirect to={{pathname: "/auth/login", search: `?redirect=${location.pathname}`}}/>
+                ? <>
+                    {isOAuthCallback != null &&
+                    <> {!isOAuthCallback
+                        ? <Redirect to={{pathname: "/auth/login", search: `?redirect=${location.pathname}`}}/>
+                        : <Layout style={{
+                            paddingTop: "10vh",
+                            paddingBottom: "10vh",
+                            paddingLeft: "10vw",
+                            paddingRight: "10vw"
+                        }}>
+                            <Typography.Title level={2}>
+                                <LoadingOutlined/> 正在登陆……
+                            </Typography.Title>
+                        </Layout>}
+                    </>}
+                </>
                 : <>
                     <Header/>
                     <Layout>

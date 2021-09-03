@@ -8,7 +8,7 @@ const AdminUserForm = ({initialValues, onFinish, disabled}) => {
         <Form initialValues={initialValues} onFinish={onFinish}>
             {!!initialValues.id &&
             <Form.Item name="id" label="用户ID">
-                <Input value={initialValues.id} disabled/>
+                <Input disabled/>
             </Form.Item>
             }
             <Form.Item name="username" label="学号" rules={[{required: true, message: "请输入学号"}]}>
@@ -38,6 +38,11 @@ const AdminUserForm = ({initialValues, onFinish, disabled}) => {
             <Form.Item name="locked" label="用户已锁定" valuePropName="checked">
                 <Switch disabled={disabled}/>
             </Form.Item>
+            {!!initialValues.id &&
+            <Form.Item name="gitlab" label="外部登录">
+                <Input disabled/>
+            </Form.Item>
+            }
             <Form.Item>
                 <Button type="primary" style={{width: "100%"}} htmlType="submit" disabled={disabled}>
                     <CheckOutlined/>提交数据

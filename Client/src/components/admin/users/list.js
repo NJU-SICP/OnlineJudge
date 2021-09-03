@@ -61,6 +61,11 @@ const AdminUserList = () => {
             }
         },
         {
+            title: "Gitlab UID",
+            key: "gitlabUserId",
+            dataIndex: "gitlabUserId"
+        },
+        {
             title: "操作",
             key: "actions",
             render: (text, record) => (<>

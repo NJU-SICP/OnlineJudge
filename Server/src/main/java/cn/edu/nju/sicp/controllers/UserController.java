@@ -70,6 +70,15 @@ public class UserController {
     @PreAuthorize("hasAuthority(@Roles.OP_USER_READ)")
     public ResponseEntity<User> viewUser(@PathVariable String id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        user.clearPassword();
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @GetMapping("/self")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<User> viewSelf() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        user.clearPassword();
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
@@ -79,6 +88,7 @@ public class UserController {
         User user = new User();
         user.setValues(createdUser);
         userRepository.save(user);
+        user.clearPassword();
         logger.info(String.format("CreateUser %s %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
@@ -113,6 +123,7 @@ public class UserController {
         }
         user.setValues(updatedUser);
         userRepository.save(user);
+        user.clearPassword();
         logger.info(String.format("UpdateUser %s %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
         return new ResponseEntity<>(user, HttpStatus.OK);
     }

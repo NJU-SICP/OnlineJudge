@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
@@ -8,7 +8,14 @@ import http from "../http";
 import config from "../config";
 
 import {Layout, Form, Input, Button, Alert, Typography, Divider, Row, Col, List} from "antd";
-import {CloseOutlined, CopyrightOutlined, HomeOutlined, LinkOutlined, UserOutlined} from "@ant-design/icons";
+import {
+    CloseOutlined,
+    CopyrightOutlined,
+    GitlabOutlined,
+    HomeOutlined,
+    LinkOutlined,
+    UserOutlined
+} from "@ant-design/icons";
 import Time from "../components/time";
 
 const AuthLayout = () => {
@@ -18,6 +25,13 @@ const AuthLayout = () => {
     const dispatch = useDispatch();
     const [disabled, setDisabled] = useState(false);
     const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const error = qs.parse(location.search, {ignoreQueryPrefix: true}).error;
+        if (!!error) {
+            setError(error);
+        }
+    }, [location.search]);
 
     const attemptLogin = (credentials) => {
         setDisabled(true);
@@ -30,7 +44,7 @@ const AuthLayout = () => {
             })
             .then((res) => {
                 dispatch(set(res.data));
-                onSuccessfulLogin();
+                history.push(qs.parse(location.search, {ignoreQueryPrefix: true}).redirect ?? "/");
             })
             .catch((err) => {
                 console.error(err);
@@ -45,23 +59,24 @@ const AuthLayout = () => {
             });
     };
 
-    const onSuccessfulLogin = useCallback(() => {
-        const to = qs.parse(location.search, {ignoreQueryPrefix: true}).redirect;
-        if (to != null) {
-            history.push(to);
-        } else {
-            history.push("/");
-        }
-    }, [history, location.search]);
-
     useEffect(() => {
         if (!auth) return;
         const now = moment();
         const exp = moment(auth.expires);
         if (now.isBefore(exp)) {
-            onSuccessfulLogin();
+            const params = qs.parse(location.search, {ignoreQueryPrefix: true});
+            history.push({
+                pathname: params.redirect ?? "/",
+                search: params.error ? `?error=${params.error}` : null
+            });
         }
-    }, [auth, onSuccessfulLogin]);
+    }, [auth, history, location.search]);
+
+    const loginWithGitlab = () => {
+        const redirect = qs.parse(location.search, {ignoreQueryPrefix: true}).redirect ?? "/";
+        const state = `oauth-${btoa("/auth/gitlab/login/callback")}-${btoa(redirect)}`;
+        window.location.href = `${config.baseNames.api}/auth/gitlab/login?state=${state}`;
+    };
 
     return (
         <Layout style={{paddingTop: "10vh", paddingBottom: "10vh", paddingLeft: "10vw", paddingRight: "10vw"}}>
@@ -107,6 +122,12 @@ const AuthLayout = () => {
                             </Button>
                         </Form.Item>
                     </Form>
+                    <p>
+                        其他登录方式：
+                        <Button type="ghost" size="large" onClick={() => loginWithGitlab()}>
+                            <GitlabOutlined/> 使用南京大学代码托管服务登录
+                        </Button>
+                    </p>
                 </Col>
                 <Col xs={24} md={8}>
                     <Typography.Title level={2}>

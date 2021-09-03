@@ -25,7 +25,7 @@ ReactDOM.render(
                 <HashRouter>
                     <Layout style={{minHeight: "100vh"}}>
                         <Switch>
-                            <Route path="/auth/login" children={<AuthLayout/>}/>
+                            <Route path="/auth/login" exact children={<AuthLayout/>}/>
                             <Route path="/" children={<MainLayout/>}/>
                         </Switch>
                     </Layout>
