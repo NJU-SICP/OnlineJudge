@@ -38,6 +38,11 @@ public class GitlabOAuth2Controller {
         return new ResponseEntity<>(service.getJwtToken(user), HttpStatus.OK);
     }
 
+    @GetMapping("/login/success")
+    public ResponseEntity<String> success() {
+        return new ResponseEntity<>("登陆成功", HttpStatus.OK);
+    }
+
     @PostMapping("/link")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> link(@RequestBody LoginDto dto) {

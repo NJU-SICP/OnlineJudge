@@ -2,7 +2,6 @@ package cn.edu.nju.sicp.security;
 
 import cn.edu.nju.sicp.security.jwt.JwtToken;
 import cn.edu.nju.sicp.models.User;
-import com.nimbusds.oauth2.sdk.auth.JWTAuthentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

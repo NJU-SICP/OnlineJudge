@@ -4,15 +4,19 @@
 from datetime import datetime
 from getpass import getpass
 import hashlib
+import http.server
 import logging
 import pickle
 import requests
+from urllib.parse import urlencode, urlparse, parse_qsl
 import time
+import webbrowser
 
 from client import __version__
 from client.exceptions import AuthenticationException, OAuthException
 from client.utils.config import (AUTH_FILE,
                                  create_config_directory)
+from client.utils.printer import print_error
 from client.utils import format, network
 
 log = logging.getLogger(__name__)
@@ -20,6 +24,9 @@ log = logging.getLogger(__name__)
 TIMEOUT = 10
 LOGIN_ENDPOINT = '/auth/login'
 REFRESH_ENDPOINT = '/auth/refresh'
+GITLAB_ENDPOINT_1 = '/auth/gitlab/login'
+GITLAB_ENDPOINT_2 = '/auth/gitlab/login/callback'
+GITLAB_ENDPOINT_3 = '/auth/gitlab/login/success'
 
 
 def post(server, endpoint, json, headers):
@@ -49,6 +56,15 @@ def make_code_post(server, username, password):
         'platform': 'ok-{}'.format(__version__)
     }
     return post(server, LOGIN_ENDPOINT, json, None)
+
+
+def make_code_post_via_gitlab(server, code):
+    json = {
+        'code': code,
+        'state': 'ok',
+        'platform': 'ok-{}'.format(__version__)
+    }
+    return post(server, GITLAB_ENDPOINT_2, json, None)
 
 
 def make_refresh_post(server, auth):
@@ -125,7 +141,10 @@ def authenticate(cmd_args, force=False, nointeract=False):
         if nointeract:
             return auth
         print('Performing authentication')
-        auth = perform_auth(get_code, cmd_args)
+        if cmd_args.oauth_gitlab:
+            auth = perform_auth(get_code_via_gitlab, cmd_args)
+        else:
+            auth = perform_auth(get_code, cmd_args)
     log.debug('Authenticated with {}'.format(auth))
 
     return auth
@@ -142,8 +161,55 @@ def get_code(cmd_args):
     return make_code_post(server, username, password)
 
 
-def get_code_via_browser(cmd_args, redirect_uri, host_name, port_number, endpoint):
-    raise NotImplemented
+def get_code_via_gitlab(cmd_args):
+    server = server_url(cmd_args)
+    code_response = None
+    oauth_exception = None
+
+    class CodeHandler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            """Respond to the GET request made by the OAuth"""
+            nonlocal code_response, oauth_exception
+            log.debug('Received GET request for %s', self.path)
+            path = urlparse(self.path)
+            qs = {k: v for k, v in parse_qsl(path.query)}
+            code = qs.get('code')
+            if code:
+                try:
+                    code_response = make_code_post_via_gitlab(server, code)
+                except OAuthException as e:
+                    oauth_exception = e
+            else:
+                oauth_exception = OAuthException(
+                    error=qs.get('error', 'Unknown Error'),
+                    error_description = qs.get('error_description', ''))
+
+            if oauth_exception:
+                print_error('{}\n{}'.format(oauth_exception.error, server, ERROR_ENDPOINT, urlencode(params)))
+            else:
+                self.send_response(302)
+                self.send_header("Location", '{}{}'.format(server, GITLAB_ENDPOINT_3))
+                self.end_headers()
+
+        def log_message(self, format, *args):
+            return
+
+    host_name = "localhost"
+    port_number = 2830  # SICP
+    server_address = (host_name, port_number)
+    log.info("Authentication server running on {}:{}".format(host_name, port_number))
+
+    assert webbrowser.open_new('{}/auth/gitlab/login?state=ok'.format(server))
+    try:
+        httpd = http.server.HTTPServer(server_address, CodeHandler)
+        httpd.handle_request()
+    except OSError as e:
+        log.warning("HTTP Server Err {}".format(server_address), exc_info=True)
+        raise
+
+    if oauth_exception:
+        raise oauth_exception
+    return code_response
 
 
 def display_student_info(cmd_args, auth):

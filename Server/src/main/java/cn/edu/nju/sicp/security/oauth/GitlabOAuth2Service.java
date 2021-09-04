@@ -52,7 +52,7 @@ public class GitlabOAuth2Service {
                     .authorizationCode()
                     .authorizationUri(registration.getProviderDetails().getAuthorizationUri())
                     .clientId(registration.getClientId())
-                    .redirectUri(registration.getRedirectUri())
+                    .redirectUri(state.startsWith("ok") ? "http://localhost:2830" : registration.getRedirectUri())
                     .scopes(registration.getScopes())
                     .state(state)
                     .build();
@@ -69,19 +69,17 @@ public class GitlabOAuth2Service {
         } else if (state == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "参数错误：授权状态不能为空。");
         }
+        String redirectUri = state.startsWith("ok") ? "http://localhost:2830" : registration.getRedirectUri();
         OAuth2AuthorizationRequest request = OAuth2AuthorizationRequest
                 .authorizationCode()
                 .authorizationUri(registration.getProviderDetails().getAuthorizationUri())
                 .clientId(registration.getClientId())
-                .redirectUri(registration.getRedirectUri())
+                .redirectUri(redirectUri)
                 .scopes(registration.getScopes())
                 .state(state)
                 .build();
         OAuth2AuthorizationResponse response = OAuth2AuthorizationResponse
-                .success(code)
-                .redirectUri(registration.getRedirectUri())
-                .state(state)
-                .build();
+                .success(code).redirectUri(redirectUri).state(state).build();
         try {
             OAuth2AuthorizationExchange exchange = new OAuth2AuthorizationExchange(request, response);
             OAuth2AuthorizationCodeAuthenticationToken token =
