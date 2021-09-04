@@ -8,6 +8,7 @@ import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.configs.S3Config;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.UserRepository;
+import com.github.dockerjava.api.model.Info;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -87,7 +88,8 @@ public class SicpApplication {
         private void applyDockerConfig() {
             logger.info(String.format("Applying docker config %s", dockerConfig));
             try {
-                dockerConfig.getInstance().pingCmd().exec();
+                Info info = dockerConfig.getInstance().infoCmd().exec();
+                logger.info(String.format("Connected to Docker %s on %s", info.getServerVersion(), info.getOperatingSystem()));
             } catch (Exception e) {
                 logger.error(String.format("Cannot apply: %s", e.getMessage()), e);
                 throw e;

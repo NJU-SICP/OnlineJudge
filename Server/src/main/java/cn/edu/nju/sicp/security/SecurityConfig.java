@@ -1,8 +1,8 @@
-package cn.edu.nju.sicp.configs;
+package cn.edu.nju.sicp.security;
 
-import cn.edu.nju.sicp.jwt.JwtAuthorizationFilter;
-import cn.edu.nju.sicp.jwt.JwtTokenUtils;
-import cn.edu.nju.sicp.services.UserDetailsServiceImpl;
+import cn.edu.nju.sicp.security.jwt.JwtAuthorizationFilter;
+import cn.edu.nju.sicp.security.jwt.JwtTokenUtils;
+import cn.edu.nju.sicp.security.services.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthorizationCodeAuthenticationProvider;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -26,20 +27,17 @@ import java.util.Collections;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserDetailsService service;
+    private final OAuth2AuthorizationCodeAuthenticationProvider gitlabOAuth2AuthenticationProvider;
 
-    public SecurityConfig(UserDetailsServiceImpl service) {
+    public SecurityConfig(UserDetailsServiceImpl service,
+                          OAuth2AuthorizationCodeAuthenticationProvider gitlabOAuth2AuthenticationProvider) {
         this.service = service;
+        this.gitlabOAuth2AuthenticationProvider = gitlabOAuth2AuthenticationProvider;
     }
 
     @Bean
     public BCryptPasswordEncoder encoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
-    @Override
-    public AuthenticationManager authenticationManager() throws Exception {
-        return super.authenticationManager();
     }
 
     @Bean
@@ -59,9 +57,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return source;
     }
 
+    @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
+    @Override
+    public AuthenticationManager authenticationManager() throws Exception {
+        return super.authenticationManager();
+    }
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(service).passwordEncoder(encoder());
+        auth.authenticationProvider(gitlabOAuth2AuthenticationProvider)
+                .userDetailsService(service)
+                .passwordEncoder(encoder());
     }
 
     @Override

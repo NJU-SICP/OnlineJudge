@@ -1,11 +1,11 @@
-package cn.edu.nju.sicp.configs;
+package cn.edu.nju.sicp.security.oauth;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(value = "spring.application.oauth")
-public class OAuthConfig {
+@ConfigurationProperties(value = "spring.application.oauth2.gitlab")
+public class GitlabOAuth2Config {
 
     private String endpoint;
     private String clientId;

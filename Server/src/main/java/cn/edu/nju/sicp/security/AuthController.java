@@ -1,13 +1,14 @@
-package cn.edu.nju.sicp.controllers;
+package cn.edu.nju.sicp.security;
 
-import cn.edu.nju.sicp.jwt.JwtAuthentication;
+import cn.edu.nju.sicp.security.jwt.JwtToken;
 import cn.edu.nju.sicp.models.User;
-import cn.edu.nju.sicp.services.AuthService;
+import com.nimbusds.oauth2.sdk.auth.JWTAuthentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,15 +26,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtAuthentication> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<JwtToken> login(@RequestBody LoginRequest request) {
         String username = request.getUsername();
         String password = request.getPassword();
         String platform = request.getPlatform();
         try {
-            JwtAuthentication authentication = service.authenticate(username, password);
-            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Authentication authentication = service.authenticate(username, password);
+            User user = (User) authentication.getPrincipal();
             logger.info(String.format("Login type=password platform=%s %s", platform, user));
-            return new ResponseEntity<>(authentication, HttpStatus.OK);
+            return new ResponseEntity<>(service.getJwtToken(user), HttpStatus.OK);
         } catch (ResponseStatusException e) {
             logger.info(String.format("Login type=password platform=%s failed={%s} username={%s}",
                     request.getPlatform(), e.getMessage(), request.getUsername()));
@@ -43,10 +44,10 @@ public class AuthController {
 
     @PostMapping("/refresh")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<JwtAuthentication> refresh(@RequestBody LoginRequest request) {
+    public ResponseEntity<JwtToken> refresh(@RequestBody LoginRequest request) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         logger.info(String.format("Refresh platform=%s %s", request.getPlatform(), user));
-        return new ResponseEntity<>(service.getJwtAuthentication(user), HttpStatus.OK);
+        return new ResponseEntity<>(service.getJwtToken(user), HttpStatus.OK);
     }
 
     @PutMapping("/password")

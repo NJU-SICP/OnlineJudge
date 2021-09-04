@@ -1,9 +1,9 @@
-package cn.edu.nju.sicp.jwt;
+package cn.edu.nju.sicp.security.jwt;
 
 import java.util.Collection;
 import java.util.Date;
 
-public class JwtAuthentication {
+public class JwtToken {
 
     private String userId;
     private String username;

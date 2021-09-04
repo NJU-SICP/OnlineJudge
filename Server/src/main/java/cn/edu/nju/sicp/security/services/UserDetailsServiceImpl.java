@@ -1,4 +1,4 @@
-package cn.edu.nju.sicp.services;
+package cn.edu.nju.sicp.security.services;
 
 import cn.edu.nju.sicp.repositories.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;

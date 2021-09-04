@@ -26,8 +26,8 @@ public class User implements UserDetails {
     private String password;
     private Collection<String> roles;
     private Date expires;
-    private boolean enabled;
-    private boolean locked;
+    private Boolean enabled;
+    private Boolean locked;
 
     private Long gitlabUserId;
     private String gitlabUserEmail;
@@ -110,23 +110,23 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return enabled != null && enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return !locked;
+        return !isLocked();
     }
 
     public boolean isLocked() {
-        return locked;
+        return locked == null || locked;
     }
 
-    public void setLocked(boolean locked) {
+    public void setLocked(Boolean locked) {
         this.locked = locked;
     }
 

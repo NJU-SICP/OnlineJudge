@@ -1,4 +1,4 @@
-package cn.edu.nju.sicp.jwt;
+package cn.edu.nju.sicp.security.jwt;
 
 import cn.edu.nju.sicp.models.User;
 import io.jsonwebtoken.*;

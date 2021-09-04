@@ -1,4 +1,4 @@
-package cn.edu.nju.sicp.jwt;
+package cn.edu.nju.sicp.security.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
