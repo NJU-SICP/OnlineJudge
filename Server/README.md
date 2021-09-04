@@ -21,3 +21,8 @@ Docker默认使用Unix文件监听请求，可以通过修改systemd配置的方
 1. 使用`python3 -m client.cli.publish`生成可执行文件
 2. 将`ok`放置在`resources/static/misc/ok-client`文件夹中，改名为版本号
 3. 切记要修改`MiscController`中的Ok版本号
+
+## OAuth配置方式
+
+在南京大学代码托管服务的个人设置页面，Applications中添加一个应用，然后填入配置文件。
+需要勾选`read_user`权限；回调地址有两个，分别是`https://nju-sicp.bitbucket.io/oj/`和`http://localhost:2830`。
