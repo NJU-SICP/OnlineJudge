@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {Button, Col, Drawer, Row, Statistic, Typography} from "antd";
 import http from "../../../http";
 import AdminSubmissionUserList from "./userlist";
+import Download from "../../download";
 
 const AdminSubmissionStatistics = ({assignment}) => {
     const [count, setCount] = useState(null);
@@ -73,7 +74,14 @@ const AdminSubmissionStatistics = ({assignment}) => {
     }, [assignment]);
 
     return (<>
-        <Typography.Title level={3}>提交信息</Typography.Title>
+        <Typography.Title level={3}>
+            提交信息
+            <div style={{float: "right"}}>
+                <Download link={`/submissions/export?assignmentId=${assignment.id}`}
+                          name={`submissions-export-${assignment.slug}.zip`} title={"导出全部提交"} type="primary"
+                          size="normal"/>
+            </div>
+        </Typography.Title>
         <Row>
             <Col span={8}>
                 <Statistic title="已评分 / 提交总数量（所有用户）" loading={count === null || graded === null}
