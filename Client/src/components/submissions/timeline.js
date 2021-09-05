@@ -1,6 +1,6 @@
 import React from "react";
 import moment from "moment";
-import {Timeline} from "antd";
+import {Timeline, Typography} from "antd";
 
 const SubmissionTimeline = ({id, submission}) => {
     return (
@@ -13,7 +13,10 @@ const SubmissionTimeline = ({id, submission}) => {
             <Timeline.Item>
                 SICP Online Judge 在
                 {moment(submission.createdAt).format(" YYYY-MM-DD HH:mm:ss ")}
-                收到提交，编号为 <code>{id.substr(-8)}</code>。
+                收到提交，编号为{" "}
+                <Typography.Text code copyable={{tooltips: "复制提交ID", text: id}}>
+                    {id.substr(-8)}
+                </Typography.Text>。
             </Timeline.Item>
             {submission.result && <>
                 {submission.result.error
