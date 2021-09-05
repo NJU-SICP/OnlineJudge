@@ -3,7 +3,7 @@ import {useHistory, useLocation} from "react-router-dom";
 import moment from "moment";
 import http from "../../http";
 
-import {Affix, Card, Col, Pagination, Row, Skeleton, Table, Typography} from "antd";
+import {Card, Col, Pagination, Row, Skeleton, Table, Typography} from "antd";
 import {ArrowRightOutlined, LoadingOutlined} from "@ant-design/icons";
 import SubmissionTimeline from "./timeline";
 import Download from "../download";
@@ -32,14 +32,13 @@ const SubmissionTable = ({assignment, page}) => {
     }, [selected, fetchSubmission]);
 
     useEffect(() => {
-        if (selected && submission && submission.result === null) {
-            const selectedId = selected.id;
-            setTimeout(() => {
-                if (selected.id === selectedId) {
-                    fetchSubmission();
-                }
-            }, 3000);
+        let timeout = null;
+        if (selected && submission) {
+            if (submission.result === null || submission.result.retryAt != null) {
+                timeout = setTimeout(fetchSubmission, 3000);
+            }
         }
+        return () => clearTimeout(timeout);
     }, [selected, submission, fetchSubmission]);
 
     const columns = [
@@ -74,8 +73,10 @@ const SubmissionTable = ({assignment, page}) => {
                     return <LoadingOutlined/>;
                 } else if (result.error === null) {
                     return result?.score;
+                } else if (result.retryAt != null) {
+                    return <LoadingOutlined/>;
                 } else {
-                    return <Typography.Text type="danger">评分失败</Typography.Text>;
+                    return <Typography.Text type="secondary">评分失败</Typography.Text>;
                 }
             }
         },
@@ -108,17 +109,18 @@ const SubmissionTable = ({assignment, page}) => {
                         <Col span={15}>
                             {!selected
                                 ? <p style={{margin: "1em"}}>在左侧列表中点击某次提交来查看详情。</p>
-                                : <Affix offsetTop={10}>
+                                : <>
                                     {!submission
                                         ? <Skeleton/>
                                         : <Card
                                             title={`提交 #${selected.index}`}
                                             extra={
-                                                <Download link={`/submissions/${selected.id}/download`} name={submission.key}/>
-                                        }>
+                                                <Download link={`/submissions/${selected.id}/download`}
+                                                          name={submission.key}/>
+                                            }>
                                             <SubmissionTimeline id={selected.id} submission={submission}/>
-                                    </Card>}
-                                </Affix>}
+                                        </Card>}
+                                </>}
                         </Col>
                     </Row>
                 </>}

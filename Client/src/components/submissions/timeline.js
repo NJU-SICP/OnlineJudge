@@ -24,10 +24,16 @@ const SubmissionTimeline = ({id, submission}) => {
                             <pre style={{whiteSpace: "pre-wrap"}}><code>{submission.result.log}</code></pre>
                         </Timeline.Item>
                         }
-                        <Timeline.Item color="red" className="ant-timeline-item-last">
-                            自动评分遇到错误：{submission.result.error}<br/>
-                            错误报告时间：{moment(submission.result.gradedAt).format(" YYYY-MM-DD HH:mm:ss ")}，请与管理员联系进行排查。
-                        </Timeline.Item>
+                        {submission.result.retryAt
+                            ? <Timeline.Item className="ant-timeline-item-last">
+                                自动评分遇到错误：{submission.result.error}<br/>
+                                评分系统将会在{moment(submission.result.retryAt).format(" YYYY-MM-DD HH:mm:ss ")}后重新尝试评分。
+                            </Timeline.Item>
+                            :
+                            <Timeline.Item color="red" className="ant-timeline-item-last">
+                                自动评分遇到错误：{submission.result.error}<br/>
+                                错误报告时间：{moment(submission.result.gradedAt).format(" YYYY-MM-DD HH:mm:ss ")}，请与管理员联系进行排查。
+                            </Timeline.Item>}
                     </>
                     : <>
                         {submission.result.score !== null

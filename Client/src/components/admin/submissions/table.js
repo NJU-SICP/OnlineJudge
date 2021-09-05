@@ -6,7 +6,6 @@ import moment from "moment";
 import http from "../../../http";
 
 import {
-    Affix,
     Button,
     Card,
     Checkbox,
@@ -210,7 +209,7 @@ const AdminSubmissionTable = ({assignment}) => {
                     <Col md={24} xl={15}>
                         {!selected
                             ? <p style={{margin: "1em"}}>在左侧列表中点击某次提交来查看详情。</p>
-                            : <Affix offsetTop={10}>
+                            : <>
                                 {!submission
                                     ? <Skeleton/>
                                     : <Card title={`提交 #${selected.id.substr(-8)}`}
@@ -222,7 +221,8 @@ const AdminSubmissionTable = ({assignment}) => {
                                                     </Button>
                                                 </Popconfirm>
                                                 }
-                                                <Download link={`/submissions/${selected.id}/download`} name={submission.key}/>
+                                                <Download link={`/submissions/${selected.id}/download`}
+                                                          name={submission.key}/>
                                             </>}>
                                         <SubmissionTimeline id={selected.id} submission={submission}/>
                                         {assignment.grader === null &&
@@ -235,7 +235,7 @@ const AdminSubmissionTable = ({assignment}) => {
                                         </Card>
                                         }
                                     </Card>}
-                            </Affix>}
+                            </>}
                     </Col>
                 </Row>
             }

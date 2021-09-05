@@ -68,7 +68,8 @@ const AssignmentView = () => {
 
     useEffect(fetchSubmissions, [id, auth, location.search, fetchSubmissions]);
     useEffect(() => {
-        if (submissionsPage && submissionsPage.content.filter(s => s.result === null).length > 0) {
+        if (submissionsPage &&
+            submissionsPage.content.filter(s => s.result === null || s.result.retryAt != null).length > 0) {
             setTimeout(fetchSubmissions, 3000);
         }
     }, [submissionsPage, fetchSubmissions]);
