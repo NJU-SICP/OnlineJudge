@@ -55,7 +55,8 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
     private final Logger logger;
 
     public GradeSubmissionListener(S3Config s3Config, DockerConfig dockerConfig,
-            AssignmentRepository assignmentRepository, SubmissionRepository submissionRepository) {
+                                   AssignmentRepository assignmentRepository,
+                                   SubmissionRepository submissionRepository) {
         this.s3Config = s3Config;
         this.dockerConfig = dockerConfig;
         this.assignmentRepository = assignmentRepository;
@@ -87,6 +88,7 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
         if (grader == null) {
             Result result = new Result();
             result.setMessage("此作业未配置自动测试，请等待管理员手动评分。");
+            result.setGradedAt(new Date());
             submission.setResult(result);
             submissionRepository.save(submission);
             return;
@@ -98,10 +100,14 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             if (grader.getImageBuildError() == null) {
                 Calendar retry = Calendar.getInstance();
                 retry.add(Calendar.MINUTE, 1);
-                result.setError("此作业已配置自动测试，正在准备自动测试镜像。");
+                retry.set(Calendar.SECOND, 0);
+                retry.set(Calendar.MILLISECOND, 0);
+                result.setError("此作业已配置自动测试，正在准备自动测试镜像，稍后将进行测试。");
                 result.setRetryAt(retry.getTime());
+                result.setGradedAt(new Date());
             } else {
                 result.setError("此作业已配置自动测试，但编译自动测试镜像时遇到错误，请联系管理员修复。");
+                result.setGradedAt(new Date());
             }
             submission.setResult(result);
             submissionRepository.save(submission);
@@ -120,6 +126,7 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             } catch (Exception ignored2) {
                 Result result = new Result();
                 result.setError("此作业已配置自动测试，但无法获取自动测试镜像，请联系管理员修复。");
+                result.setGradedAt(new Date());
                 submission.setResult(result);
                 submissionRepository.save(submission);
                 return;
@@ -129,10 +136,8 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
         logger.info(String.format("GradeSubmission start: %s", submission));
         StringBuilder logBuilder = new StringBuilder();
         StopWatch stopWatch = new StopWatch();
-        Consumer<String> logStopWatch = (message) -> {
-            logBuilder.append(
-                    String.format("%05.2fs %s", (double) stopWatch.getTime() / 1000, message));
-        };
+        Consumer<String> logStopWatch = (message) -> logBuilder.append(
+                String.format("%05.2fs %s", (double) stopWatch.getTime() / 1000, message));
 
         try {
             stopWatch.start();
@@ -161,10 +166,10 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             Path json = Files.createTempFile("grader-json", ".json");
             String key = submission.getKey();
             try (FileOutputStream tempOutputStream = new FileOutputStream(temp.toFile());
-                    ArchiveOutputStream tarOutputStream =
-                            new TarArchiveOutputStream(tempOutputStream);
-                    InputStream s3Stream =
-                            s3.getObject(builder -> builder.bucket(s3Bucket).key(key).build())) {
+                 ArchiveOutputStream tarOutputStream =
+                         new TarArchiveOutputStream(tempOutputStream);
+                 InputStream s3Stream =
+                         s3.getObject(builder -> builder.bucket(s3Bucket).key(key).build())) {
                 if (Objects.equals(assignment.getSubmitFileType(), ".zip")) {
                     // zip archive
                     try (ZipInputStream zipInputStream = new ZipInputStream(s3Stream)) {
@@ -204,12 +209,12 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
 
             try (InputStream resultStream = docker.copyArchiveFromContainerCmd(containerId,
                     String.format("/workdir/%s", args.get(args.size() - 1))).exec();
-                    TarArchiveInputStream tarInputStream =
-                            new TarArchiveInputStream(resultStream)) {
+                 TarArchiveInputStream tarInputStream =
+                         new TarArchiveInputStream(resultStream)) {
                 logBuilder.append(String.format("%05.2fs Result file retrieved from container.\n",
                         (double) stopWatch.getTime() / 1000));
                 docker.removeContainerCmd(containerId).exec(); // remove container after getting
-                                                               // data
+                // data
                 logBuilder.append(String.format("%05.2fs Docker container removed.\n",
                         (double) stopWatch.getTime() / 1000));
                 ArchiveEntry entry = tarInputStream.getNextEntry();

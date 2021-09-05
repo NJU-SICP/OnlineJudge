@@ -1,7 +1,5 @@
 package cn.edu.nju.sicp;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
 import cn.edu.nju.sicp.configs.AdminConfig;
 import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
@@ -15,6 +13,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
@@ -23,6 +22,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import java.util.List;
 
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
+@EnableScheduling
 public class SicpApplication {
 
     public static void main(String[] args) {
@@ -49,9 +49,6 @@ public class SicpApplication {
 
         @Override
         public void run(String... args) {
-            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-            loggerContext.getLogger("org.mongodb.driver").setLevel(Level.ERROR);
-
             applyAdminConfig();
             applyDockerConfig();
             applyS3Config();

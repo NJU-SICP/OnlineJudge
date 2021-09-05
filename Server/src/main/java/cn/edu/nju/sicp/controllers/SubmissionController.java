@@ -197,9 +197,12 @@ public class SubmissionController {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!submission.getUserId().equals(user.getId()) && user.getAuthorities().stream()
+        if (user.getAuthorities().stream()
                 .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            if (!submission.getUserId().equals(user.getId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+            submission.getResult().setLog(null); // hide log from students
         }
         return new ResponseEntity<>(submission, HttpStatus.OK);
     }
@@ -337,16 +340,9 @@ public class SubmissionController {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         List<Submission> submissions = submissionRepository.findAll(Example.of(example));
+        logger.info(String.format("RejudgeSubmissions size=%d criteria=%s %s", submissions.size(), example, user));
         for (Submission submission : submissions) {
-            submission.setGraded(false);
-            submission.setResult(null);
-            submissionRepository.save(submission);
-            try {
-                service.sendGradeSubmissionMessage(submission);
-                logger.info(String.format("RejudgeSubmission %s %s", submission, user));
-            } catch (Exception e) {
-                logger.error(String.format("%s %s %s", e.getMessage(), submission, user), e);
-            }
+            service.rejudgeSubmission(submission);
         }
 
         List<SubmissionInfo> infos = submissions.stream()

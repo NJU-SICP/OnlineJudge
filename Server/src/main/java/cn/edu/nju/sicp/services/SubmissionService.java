@@ -1,10 +1,15 @@
 package cn.edu.nju.sicp.services;
 
 import java.io.InputStream;
+import java.util.Date;
+import java.util.List;
+
+import cn.edu.nju.sicp.repositories.SubmissionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import cn.edu.nju.sicp.configs.AmqpConfig;
 import cn.edu.nju.sicp.configs.S3Config;
@@ -17,12 +22,14 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 public class SubmissionService {
 
     private final S3Config s3Config;
-    private final RabbitTemplate rabbitTemplate;
+    private final SubmissionRepository repository;
+    private final RabbitTemplate rabbit;
     private final Logger logger;
 
-    public SubmissionService(S3Config s3Config, RabbitTemplate rabbitTemplate) {
+    public SubmissionService(S3Config s3Config, SubmissionRepository repository, RabbitTemplate rabbit) {
         this.s3Config = s3Config;
-        this.rabbitTemplate = rabbitTemplate;
+        this.repository = repository;
+        this.rabbit = rabbit;
         this.logger = LoggerFactory.getLogger(SubmissionService.class);
     }
 
@@ -51,11 +58,38 @@ public class SubmissionService {
         logger.debug(String.format("Delete submission file %s", key));
     }
 
+    @Scheduled(fixedRate = 10 * 1000) // per minute
+    public void autoRetryGradingSubmissions() {
+        try {
+            List<Submission> submissions = repository.findAllByResultRetryAtBefore(new Date());
+            if (submissions.size() > 0) {
+                logger.info(String.format("Retry grading for %d submissions", submissions.size()));
+            }
+            for (Submission submission : submissions) {
+                sendGradeSubmissionMessage(submission);
+            }
+        } catch (AmqpException e) {
+            logger.error(String.format("Failed to retry grade submissions: %s", e.getMessage()), e);
+        }
+    }
+
+    public void rejudgeSubmission(Submission submission) {
+        submission.setGraded(false);
+        submission.setResult(null);
+        repository.save(submission);
+        try {
+            sendGradeSubmissionMessage(submission);
+            logger.info(String.format("RejudgeSubmission %s", submission));
+        } catch (Exception e) {
+            logger.error(String.format("%s %s", e.getMessage(), submission), e);
+        }
+    }
+
     public void sendGradeSubmissionMessage(Submission submission) throws AmqpException {
         String exchange = AmqpConfig.directExchangeName;
         String routingKey = AmqpConfig.gradeSubmissionQueueName;
         String payload = submission.getId();
-        rabbitTemplate.convertAndSend(exchange, routingKey, payload);
+        rabbit.convertAndSend(exchange, routingKey, payload);
         logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s",
                 exchange, routingKey, payload));
     }
