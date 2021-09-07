@@ -19,7 +19,7 @@ const Header = () => {
     }
 
     return (
-        <Layout.Header style={{background: "white", zIndex: 1000, boxShadow: "0 2px 8px #f0f1f2"}}>
+        <Layout.Header className="header" style={{zIndex: 1000}}>
             <div style={{float: "left"}}>
                 <Typography.Text strong>SICP Online Judge</Typography.Text>
                 <span style={{marginLeft: "6em"}}>当前服务器时间：<Time/></span>
