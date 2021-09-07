@@ -4,12 +4,14 @@
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^4.6.2",
+    "@craco/craco": "^6.2.0",
     "@reduxjs/toolkit": "^1.6.1",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
     "antd": "^4.16.8",
     "axios": "^0.21.1",
+    "craco-less": "^1.20.0",
     "file-saver": "^2.0.5",
     "moment": "^2.29.1",
     "qs": "^6.10.1",
@@ -21,9 +23,9 @@
     "web-vitals": "^1.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

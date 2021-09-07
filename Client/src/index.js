@@ -5,7 +5,7 @@ import {HashRouter, Route, Switch} from "react-router-dom";
 import {Provider} from "react-redux";
 import store from "./store";
 
-import './index.css';
+import './index.less';
 import {ConfigProvider, Layout} from "antd";
 import zhCN from 'antd/lib/locale/zh_CN';
 
