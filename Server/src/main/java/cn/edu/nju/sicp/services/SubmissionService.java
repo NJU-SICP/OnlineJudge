@@ -95,7 +95,7 @@ public class SubmissionService {
                     Integer v1 = s1.getResult() == null ? null : s1.getResult().getScore();
                     Integer v2 = s2.getResult() == null ? null : s2.getResult().getScore();
                     if (Objects.equals(v1, v2)) {
-                        return s1.getCreatedAt().compareTo(s2.getCreatedAt());
+                        return -s1.getCreatedAt().compareTo(s2.getCreatedAt()); // older is larger
                     } else {
                         return v1 == null ? -1 : (v2 == null ? 1 : v1 - v2);
                     }
