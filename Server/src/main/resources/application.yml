@@ -1,0 +1,64 @@
+sicp:
+  admin:
+    username: Admin
+    password: password
+    fullName: 系统管理员
+  jwt:
+    issuer: sicp
+    audience: sicp-user
+    secret: 0000000000000000000000000000000
+  oauth2:
+    gitlab:
+      endpoint: https://git.nju.edu.cn
+      #clientId:
+      #clientSecret:
+      #redirectUri:
+      #scope:
+  docker:
+    host: tcp://localhost:2376
+    tls-verify: false
+    #tls-cert-path:
+    registry-url: http://localhost:5000
+    #registry-email:
+    #registry-username:
+    #registry-password:
+  s3:
+    endpoint: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    region: us-east-1
+    bucket: sicp
+
+spring:
+  application:
+    name: SICP Online Judge
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: sicp
+      #username:
+      #password:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 1MB
+
+logging:
+  file:
+    name: sicp.log
+  level:
+    root: ERROR
+    cn.nju.edu.sicp: INFO
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    whitelabel:
+      enabled: false

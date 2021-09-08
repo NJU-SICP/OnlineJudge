@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(value = "spring.application.oauth2.gitlab")
+@ConfigurationProperties(value = "sicp.oauth2.gitlab")
 public class GitlabOAuth2Config {
 
     private String endpoint;
