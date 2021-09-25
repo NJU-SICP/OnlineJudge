@@ -32,7 +32,7 @@ const AdminAssignmentGrader = () => {
     }, [id, fetchGrader]);
 
     useEffect(() => {
-        if (grader != null && (!grader.imageId || !grader.imageBuildError)) {
+        if (grader != null && !grader.imageId && !grader.imageBuildError) {
             setTimeout(() => fetchGrader(), 2000);
         }
     }, [id, grader, fetchGrader]);
