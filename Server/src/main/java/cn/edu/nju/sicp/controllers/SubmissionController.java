@@ -12,6 +12,7 @@ import cn.edu.nju.sicp.services.SubmissionService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.*;
@@ -325,11 +326,27 @@ public class SubmissionController {
 
         try {
             InputStream stream = service.getSubmissionFile(submission);
-            InputStreamResource resource = new InputStreamResource(stream);
+            Resource resource = new InputStreamResource(stream);
             return new ResponseEntity<>(resource, HttpStatus.OK);
         } catch (Exception e) {
             logger.error(String.format("%s %s %s", e.getMessage(), submission, user), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法读取提交文件。");
+        }
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
+    public ResponseEntity<Resource> exportSubmissions(@RequestParam String assignmentId) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        try {
+            byte[] bytes = service.exportSubmissions(assignment.getId());
+            Resource resource = new ByteArrayResource(bytes);
+            return new ResponseEntity<>(resource, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error(String.format("%s %s %s", e.getMessage(), assignmentId, user), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法导出提交文件。");
         }
     }
 

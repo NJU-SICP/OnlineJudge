@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import java.net.URI;
 
 @Configuration
-@ConfigurationProperties(prefix = "spring.application.s3")
+@ConfigurationProperties(prefix = "sicp.s3")
 public class S3Config {
 
     private String endpoint;

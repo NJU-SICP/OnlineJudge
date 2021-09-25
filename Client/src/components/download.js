@@ -5,7 +5,7 @@ import http from "../http";
 import {Button, message} from "antd";
 import {DownloadOutlined, LoadingOutlined} from "@ant-design/icons";
 
-const Download = ({name, link}) => {
+const Download = ({name, link, title, type, size}) => {
     const [disabled, setDisabled] = useState(false);
 
     const download = () => {
@@ -27,10 +27,10 @@ const Download = ({name, link}) => {
     }
 
     return (
-        <Button type="link" size="small" onClick={download} disabled={disabled}>
+        <Button type={type ?? "link"} size={size ?? "small"} onClick={download} disabled={disabled}>
             {disabled
                 ? <><LoadingOutlined/> 正在下载</>
-                : <><DownloadOutlined/> 下载文件</>
+                : <><DownloadOutlined/> {title ?? "下载文件"}</>
             }
         </Button>
     );

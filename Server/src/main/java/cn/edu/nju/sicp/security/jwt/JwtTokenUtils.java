@@ -16,8 +16,9 @@ public class JwtTokenUtils {
     public static final String TOKEN_HEADER = "Authorization";
     public static final String TOKEN_PREFIX = "Bearer";
 
-    private @Value("${spring.application.jwt.issuer}") String JWT_ISSUER;
-    private @Value("${spring.application.jwt.secret}")  String JWT_SECRET;
+    private @Value("${sicp.jwt.issuer}") String JWT_ISSUER;
+    private @Value("${sicp.jwt.audience}") String JWT_AUDIENCE;
+    private @Value("${sicp.jwt.secret}")  String JWT_SECRET;
     private static final long JWT_EXPIRE = 7 * 24 * 60 * 60;
 
     public JwtTokenUtils() {
@@ -32,6 +33,7 @@ public class JwtTokenUtils {
                 .signWith(key)
                 .setClaims(claims)
                 .setIssuer(JWT_ISSUER)
+                .setAudience(JWT_AUDIENCE)
                 .setSubject(user.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRE * 1000))
@@ -42,6 +44,7 @@ public class JwtTokenUtils {
         Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(JWT_SECRET));
         JwtParser parser = Jwts.parserBuilder()
                 .requireIssuer(JWT_ISSUER)
+                .requireAudience(JWT_AUDIENCE)
                 .setSigningKey(key)
                 .build();
         return parser.parseClaimsJws(token).getBody();

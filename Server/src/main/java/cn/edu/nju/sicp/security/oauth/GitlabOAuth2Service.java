@@ -114,7 +114,7 @@ public class GitlabOAuth2Service {
                     Pattern pattern = Pattern.compile("(.+)@(smail\\.)?nju\\.edu\\.cn");
                     Matcher matcher = pattern.matcher(info.getEmail());
                     if (matcher.matches()) {
-                        User user = repository.findByUsername(matcher.group(1))
+                        User user = repository.findByUsername(matcher.group(1).toUpperCase())
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                         "南京大学代码托管服务提供的账户邮箱前缀为" + matcher.group(1) +
                                                 "，该前缀不是学（工）号或在本系统中不存在。请使用账户密码登录后手动绑定。"));

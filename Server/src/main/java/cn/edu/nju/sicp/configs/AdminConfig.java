@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "spring.application.admin")
+@ConfigurationProperties(prefix = "sicp.admin")
 public class AdminConfig {
 
     private String username;

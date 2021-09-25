@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Duration;
 
 @Configuration
-@ConfigurationProperties(prefix = "spring.application.docker")
+@ConfigurationProperties(prefix = "sicp.docker")
 public class DockerConfig {
 
     private String host;
