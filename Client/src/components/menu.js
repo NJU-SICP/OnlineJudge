@@ -33,7 +33,7 @@ const Menu = () => {
                 </AntMenu.Item>
             </AntMenu.ItemGroup>
             {!!auth && auth.roles && auth.authorities &&
-            auth.roles.filter(role => role !== "ROLE_STUDENT").length > 0 && <>
+            auth.roles.filter(role => role !== "ROLE_STUDENT" && role !== "ROLE_GUEST").length > 0 && <>
                 <AntMenu.Divider style={{
                     marginTop: "1.5em",
                     marginBottom: "1.5em",
