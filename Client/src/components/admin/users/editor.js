@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {useSelector} from "react-redux";
 import {useHistory, useParams} from "react-router-dom";
+import moment from "moment";
 import http from "../../../http";
 
 import {Typography, message, Popconfirm, Button, Skeleton} from "antd";
@@ -21,6 +22,7 @@ const AdminUserEditor = () => {
                 ...res.data,
                 id: id,
                 password: "",
+                expires: !!res.data.expires ? moment(res.data.expires) : null,
                 gitlab: !res.data.gitlabUserId
                     ? "未绑定"
                     : `已绑定：UID=${res.data.gitlabUserId}，Email=${res.data.gitlabUserEmail}`
@@ -37,7 +39,7 @@ const AdminUserEditor = () => {
                 password: values.password,
                 fullName: values.fullName,
                 roles: values.roles,
-                expires: values.expires,
+                expires: !!values.expires ? moment(values.expires) : null,
                 enabled: values.enabled,
                 locked: values.locked,
             })
