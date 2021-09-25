@@ -7,7 +7,7 @@ const config = {
     },
     baseNames: {
         web: isDevelopment ? "/" : "/oj",
-        api: isDevelopment ? "http://localhost:8080" : "https://sicp-api.njujb.com"
+        api: isDevelopment ? "http://localhost:8080" : "https://sicp-api.njujb.com:28300"
     }
 };
 
