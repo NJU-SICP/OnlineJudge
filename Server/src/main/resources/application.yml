@@ -54,7 +54,7 @@ logging:
     name: sicp.log
   level:
     root: ERROR
-    cn.nju.edu.sicp: INFO
+    cn.edu.nju.sicp: INFO
 
 server:
   port: 8080
