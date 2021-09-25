@@ -223,8 +223,6 @@ public class SubmissionController {
         } else if (!Objects.equals("." + FilenameUtils.getExtension(file.getOriginalFilename()),
                 assignment.getSubmitFileType())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交的文件类型不符合作业限制的文件类型。");
-        } else if (token == null && (new Date()).after(assignment.getEndTime())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交时间晚于作业截止时间。");
         }
 
         String createdBy = null; // if submit with token, set to issuer user info, else null
@@ -240,7 +238,14 @@ public class SubmissionController {
             logger.info(String.format("ConsumeToken %s", _token));
             createdBy = String.format("%s %s", issuer.getUsername(), issuer.getFullName());
             tokenRepository.delete(_token);
-        } else {
+        } else if (user.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_UPDATE))) {
+            Date now = new Date();
+            if (now.before(assignment.getBeginTime())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交时间早于作业开始时间。");
+            } else if (now.after(assignment.getEndTime())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交时间晚于作业截止时间。");
+            }
             long limit = assignment.getSubmitCountLimit();
             if (limit > 0) {
                 Submission submission = new Submission();
