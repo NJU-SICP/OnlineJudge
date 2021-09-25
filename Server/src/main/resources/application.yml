@@ -55,6 +55,9 @@ logging:
   level:
     root: ERROR
     cn.edu.nju.sicp: INFO
+  logback:
+    rollingpolicy:
+      max-history: 365
 
 server:
   port: 8080
