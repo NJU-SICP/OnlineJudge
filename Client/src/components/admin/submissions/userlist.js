@@ -8,6 +8,7 @@ import AdminSubmissionInfo from "./info";
 
 const AdminSubmissionUserList = ({assignment, submitted}) => {
     const [_page, _setPage] = useState(0);
+    const [_size, _setSize] = useState(20);
     const [page, setPage] = useState(null);
 
     useEffect(() => {
@@ -15,12 +16,14 @@ const AdminSubmissionUserList = ({assignment, submitted}) => {
             .get(`/submissions/users`, {
                 params: {
                     assignmentId: assignment.id,
-                    submitted: submitted
+                    submitted: submitted,
+                    page: _page,
+                    size: _size
                 }
             })
             .then((res) => setPage(res.data))
             .catch((err) => console.error(err));
-    }, [assignment, submitted, _page]);
+    }, [assignment, submitted, _page, _size]);
 
     const columns = [
         {
@@ -46,7 +49,10 @@ const AdminSubmissionUserList = ({assignment, submitted}) => {
                 <div style={{float: "right", marginTop: "1em"}}>
                     <Pagination current={page.number + 1} pageSize={page.size}
                                 total={page.totalElements}
-                                onChange={(p) => _setPage(p)}/>
+                                onChange={(p, s) => {
+                                    _setPage(p - 1);
+                                    _setSize(s);
+                                }}/>
                 </div>
             </>}
     </>);
