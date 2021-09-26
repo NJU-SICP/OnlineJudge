@@ -62,9 +62,9 @@ class BackupProtocol(models.Protocol):
 
         if isinstance(response, dict):
             print_success('Backup successful for user: {} {}'.format(auth['username'], auth['fullName']))
-            print('NOTE: this is only a backup. '
-                  'To submit your assignment, use:\n'
-                  '\tpython3 ok --submit')
+            print('NOTE: this is only a backup. To submit your assignment, use:\n'
+                  '\tpython  ok --submit (Windows)\n'
+                  '\tpython3 ok --submit (Linux/macOS)')
 
         self.dump_unsent_messages(message_list)
         print()

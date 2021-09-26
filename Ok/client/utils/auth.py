@@ -145,9 +145,16 @@ def authenticate(cmd_args, force=False, nointeract=False):
             auth = perform_auth(get_code_via_gitlab, cmd_args)
         else:
             auth = perform_auth(get_code, cmd_args)
-    log.debug('Authenticated with {}'.format(auth))
-
-    return auth
+    
+    if auth is None:
+        print_error('Error: null response')
+        return None
+    elif 'status' in auth:
+        print_error('Error: {}'.format(repr(auth)))
+        return None
+    else:
+        log.debug('Authenticated with {}'.format(auth))
+        return auth
 
 
 def notebook_authenticate(cmd_args, force=False, silent=True, nointeract=False):
