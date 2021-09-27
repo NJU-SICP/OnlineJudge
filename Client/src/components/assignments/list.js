@@ -59,30 +59,6 @@ const AssignmentList = () => {
             }
         },
         {
-            title: "提交文件",
-            key: "submitFile",
-            render: (text, record) => <>
-                <code>{record.submitFileName}{record.submitFileType}</code>{" "}
-                ({record.submitFileSize} MiB)
-            </>
-        },
-        {
-            title: "提交次数",
-            key: "submitCountLimit",
-            dataIndex: "submitCountLimit",
-            render: (limit) => {
-                if (limit < 0) return "无次数限制";
-                else if (limit === 0) return "不允许提交";
-                else return `最多${limit}次`;
-            }
-        },
-        {
-            title: "总评占比",
-            key: "percentage",
-            dataIndex: "percentage",
-            render: (value) => `${value}%`
-        },
-        {
             title: "最高得分",
             key: "score",
             render: (_, record) => <AssignmentScore assignmentId={record.id} totalScore={record.totalScore}/>

@@ -162,7 +162,7 @@ const AssignmentView = () => {
                             <Statistic title="截止日期" value={moment(assignment.endTime).format("YYYY-MM-DD HH:mm")}/>
                         </Col>
                         <Col span={6}>
-                            <Statistic title="总评占比" value={assignment.percentage} suffix="%"/>
+                            <Statistic title="作业满分" value={assignment.totalScore} suffix="分"/>
                         </Col>
                         <Col span={6}>
                             <Statistic title="提交文件"

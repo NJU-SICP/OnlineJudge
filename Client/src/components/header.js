@@ -27,7 +27,7 @@ const Header = () => {
             <div style={{float: "right"}}>
                 {!!auth && <>
                     <UserOutlined/> &nbsp;
-                    <span>{auth.fullName}</span>
+                    <span>{auth.username} {auth.fullName}</span>
                     <Button type="text" danger onClick={logout}>退出</Button>
                 </>}
             </div>
