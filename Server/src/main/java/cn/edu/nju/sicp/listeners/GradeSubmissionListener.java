@@ -203,7 +203,7 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             docker.startContainerCmd(containerId).exec();
             logStopWatch.accept("Docker container started.\n");
             if (!docker.waitContainerCmd(containerId).exec(new WaitContainerResultCallback())
-                    .awaitCompletion(60, TimeUnit.SECONDS)) {
+                    .awaitCompletion(180, TimeUnit.SECONDS)) {
                 logStopWatch.accept("Docker container timeout.\n");
                 throw new Exception("判题容器执行程序超时。");
             }
