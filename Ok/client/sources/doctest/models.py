@@ -23,7 +23,7 @@ class Doctest(models.Test):
     SETUP = PS1 + IMPORT_STRING
     prompt_re = re.compile(r'(\s*)({}|{})'.format(PS1, '\.\.\. '))
 
-    def __init__(self, file, verbose, interactive, timeout=None, **fields):
+    def __init__(self, file, verbose, interactive, timeout=None, ignore_empty=False, **fields):
         super().__init__(**fields)
         self.file = file
         self.verbose = verbose
@@ -82,7 +82,7 @@ class Doctest(models.Test):
 
         if not self.docstring:
             print('-- No doctests found for {} --'.format(self.name))
-            success = False
+            success = self.ignore_empty
         else:
             success = self.case.run()
             if success:
@@ -134,3 +134,4 @@ class Doctest(models.Test):
             }
         }
         return data
+
