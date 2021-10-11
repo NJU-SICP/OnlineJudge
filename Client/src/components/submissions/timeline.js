@@ -1,8 +1,19 @@
 import React from "react";
 import moment from "moment";
 import {Timeline, Typography} from "antd";
+import {CheckOutlined} from "@ant-design/icons";
 
 const SubmissionTimeline = ({id, submission}) => {
+    const getTotal = (title) => {
+        const regex = /.*\([^\d]*(\d+)\s*pts?\)/;
+        const match = title.match(regex);
+        return match ? Number(match[1]) : null;
+    }
+    const isTotal = (title, score) => {
+        const total = getTotal(title);
+        return total != null && score >= total;
+    };
+
     return (
         <Timeline pending={submission.result === null ? "等待系统处理……" : null}>
             {!!submission.createdBy &&
@@ -53,6 +64,9 @@ const SubmissionTimeline = ({id, submission}) => {
                                         <ul>
                                             {submission.result.details && submission.result.details.map((detail, index) => (
                                                 <li key={index}>
+                                                    {isTotal(detail.title, detail.score) &&
+                                                        <CheckOutlined style={{width: "1.5em"}}/>
+                                                    }
                                                     {detail.title}：{detail.score}
                                                     {!!detail.message && `（${detail.message}）`}
                                                 </li>
