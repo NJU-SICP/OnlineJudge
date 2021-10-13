@@ -1,7 +1,7 @@
 # Modifications copyright (C) 2021 Tianyun Zhang
 # This file has been modified to adapt to SICP course at Nanjing University.
 
-__version__ = 'NJU-SICP-v1.4.3'
+__version__ = 'NJU-SICP-v1.5.0'
 
 FILE_NAME = 'ok'
 
