@@ -5,10 +5,7 @@ import collections
 # Field types #
 ###############
 
-class NoValue(object):
-    pass
-
-NoValue = NoValue()
+NoValue = None
 
 class Field(object):
     _default = NoValue

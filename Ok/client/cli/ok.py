@@ -112,7 +112,7 @@ def parse_input(command_input=None):
                          help="set the submit token")
     testing.add_argument('--backup', action='store_true',
                          help="attempt to reliably backup your work")
-    testing.add_argument('--timeout', type=int, default=10,
+    testing.add_argument('--timeout', type=float, default=10,
                          help="set the timeout duration (in seconds) for running tests")
     testing.add_argument('-cov', '--coverage', action='store_true',
                          help="get suggestions on what lines to add tests for")

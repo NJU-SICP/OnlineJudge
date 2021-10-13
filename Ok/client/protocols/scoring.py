@@ -12,6 +12,7 @@ from client.protocols.common import models as protocol_models
 from client.utils import format
 from collections import OrderedDict
 import logging
+from multiprocessing import Pool
 
 log = logging.getLogger(__name__)
 
@@ -44,16 +45,16 @@ class ScoringProtocol(protocol_models.Protocol):
             assert isinstance(test, sources_models.Test), 'ScoringProtocol received invalid test'
 
             log.info('Scoring test {}'.format(test.name))
-
             # A hack that allows programmatic API users to plumb a custom
             # environment through to Python tests.
             # Use type to ensure is an actual OkTest and not a subclass
             if type(test) == ok_test_models.OkTest:
-                score = test.score(env=env)
+                with Pool(1) as pool:
+                    score, tle = test.score(env=env, pool=pool)
             else:
-                score = test.score()
+                score, tle = test.score(), False
 
-            raw_scores[test.name] = (score, test.points)
+            raw_scores[test.name] = (score, test.points, tle)
 
         messages['scoring'] = display_breakdown(raw_scores, self.args.score_out)
         print()
@@ -69,19 +70,20 @@ def display_breakdown(scores, outfile=None):
     total = 0
     if outfile:
         out = {'score': 0, 'details': []}
-        for name, (score, _) in scores.items():
+        for name, (score, _, tle) in scores.items():
             total += score
             out['score'] += int(score)
             out['details'].append({
                 'title': name,
-                'score': int(score)
+                'score': int(score),
+                'message': 'TLE' if tle else None
             })
         with open(outfile, mode='w+', encoding='utf8') as out_fp:
             json.dump(out, out_fp, ensure_ascii=False)
     else:
         format.print_line('-')
         print('Point breakdown')
-        for name, (score, max_score) in scores.items():
+        for name, (score, max_score, _) in scores.items():
             print('    {}: {}/{}'.format(name, score, max_score))
             total += score
         print()

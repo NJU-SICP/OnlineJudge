@@ -92,7 +92,7 @@ class OkTest(models.Test):
             'locked': locked,
         }
 
-    def score(self, env=None):
+    def score(self, env=None, pool=None):
         """Runs test cases and computes the score for this particular test.
 
         Scores are determined by aggregating results from suite.run() for each
@@ -102,17 +102,27 @@ class OkTest(models.Test):
         The points available for this test are distributed evenly across
         scoreable (i.e. unlocked and 'scored' = True) suites.
         """
-        passed, total = 0, 0
+        passed, total, tle = 0, 0, False
         for i, suite in enumerate(self.suites):
             if not suite.scored:
                 continue
             total += 1
 
             # Env is for programmatic API users to plumb a custom environment
-            results = suite.run(self.name, i + 1, env)
+            # Use multiprocessing for correct timeout handling
+            if not pool:
+                results = suite.run(self.name, i + 1, env)
+            else:
+                r = pool.apply_async(suite.run, (self.name, i + 1, env,))
+                try:
+                    results = r.get(self.timeout)
+                except Exception:
+                    results = None
 
-            if results['locked'] == 0 and results['failed'] == 0:
-                passed += 1
+                if results is None:
+                    tle = True
+                elif results['locked'] == 0 and results['failed'] == 0:
+                    passed += 1
         if total > 0:
             score = passed * self.points / total
         else:
@@ -120,7 +130,7 @@ class OkTest(models.Test):
 
         format.print_progress_bar(self.name, passed, total - passed, 0)
         print()
-        return score
+        return score, tle
 
     def unlock(self, interact):
         total_cases = len([case for suite in self.suites
