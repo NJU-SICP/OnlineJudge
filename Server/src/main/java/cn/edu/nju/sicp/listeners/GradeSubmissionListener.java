@@ -166,10 +166,8 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             Path json = Files.createTempFile("grader-json", ".json");
             String key = submission.getKey();
             try (FileOutputStream tempOutputStream = new FileOutputStream(temp.toFile());
-                 ArchiveOutputStream tarOutputStream =
-                         new TarArchiveOutputStream(tempOutputStream);
-                 InputStream s3Stream =
-                         s3.getObject(builder -> builder.bucket(s3Bucket).key(key).build())) {
+                 ArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(tempOutputStream);
+                 InputStream s3Stream = s3.getObject(builder -> builder.bucket(s3Bucket).key(key).build())) {
                 if (Objects.equals(assignment.getSubmitFileType(), ".zip")) {
                     // zip archive
                     try (ZipInputStream zipInputStream = new ZipInputStream(s3Stream)) {
@@ -203,7 +201,7 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             docker.startContainerCmd(containerId).exec();
             logStopWatch.accept("Docker container started.\n");
             if (!docker.waitContainerCmd(containerId).exec(new WaitContainerResultCallback())
-                    .awaitCompletion(180, TimeUnit.SECONDS)) {
+                    .awaitCompletion(1800, TimeUnit.SECONDS)) {
                 logStopWatch.accept("Docker container timeout.\n");
                 throw new Exception("判题容器执行程序超时。");
             }

@@ -1,8 +1,11 @@
 package cn.edu.nju.sicp.contests.hog;
 
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.util.Date;
 import java.util.Map;
 
+@Document(collection = "#{@HogConfig.collection}")
 public class HogEntry {
 
     private String id;
@@ -12,7 +15,8 @@ public class HogEntry {
     private String key;
     private Date date;
     private Boolean valid;
-    private Map<String, Double> rates;
+    private String message;
+    private Map<String, Integer> wins;
 
     public String getId() {
         return id;
@@ -62,12 +66,20 @@ public class HogEntry {
         this.valid = valid;
     }
 
-    public Map<String, Double> getRates() {
-        return rates;
+    public String getMessage() {
+        return message;
     }
 
-    public void setRates(Map<String, Double> rates) {
-        this.rates = rates;
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public Map<String, Integer> getWins() {
+        return wins;
+    }
+
+    public void setWins(Map<String, Integer> wins) {
+        this.wins = wins;
     }
 
 }

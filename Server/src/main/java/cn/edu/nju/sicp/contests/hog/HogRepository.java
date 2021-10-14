@@ -6,6 +6,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface HogRepository extends MongoRepository<HogEntry, String> {
 
-    List<HogEntry> findValidAndDateBefore(Date date);
+    List<HogEntry> findByValidIsTrueAndDateBefore(Date date);
 
 }
