@@ -8,6 +8,10 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import cn.edu.nju.sicp.configs.AmqpConfig;
+import cn.edu.nju.sicp.configs.S3Config;
+import cn.edu.nju.sicp.contests.hog.HogConfig;
+import cn.edu.nju.sicp.models.Submission;
 import cn.edu.nju.sicp.repositories.SubmissionRepository;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -17,9 +21,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Example;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import cn.edu.nju.sicp.configs.AmqpConfig;
-import cn.edu.nju.sicp.configs.S3Config;
-import cn.edu.nju.sicp.models.Submission;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -32,7 +33,8 @@ public class SubmissionService {
     private final RabbitTemplate rabbit;
     private final Logger logger;
 
-    public SubmissionService(S3Config s3Config, SubmissionRepository repository, RabbitTemplate rabbit) {
+    public SubmissionService(S3Config s3Config, SubmissionRepository repository,
+            RabbitTemplate rabbit) {
         this.s3Config = s3Config;
         this.repository = repository;
         this.rabbit = rabbit;
@@ -67,8 +69,9 @@ public class SubmissionService {
     public byte[] exportSubmissions(String assignmentId) throws IOException {
         Submission example = new Submission();
         example.setAssignmentId(assignmentId);
-        Map<String, List<Submission>> submissionMap = repository.findAll(Example.of(example)).stream()
-                .collect(Collectors.groupingBy(Submission::getUserId));
+        Map<String, List<Submission>> submissionMap =
+                repository.findAll(Example.of(example)).stream()
+                        .collect(Collectors.groupingBy(Submission::getUserId));
         Pattern pattern = Pattern.compile("submissions/[^/]*/([^/]*)/(.*)");
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
@@ -81,7 +84,8 @@ public class SubmissionService {
                         Matcher matcher = pattern.matcher(submission.getKey());
                         String key = matcher.matches()
                                 ? String.format("all/%s/%s", matcher.group(1), matcher.group(2))
-                                : String.format("all/unknown/%s", submission.getKey().replace("/", "_"));
+                                : String.format("all/unknown/%s",
+                                        submission.getKey().replace("/", "_"));
                         ZipEntry zipEntry = new ZipEntry(key);
                         zipOutputStream.putNextEntry(zipEntry);
                         IOUtils.copy(s3InputStream, zipOutputStream);
@@ -105,7 +109,8 @@ public class SubmissionService {
                         Matcher matcher = pattern.matcher(submission.getKey());
                         String key = matcher.matches()
                                 ? String.format("single/%s_%s", matcher.group(1), matcher.group(2))
-                                : String.format("single/unknown/%s", submission.getKey().replace("/", "_"));
+                                : String.format("single/unknown/%s",
+                                        submission.getKey().replace("/", "_"));
                         ZipEntry zipEntry = new ZipEntry(key);
                         zipOutputStream.putNextEntry(zipEntry);
                         IOUtils.copy(s3InputStream, zipOutputStream);
@@ -149,6 +154,16 @@ public class SubmissionService {
     public void sendGradeSubmissionMessage(Submission submission) throws AmqpException {
         String exchange = AmqpConfig.directExchangeName;
         String routingKey = AmqpConfig.gradeSubmissionQueueName;
+        String payload = submission.getId();
+        rabbit.convertAndSend(exchange, routingKey, payload);
+        logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s",
+                exchange, routingKey, payload));
+    }
+
+    // for Hog Contest
+    public void sendHogMessage(Submission submission) throws AmqpException {
+        String exchange = AmqpConfig.directExchangeName;
+        String routingKey = HogConfig.hogQueueName;
         String payload = submission.getId();
         rabbit.convertAndSend(exchange, routingKey, payload);
         logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s",
