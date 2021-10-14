@@ -29,6 +29,7 @@ class Doctest(models.Test):
         self.verbose = verbose
         self.interactive = interactive
         self.timeout = timeout
+        self.ignore_empty = ignore_empty
 
         self.console = pyconsole.PythonConsole(self.verbose, self.interactive,
                                                   self.timeout)
