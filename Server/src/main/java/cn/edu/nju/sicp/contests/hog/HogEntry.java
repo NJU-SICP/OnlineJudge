@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Date;
 import java.util.Map;
 
-@Document(collection = "#{@HogConfig.collection}")
+@Document(collection = "#{@hogConfig.collection}")
 public class HogEntry {
 
     private String id;

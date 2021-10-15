@@ -8,6 +8,7 @@ import {
     EditOutlined,
     HomeOutlined,
     PaperClipOutlined,
+    RobotOutlined,
     TableOutlined,
     UserSwitchOutlined
 } from "@ant-design/icons";
@@ -31,6 +32,16 @@ const Menu = () => {
                               onClick={() => redirect("/config")}>
                     用户设置
                 </AntMenu.Item>
+                <AntMenu.Divider style={{
+                    marginTop: "1.5em",
+                    marginBottom: "1.5em",
+                    marginLeft: "1em",
+                    marginRight: "1em"
+                }}/>
+                <AntMenu.Item key="/contests/hog" icon={<RobotOutlined/>}
+                              onClick={() => redirect("/contests/hog")}>
+                    Hog Contest
+                </AntMenu.Item>
             </AntMenu.ItemGroup>
             {!!auth && auth.roles && auth.authorities &&
             auth.roles.filter(role => role !== "ROLE_STUDENT" && role !== "ROLE_GUEST").length > 0 && <>
@@ -40,7 +51,7 @@ const Menu = () => {
                     marginLeft: "1em",
                     marginRight: "1em"
                 }}/>
-                <AntMenu.ItemGroup key="g2" title="系统管理">
+                <AntMenu.ItemGroup key="g3" title="系统管理">
                     {auth.authorities.indexOf("OP_USER_READ") >= 0 &&
                     <AntMenu.Item key="/admin/users" icon={<UserSwitchOutlined/>}
                                   onClick={() => redirect("/admin/users")}>

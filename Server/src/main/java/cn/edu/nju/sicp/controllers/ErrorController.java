@@ -1,5 +1,7 @@
 package cn.edu.nju.sicp.controllers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,6 +19,8 @@ public class ErrorController {
     @RestControllerAdvice
     public static class ExceptionHandlerImpl {
 
+        private final Logger logger = LoggerFactory.getLogger(getClass());
+
         @ExceptionHandler(Exception.class)
         public ResponseEntity<ExceptionResponse> onException(Exception e) {
             HttpStatus status;
@@ -31,6 +35,7 @@ public class ErrorController {
                 response.setStatus(status.value());
                 response.setMessage(null);
             } else {
+                logger.error(String.format("Uncaught exception: %s", e.getMessage()), e);
                 status = HttpStatus.INTERNAL_SERVER_ERROR;
                 response.setStatus(status.value());
                 response.setMessage("uncaught exception");
