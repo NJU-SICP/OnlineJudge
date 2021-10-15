@@ -17,11 +17,12 @@ import java.util.Date;
 @Configuration
 public class HogConfig {
 
-    public static final String compareImage = "sicp-hog-contest";
+    public static final String triggerImage = "sicp-hog-contest-trigger";
+    public static final String compareImage = "sicp-hog-contest-compare";
     public static final int compareRounds = (int) 1e6;
 
-    public static final String collection = "hog_contest";
-    public static final String queueName = "sicp.hog_contest";
+    public static final String collection = "contests_hog";
+    public static final String queueName = "sicp.contests.hog";
     public static final Date frozen;
     public static final Date deadline;
     static {

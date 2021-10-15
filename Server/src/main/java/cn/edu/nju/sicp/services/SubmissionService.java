@@ -160,14 +160,4 @@ public class SubmissionService {
                 exchange, routingKey, payload));
     }
 
-    // for Hog Contest
-    public void sendHogMessage(Submission submission) throws AmqpException {
-        String exchange = AmqpConfig.directExchangeName;
-        String routingKey = HogConfig.hogQueueName;
-        String payload = submission.getId();
-        rabbit.convertAndSend(exchange, routingKey, payload);
-        logger.debug(String.format("Send AMQP exchange=%s routingKey=%s payload=%s",
-                exchange, routingKey, payload));
-    }
-
 }

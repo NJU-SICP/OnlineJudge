@@ -3,7 +3,7 @@ package cn.edu.nju.sicp.contests.hog;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties
-public class HogResult {
+public class HogCompareResult {
 
     private Integer wins;
     private Integer loses;

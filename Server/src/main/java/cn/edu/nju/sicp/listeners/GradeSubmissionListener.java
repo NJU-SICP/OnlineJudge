@@ -2,6 +2,7 @@ package cn.edu.nju.sicp.listeners;
 
 import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.S3Config;
+import cn.edu.nju.sicp.contests.hog.HogTrigger;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.models.Grader;
 import cn.edu.nju.sicp.models.Result;
@@ -52,15 +53,18 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
     private final DockerConfig dockerConfig;
     private final AssignmentRepository assignmentRepository;
     private final SubmissionRepository submissionRepository;
+    private final HogTrigger hogTrigger;
     private final Logger logger;
 
     public GradeSubmissionListener(S3Config s3Config, DockerConfig dockerConfig,
                                    AssignmentRepository assignmentRepository,
-                                   SubmissionRepository submissionRepository) {
+                                   SubmissionRepository submissionRepository,
+                                   HogTrigger hogTrigger) {
         this.s3Config = s3Config;
         this.dockerConfig = dockerConfig;
         this.assignmentRepository = assignmentRepository;
         this.submissionRepository = submissionRepository;
+        this.hogTrigger = hogTrigger;
         this.logger = LoggerFactory.getLogger(BuildImageListener.class);
     }
 
@@ -196,11 +200,13 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             logStopWatch.accept("Submit file copied to container.\n");
 
             docker.copyArchiveToContainerCmd(containerId)
-                    .withTarInputStream(Files.newInputStream(temp)).withRemotePath("/workdir")
+                    .withTarInputStream(Files.newInputStream(temp))
+                    .withRemotePath("/workdir")
                     .exec();
             docker.startContainerCmd(containerId).exec();
             logStopWatch.accept("Docker container started.\n");
-            if (!docker.waitContainerCmd(containerId).exec(new WaitContainerResultCallback())
+            if (!docker.waitContainerCmd(containerId)
+                    .exec(new WaitContainerResultCallback())
                     .awaitCompletion(1800, TimeUnit.SECONDS)) {
                 logStopWatch.accept("Docker container timeout.\n");
                 throw new Exception("判题容器执行程序超时。");
@@ -210,8 +216,7 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
 
             try (InputStream resultStream = docker.copyArchiveFromContainerCmd(containerId,
                     String.format("/workdir/%s", args.get(args.size() - 1))).exec();
-                 TarArchiveInputStream tarInputStream =
-                         new TarArchiveInputStream(resultStream)) {
+                 TarArchiveInputStream tarInputStream = new TarArchiveInputStream(resultStream)) {
                 logBuilder.append(String.format("%05.2fs Result file retrieved from container.\n",
                         (double) stopWatch.getTime() / 1000));
                 docker.removeContainerCmd(containerId).exec(); // remove container after getting
@@ -273,6 +278,12 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
             stopWatch.stop();
             logger.info(String.format("GradeSubmission finish: elapsed=%05.2fs %s",
                     (double) stopWatch.getTime() / 1000, submission));
+
+            /* Hog Contest Trigger: if all steps get a positive score, submit to contest */
+            if (assignment.getSlug().equals("hogcon") && submission.getResult() != null &&
+                    submission.getResult().getDetails().stream().allMatch(detail -> detail.getScore() > 0)) {
+                hogTrigger.accept(submission);
+            }
         }
     }
 
