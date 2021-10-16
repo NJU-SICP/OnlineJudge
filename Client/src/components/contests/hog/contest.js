@@ -62,7 +62,7 @@ const HogContest = () => {
             <RobotOutlined /> Hog Contest 2021
         </Typography.Title>
         <Typography.Title level={4} style={{ textAlign: "center" }}>
-            截止时间：2021-11-14 23:59
+            截止时间：2021-11-07 23:59
         </Typography.Title>
         <Divider />
         <HogSubmission entries={entries} reload={loadEntries} disabled={disabled}/>
