@@ -98,7 +98,7 @@ public class DockerConfig {
                 .sslConfig(config.getSSLConfig())
                 .maxConnections(100)
                 .connectionTimeout(Duration.ofSeconds(10))
-                .responseTimeout(Duration.ofSeconds(60))
+                .responseTimeout(Duration.ofSeconds(1800))
                 .build();
         return DockerClientImpl.getInstance(config, client);
     }

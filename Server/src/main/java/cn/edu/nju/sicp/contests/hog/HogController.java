@@ -3,7 +3,10 @@ package cn.edu.nju.sicp.contests.hog;
 import cn.edu.nju.sicp.models.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Example;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,31 +22,29 @@ import java.util.List;
 @RequestMapping("/contests/hog")
 public class HogController {
 
-    public final HogRepository hogRepository;
+    private final MongoOperations mongo;
     public final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public HogController(HogRepository hogRepository) {
-        this.hogRepository = hogRepository;
+    public HogController(MongoTemplate mongo) {
+        this.mongo = mongo;
     }
 
     @GetMapping("/submission")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<HogEntry> getSubmission() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        HogEntry example = new HogEntry();
-        example.setUserId(user.getId());
-        example.setValid(true);
-        HogEntry entry = hogRepository.findOne(Example.of(example))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        HogEntry entry = mongo.findOne(Query.query(Criteria.where("userId").is(user.getId())
+                .andOperator(Criteria.where("valid").is(true))), HogEntry.class);
+        if (entry == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
         return new ResponseEntity<>(entry, HttpStatus.OK);
     }
 
     @GetMapping("/scoreboard")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<HogEntry>> getScoreboard() {
-        HogEntry example = new HogEntry();
-        example.setValid(true);
-        List<HogEntry> entries = hogRepository.findAll(Example.of(example));
+        List<HogEntry> entries = mongo.find(Query.query(Criteria.where("valid").is(true)), HogEntry.class);
         return new ResponseEntity<>(entries, HttpStatus.OK);
     }
 

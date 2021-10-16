@@ -11,6 +11,7 @@ public class HogTriggerResult {
     private Boolean valid;
     private Integer size;
     private Map<Integer, Map<Integer, Integer>> strategy;
+    private String message;
 
     public String getName() {
         return name;
@@ -42,6 +43,14 @@ public class HogTriggerResult {
 
     public void setStrategy(Map<Integer, Map<Integer, Integer>> strategy) {
         this.strategy = strategy;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
 }

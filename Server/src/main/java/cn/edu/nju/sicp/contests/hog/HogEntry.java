@@ -5,17 +5,20 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Date;
 import java.util.Map;
 
-@Document(collection = "#{@hogConfig.collection}")
+@Document(collection = "contests_hog")
 public class HogEntry {
 
     private String id;
     private String userId;
+    private String submissionId;
 
-    private String name;
     private String key;
     private Date date;
     private Boolean valid;
     private String message;
+
+    private String name;
+    private Integer size;
     private Map<String, Integer> wins;
 
     public String getId() {
@@ -34,12 +37,12 @@ public class HogEntry {
         this.userId = userId;
     }
 
-    public String getName() {
-        return name;
+    public String getSubmissionId() {
+        return submissionId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setSubmissionId(String submissionId) {
+        this.submissionId = submissionId;
     }
 
     public String getKey() {
@@ -74,12 +77,42 @@ public class HogEntry {
         this.message = message;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getSize() {
+        return size;
+    }
+
+    public void setSize(Integer size) {
+        this.size = size;
+    }
+
     public Map<String, Integer> getWins() {
         return wins;
     }
 
     public void setWins(Map<String, Integer> wins) {
         this.wins = wins;
+    }
+
+    @Override
+    public String toString() {
+        return "HogEntry{" +
+                "id='" + id + '\'' +
+                ", userId='" + userId + '\'' +
+                ", key='" + key + '\'' +
+                ", date=" + date +
+                ", valid=" + valid +
+                ", message='" + message + '\'' +
+                ", name='" + name + '\'' +
+                ", size=" + size +
+                '}';
     }
 
 }

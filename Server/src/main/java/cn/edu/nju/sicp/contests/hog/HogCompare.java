@@ -1,5 +1,6 @@
 package cn.edu.nju.sicp.contests.hog;
 
+import cn.edu.nju.sicp.configs.AmqpConfig;
 import cn.edu.nju.sicp.configs.DockerConfig;
 import cn.edu.nju.sicp.configs.S3Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +9,6 @@ import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.WaitContainerResultCallback;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.HostConfig;
-import com.mongodb.client.MongoClients;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -17,9 +17,9 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -43,43 +43,58 @@ public class HogCompare implements Consumer<HogEntry> {
     private final S3Client s3;
     private final String s3Bucket;
     private final DockerClient docker;
-    private final MongoOperations mongoOps = // we want to use atomic update operations here
-            new MongoTemplate(new SimpleMongoClientDatabaseFactory(MongoClients.create(), HogConfig.collection));
+    private final RabbitTemplate rabbit;
+    private final MongoOperations mongo;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public HogCompare(S3Config s3Config, DockerConfig dockerConfig) {
+    public HogCompare(S3Config s3Config,
+                      DockerConfig dockerConfig,
+                      RabbitTemplate rabbit,
+                      MongoTemplate mongo) {
         this.s3 = s3Config.getInstance();
         this.s3Bucket = s3Config.getBucket();
         this.docker = dockerConfig.getInstance();
+        this.rabbit = rabbit;
+        this.mongo = mongo;
     }
 
     @Override
     public void accept(HogEntry entry) {
         logger.info(String.format("UpdateHogContest start entry=%s", entry));
-        List<HogEntry> opponents = mongoOps.find(Query.query(Criteria.where("valid").is(true)
+        List<HogEntry> opponents = mongo.find(Query.query(Criteria.where("valid").is(true)
                 .andOperator(Criteria.where("date").lt(entry.getDate()))), HogEntry.class);
+        if (opponents.stream().anyMatch(o -> o.getKey() == null)) {
+            logger.info(String.format("UpdateHogContest will try later entry=%s", entry));
+            try {
+                Thread.sleep(60 * 1000); // retry at one minute later
+            } catch (InterruptedException ignored) {
+                rabbit.convertAndSend(AmqpConfig.directExchangeName, HogConfig.queueName, entry.getId());
+            }
+        }
+
         try {
             for (HogEntry opponent : opponents) {
+                logger.info(String.format("UpdateHogContest play %s vs %s", entry, opponent));
                 HogCompareResult result = compareHogEntries(entry, opponent);
                 if (result.getWins() + result.getLoses() != HogConfig.compareRounds) {
                     throw new Exception("胜负局数之和不等于抽样数量。");
                 }
-                mongoOps.updateFirst(Query.query(Criteria.where("_id").is(entry.getId())),
+                mongo.updateFirst(Query.query(Criteria.where("_id").is(entry.getId())),
                         Update.update(String.format("wins.%s", opponent.getId()), result.getWins()), HogEntry.class);
-                mongoOps.updateFirst(Query.query(Criteria.where("_id").is(opponent.getId())),
+                mongo.updateFirst(Query.query(Criteria.where("_id").is(opponent.getId())),
                         Update.update(String.format("wins.%s", entry.getId()), result.getLoses()), HogEntry.class);
             }
+            logger.info(String.format("UpdateHogContest OK entry=%s", entry));
         } catch (Exception e) {
-            logger.error(String.format("UpdateHogContest failed: %s", e.getMessage()), e);
-            mongoOps.updateFirst(Query.query(Criteria.where("_id").is(entry.getId())),
+            mongo.updateFirst(Query.query(Criteria.where("_id").is(entry.getId())),
                     Update.update("valid", false), HogEntry.class);
-            mongoOps.updateFirst(Query.query(Criteria.where("_id").is(entry.getId())),
+            mongo.updateFirst(Query.query(Criteria.where("_id").is(entry.getId())),
                     Update.update("message", e.getMessage()), HogEntry.class);
+            logger.error(String.format("UpdateHogContest failed: %s entry=%s", e.getMessage(), entry), e);
         }
-        logger.info(String.format("UpdateHogContest complete entry=%s", entry));
     }
 
-    private HogCompareResult compareHogEntries(HogEntry entry1, HogEntry entry2) throws Exception {
+    private HogCompareResult compareHogEntries(HogEntry entry0, HogEntry entry1) throws Exception {
         InspectImageResponse inspect = docker.inspectImageCmd(HogConfig.compareImage).exec();
         ContainerConfig config = inspect.getConfig();
         List<String> args = new ArrayList<>(List.of("/usr/bin/python3", "compare.py"));
@@ -104,15 +119,15 @@ public class HogCompare implements Consumer<HogEntry> {
 
         try (FileOutputStream tempOutputStream = new FileOutputStream(temp.toFile());
              ArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(tempOutputStream);
-             InputStream s3Stream1 = s3.getObject(builder -> builder.bucket(s3Bucket).key(entry1.getKey()).build());
-             InputStream s3Stream2 = s3.getObject(builder -> builder.bucket(s3Bucket).key(entry2.getKey()).build())) {
-            int count = 0;
-            for (var s3Stream : List.of(s3Stream1, s3Stream2)) {
-                ++count;
+             InputStream s3Stream0 = s3.getObject(builder -> builder.bucket(s3Bucket).key(entry0.getKey()).build());
+             InputStream s3Stream1 = s3.getObject(builder -> builder.bucket(s3Bucket).key(entry1.getKey()).build())) {
+            int count = 0; // 0 and 1
+            for (var s3Stream : List.of(s3Stream0, s3Stream1)) {
                 byte[] s3Bytes = IOUtils.toByteArray(s3Stream);
-                String archiveFilename = String.format("strategy%d.json", count);
+                String archiveFilename = String.format("strategy%d.json", count++);
                 TarArchiveEntry archiveEntry = new TarArchiveEntry(archiveFilename);
                 archiveEntry.setSize(s3Bytes.length);
+                tarOutputStream.putArchiveEntry(archiveEntry);
                 try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(s3Bytes)) {
                     IOUtils.copy(byteArrayInputStream, tarOutputStream);
                 }
@@ -124,7 +139,7 @@ public class HogCompare implements Consumer<HogEntry> {
                 .exec();
         docker.startContainerCmd(containerId).exec();
         if (!docker.waitContainerCmd(containerId).exec(new WaitContainerResultCallback())
-                .awaitCompletion(180, TimeUnit.SECONDS)) {
+                .awaitCompletion(1800, TimeUnit.SECONDS)) {
             throw new Exception("比较容器执行程序超时。");
         }
 

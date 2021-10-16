@@ -16,6 +16,11 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -37,54 +42,69 @@ public class HogTrigger implements Consumer<Submission> {
     private final S3Client s3;
     private final String s3Bucket;
     private final DockerClient docker;
-    private final HogRepository hogRepository;
-    private final RabbitTemplate rabbitTemplate;
+    private final RabbitTemplate rabbit;
+    private final MongoOperations mongo;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public HogTrigger(S3Config s3Config,
                       DockerConfig dockerConfig,
-                      HogRepository hogRepository,
-                      RabbitTemplate rabbitTemplate) {
+                      RabbitTemplate rabbit,
+                      MongoTemplate mongo) {
         this.s3 = s3Config.getInstance();
         this.s3Bucket = s3Config.getBucket();
         this.docker = dockerConfig.getInstance();
-        this.hogRepository = hogRepository;
-        this.rabbitTemplate = rabbitTemplate;
+        this.rabbit = rabbit;
+        this.mongo = mongo;
     }
 
     @Override
     public void accept(Submission submission) {
-        generateHogStrategy(submission);
+        if ((new Date()).before(HogConfig.deadline)) {
+            generateHogStrategy(submission);
+        }
     }
 
     private void generateHogStrategy(Submission submission) {
-        logger.error(String.format("GenerateHogStrategy submission=%s", submission));
+        logger.info(String.format("GenerateHogStrategy submission=%s", submission));
         HogEntry entry = new HogEntry();
         entry.setUserId(submission.getUserId());
+        entry.setSubmissionId(submission.getId());
         entry.setName(null);
         entry.setKey(null);
-        entry.setWins(new HashMap<>());
+        entry.setDate(submission.getCreatedAt());
+        entry.setValid(true);
+        entry.setMessage(null);
+        entry.setName(null);
+        entry.setSize(null);
+        entry.setWins(null);
+        mongo.save(entry);
+
         try {
             InputStream stream = s3.getObject(builder ->
                     builder.bucket(s3Bucket).key(submission.getKey()).build());
             HogTriggerResult result = runGenerateImage(stream);
             entry.setName(result.getName());
-            entry.setValid(true);
-            hogRepository.save(entry);
+            entry.setSize(result.getSize());
+            entry.setValid(result.isValid());
+            entry.setMessage(result.getMessage());
+            entry.setWins(new HashMap<>());
+            mongo.save(entry);
 
             entry.setKey(String.format("contests/hog/%s.json", entry.getId()));
             RequestBody requestBody = RequestBody.fromString((new ObjectMapper()).writeValueAsString(result));
             s3.putObject(builder -> builder.bucket(s3Bucket).key(entry.getKey()).build(), requestBody);
-            hogRepository.save(entry);
+            logger.info(String.format("GenerateHogStrategy OK entry=%s submission=%s", entry, submission));
         } catch (Exception e) {
-            logger.error(String.format("GenerateHogStrategy failed submission=%s", submission), e);
             entry.setValid(false);
             entry.setMessage(e.getMessage());
+            logger.error(String.format("GenerateHogStrategy failed entry=%s submission=%s", entry, submission), e);
         } finally {
-            entry.setDate(new Date());
-            hogRepository.save(entry);
+            mongo.save(entry);
             if (entry.isValid()) {
-                rabbitTemplate.convertAndSend(AmqpConfig.directExchangeName, HogConfig.queueName, entry.getId());
+                mongo.updateMulti(Query.query(Criteria.where("userId").is(entry.getUserId())
+                                .andOperator(Criteria.where("id").ne(entry.getId()))),
+                        Update.update("valid", false), HogEntry.class);
+                rabbit.convertAndSend(AmqpConfig.directExchangeName, HogConfig.queueName, entry.getId());
             }
         }
     }
@@ -106,7 +126,7 @@ public class HogTrigger implements Consumer<Submission> {
         try (FileOutputStream fileOutputStream = new FileOutputStream(temp.toFile());
              TarArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(fileOutputStream)) {
             byte[] bytes = IOUtils.toByteArray(submissionInputStream);
-            TarArchiveEntry entry = new TarArchiveEntry("strategy.py");
+            TarArchiveEntry entry = new TarArchiveEntry("final_strategy.py");
             entry.setSize(bytes.length);
             tarOutputStream.putArchiveEntry(entry);
             try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes)) {
@@ -129,7 +149,7 @@ public class HogTrigger implements Consumer<Submission> {
         try (InputStream resultStream =
                      docker.copyArchiveFromContainerCmd(containerId, "/workdir/result.json").exec();
              TarArchiveInputStream tarInputStream = new TarArchiveInputStream(resultStream)) {
-            docker.removeContainerCmd(containerId).exec();
+            //docker.removeContainerCmd(containerId).exec();
             ArchiveEntry entry = tarInputStream.getNextEntry();
             if (entry == null || !tarInputStream.canReadEntryData(entry)) {
                 throw new Exception("无法读取Hog策略生成程序保存的结果。");
@@ -140,7 +160,6 @@ public class HogTrigger implements Consumer<Submission> {
             }
         }
         HogTriggerResult result = (new ObjectMapper()).readValue(Files.newInputStream(json), HogTriggerResult.class);
-
         Files.deleteIfExists(temp);
         Files.deleteIfExists(json);
         return result;
