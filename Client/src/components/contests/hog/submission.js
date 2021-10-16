@@ -1,76 +1,77 @@
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import moment from "moment";
-import http from "../../../http";
 
-import { Card, Descriptions, Empty, Skeleton, Typography } from "antd";
-import { LoadingOutlined } from "@ant-design/icons";
+import { Button, Card, Descriptions, Empty, Skeleton, Typography } from "antd";
+import { LoadingOutlined, RedoOutlined } from "@ant-design/icons";
 
-const HogSubmission = () => {
-    const [loaded, setLoaded] = useState(false);
-    const [submission, setSubmission] = useState(null);
+const HogSubmission = ({ entries, reload, disabled }) => {
+    const auth = useSelector((state) => state.auth.value);
+    const [entry, setEntry] = useState(null);
 
     useEffect(() => {
-        http()
-            .get(`/contests/hog/submission`)
-            .then((res) => {
-                setLoaded(true);
-                setSubmission(res.data);
-            })
-            .catch((err) => {
-                if (err.response.status === 404) {
-                    setLoaded(true);
-                } else {
-                    console.error(err);
-                }
-            });
-    }, []);
+        setEntry(entries ? entries.find(e => e.userId === auth.userId) : null);
+    }, [auth, entries]);
 
     return (<>
         <Typography.Title level={3}>
             我的提交
-            {loaded && submission &&
+            {entries && entry &&
                 <>
                     <span style={{ marginLeft: "1rem" }}>
-                        <code>{submission.submissionId.substr(-8)}</code>
+                        <code>{entry.submissionId.substr(-8)}</code>
                     </span>
-                    {submission.valid && !submission.key &&
+                    {entry.valid && !entry.key &&
                         <span style={{ marginLeft: "1rem" }}>
-                            <code><LoadingOutlined /> 处理中</code>
+                            <LoadingOutlined /> 处理中
                         </span>
                     }
                 </>
             }
+            <div style={{ float: "right" }}>
+                <Button type="primary" disabled={disabled} onClick={reload}>
+                    <RedoOutlined />刷新
+                </Button>
+            </div>
         </Typography.Title>
-        {!loaded
+        {!entries
             ? <Skeleton />
             : <Card>
-                {!submission
+                {!entries || !entry
                     ? <Empty description={<>
                         你还没有参与Hog Contest，请提交代码到<Link to="/assignments/hogcon"><code>hogcon</code>作业</Link>以参与比赛。
                     </>} />
                     : <Descriptions>
-                        <Descriptions.Item label="玩家名称">{submission.name}</Descriptions.Item>
-                        <Descriptions.Item label="代码长度">{submission.size}</Descriptions.Item>
-                        {submission.message &&
+                        <Descriptions.Item label="玩家名称">{entry.name}</Descriptions.Item>
+                        <Descriptions.Item label="代码长度">{entry.size}</Descriptions.Item>
+                        {entry.message &&
                             <Descriptions.Item label="错误信息">
-                                <pre>{submission.message}</pre>
+                                <pre>{entry.message}</pre>
                             </Descriptions.Item>
                         }
                         <Descriptions.Item label="提交时间">
-                            {moment(submission.date).format("YYYY-MM-DD HH:mm:ss")}
+                            {moment(entry.date).format("YYYY-MM-DD HH:mm:ss")}
                         </Descriptions.Item>
-                        {submission.valid && submission.wins &&
-                            <Descriptions.Item label="胜负历史">
-                                {!Object.keys(submission.wins).length
+                        {entry.valid && entry.wins &&
+                            <Descriptions.Item label="胜负数据">
+                                {!Object.keys(entry.wins).length
                                     ? <>暂无</>
                                     : <ul>
-                                        {Object.keys(submission.wins).map(o => <>
+                                        {Object.keys(entry.wins)
+                                            .sort((o1, o2) => entry.wins[o2] - entry.wins[o1])
+                                            .filter(o => entries.findIndex(e => e.id === o) >= 0)
+                                            .map(o => <li key={o}>
+                                                {(entry.wins[o] / 1e4).toFixed(4)}%{" "}
+                                                {entry.wins[o] <= 5e5 ? "负" : "胜"}{" "}
+                                                {entries.find(e => e.id === o)?.name}
+                                            </li>)}
+                                        {Object.keys(entry.wins).length < entries.length - 1 &&
                                             <li>
-                                                {submission.wins[o] / 1e6} v.s. <code>{o.substr(-8)}</code>
-                                                {" "}({submission.wins[o] <= 5e7 ? "lose" : "win"})
+                                                <LoadingOutlined style={{ marginRight: "0.5rem" }} />
+                                                其他对战计算中……
                                             </li>
-                                        </>)}
+                                        }
                                     </ul>
                                 }
                             </Descriptions.Item>

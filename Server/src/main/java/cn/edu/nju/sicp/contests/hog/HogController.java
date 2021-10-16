@@ -29,21 +29,9 @@ public class HogController {
         this.mongo = mongo;
     }
 
-    @GetMapping("/submission")
+    @GetMapping("/entries")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<HogEntry> getSubmission() {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        HogEntry entry = mongo.findOne(Query.query(Criteria.where("userId").is(user.getId())
-                .andOperator(Criteria.where("valid").is(true))), HogEntry.class);
-        if (entry == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        return new ResponseEntity<>(entry, HttpStatus.OK);
-    }
-
-    @GetMapping("/scoreboard")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<HogEntry>> getScoreboard() {
+    public ResponseEntity<List<HogEntry>> getEntries() {
         List<HogEntry> entries = mongo.find(Query.query(Criteria.where("valid").is(true)), HogEntry.class);
         return new ResponseEntity<>(entries, HttpStatus.OK);
     }

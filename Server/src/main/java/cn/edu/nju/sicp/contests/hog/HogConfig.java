@@ -1,6 +1,5 @@
 package cn.edu.nju.sicp.contests.hog;
 
-import com.mongodb.client.MongoClients;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -9,12 +8,8 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.boot.autoconfigure.mongo.MongoProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.core.MongoOperations;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -24,7 +19,7 @@ public class HogConfig {
 
     public static final String triggerImage = "sicp-hog-contest-trigger";
     public static final String compareImage = "sicp-hog-contest-compare";
-    public static final int compareRounds = (int) 1e8;
+    public static final int compareRounds = (int) 1e6;
 
     public static final String queueName = "sicp.contests.hog";
     public static final Date frozen;

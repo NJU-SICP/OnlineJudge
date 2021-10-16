@@ -1,73 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import moment from "moment";
-import http from "../../../http";
 
-import { Card, Empty, Skeleton, Table, Typography } from "antd";
-import { LoadingOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Empty, Skeleton, Table, Typography } from "antd";
+import { RedoOutlined, LoadingOutlined } from "@ant-design/icons";
 
-const HogScoreboard = () => {
-    const [entries, setEntries] = useState(null);
-
-    useEffect(() => {
-        http()
-            .get(`/contests/hog/scoreboard`)
-            .then((res) => {
-                const list = [];
-                const valids = res.data.map(e => e.id);
-                res.data.forEach(e => {
-                    if (!e.key) return;
-                    let playCount = 0;
-                    let winCount = 0;
-                    let winRate = 0;
-                    for (let o in e.wins) {
-                        if (valids.indexOf(o) >= 0) {
-                            ++playCount;
-                            if (e.wins[o] >= 5e7) {
-                                ++winCount;
-                            }
-                            winRate += e.wins[o];
-                        }
-                    }
-                    winRate /= 1e6 * playCount;
-                    list.push({
-                        ...e,
-                        playCount,
-                        winCount,
-                        winRate,
-                    });
-                });
-                list.sort((e1, e2) => {
-                    if (e1.winCount !== e2.winCount) {
-                        return e2.winCount - e1.winCount;
-                    } else {
-                        return e1.size - e2.size;
-                    }
-                });
-                for (let i = 0; i < list.length; ++i) {
-                    list[i].rank = i + 1;
-                }
-                setEntries(list);
-            })
-            .catch((err) => console.error(err));
-    }, []);
-
+const HogScoreboard = ({ entries, reload, disabled }) => {
     const columns = [
         {
             title: "排名",
             key: "rank",
-            dataIndex: "rank",
-            render: (rank, record) => <>
-                {rank}
-                <span style={{ marginLeft: "1rem" }}>
-                    {record.playCount !== entries.length - 1 && <LoadingOutlined />}
-                </span>
-            </>
+            dataIndex: "rank"
         },
         {
             title: "编号",
             key: "id",
             dataIndex: "submissionId",
-            render: (id) => <code>{id.substr(-8)}</code>
+            render: (id) => <Typography.Text copyable={{ text: id }}>
+                <code>{id.substr(-8)}</code>
+            </Typography.Text>
         },
         {
             title: "玩家名称",
@@ -88,6 +38,7 @@ const HogScoreboard = () => {
             title: "平均胜率",
             key: "winRate",
             dataIndex: "winRate",
+            render: (rate) => `${rate.toFixed(4)}%`
         },
         {
             title: "提交时间",
@@ -99,11 +50,22 @@ const HogScoreboard = () => {
 
     return (<>
         <Typography.Title level={3}>
-            排行榜（排行榜更新可能会需要数小时，可以去做一些有意义的事情）
+            比赛排行榜
+            <div style={{ float: "right" }}>
+                <Button type="primary" disabled={disabled} onClick={reload}>
+                    <RedoOutlined />刷新
+                </Button>
+            </div>
         </Typography.Title>
         {!entries
             ? <Skeleton />
             : <>
+                {entries.findIndex(e => Object.keys(e.wins).length < entries.length - 1) >= 0 &&
+                    <Alert message={<>
+                        <LoadingOutlined style={{ marginRight: "0.5rem" }} />
+                        排行榜正在更新中，可能会需要数小时才能得到结果，可以去做一些有意义的事情。
+                    </>} style={{ marginBottom: "1rem" }} />
+                }
                 {entries.length === 0
                     ? <Card>
                         <Empty description="现在还没有人参与Hog Contest，快成为第一个吧！" />

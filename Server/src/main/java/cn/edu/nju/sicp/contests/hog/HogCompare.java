@@ -74,6 +74,15 @@ public class HogCompare implements Consumer<HogEntry> {
 
         try {
             for (HogEntry opponent : opponents) {
+                if (mongo.count(Query.query(Criteria.where("id").is(entry.getId())
+                        .andOperator(Criteria.where("valid").is(true))), HogEntry.class) == 0) {
+                    break; // the entry is invalid now, skip all
+                }
+                if (mongo.count(Query.query(Criteria.where("id").is(opponent.getId())
+                        .andOperator(Criteria.where("valid").is(true))), HogEntry.class) == 0) {
+                    continue; // the opponent is invalid now, skip it
+                }
+
                 logger.info(String.format("UpdateHogContest play %s vs %s", entry, opponent));
                 HogCompareResult result = compareHogEntries(entry, opponent);
                 if (result.getWins() + result.getLoses() != HogConfig.compareRounds) {

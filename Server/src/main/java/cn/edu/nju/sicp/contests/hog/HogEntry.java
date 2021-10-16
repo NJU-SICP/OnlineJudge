@@ -106,6 +106,7 @@ public class HogEntry {
         return "HogEntry{" +
                 "id='" + id + '\'' +
                 ", userId='" + userId + '\'' +
+                ", submissionId='" + submissionId + '\'' +
                 ", key='" + key + '\'' +
                 ", date=" + date +
                 ", valid=" + valid +
