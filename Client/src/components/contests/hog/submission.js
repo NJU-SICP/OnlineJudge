@@ -66,7 +66,9 @@ const HogSubmission = ({ entries, reload, disabled }) => {
                                                 {entry.wins[o] <= 5e5 ? "负" : "胜"}{" "}
                                                 {entries.find(e => e.id === o)?.name}
                                             </li>)}
-                                        {Object.keys(entry.wins).length < entries.length - 1 &&
+                                        {Object.keys(entry.wins)
+                                            .filter(o => entries.findIndex(e => e.id === o) >= 0)
+                                            .length < entries.length - 1 &&
                                             <li>
                                                 <LoadingOutlined style={{ marginRight: "0.5rem" }} />
                                                 其他对战计算中……
