@@ -6,7 +6,7 @@ import moment from "moment";
 import { Button, Card, Descriptions, Empty, Skeleton, Typography } from "antd";
 import { LoadingOutlined, RedoOutlined } from "@ant-design/icons";
 
-const HogSubmission = ({ entries, reload, disabled }) => {
+const HogSubmission = ({ totalRounds, entries, reload, disabled }) => {
     const auth = useSelector((state) => state.auth.value);
     const [entry, setEntry] = useState(null);
 
@@ -62,8 +62,8 @@ const HogSubmission = ({ entries, reload, disabled }) => {
                                             .sort((o1, o2) => entry.wins[o2] - entry.wins[o1])
                                             .filter(o => entries.findIndex(e => e.id === o) >= 0)
                                             .map(o => <li key={o}>
-                                                {(entry.wins[o] / 1e4).toFixed(4)}%{" "}
-                                                {entry.wins[o] <= 5e5 ? "负" : "胜"}{" "}
+                                                {(entry.wins[o] / (totalRounds / 1e2)).toFixed(4)}%{" "}
+                                                {entry.wins[o] > totalRounds / 2 ? "负" : "胜"}{" "}
                                                 {entries.find(e => e.id === o)?.name}
                                             </li>)}
                                         {Object.keys(entry.wins)

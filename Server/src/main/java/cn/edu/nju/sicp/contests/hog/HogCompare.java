@@ -104,16 +104,10 @@ public class HogCompare implements Consumer<HogEntry> {
     }
 
     private HogCompareResult compareHogEntries(HogEntry entry0, HogEntry entry1) throws Exception {
-        InspectImageResponse inspect = docker.inspectImageCmd(HogConfig.compareImage).exec();
-        ContainerConfig config = inspect.getConfig();
-        List<String> args = new ArrayList<>(List.of("/usr/bin/python3", "compare.py"));
-        if (config != null && config.getEntrypoint() != null) {
-            args = new ArrayList<>(List.of(config.getEntrypoint()));
-        }
-        args.add(String.format("%d", HogConfig.compareRounds));
+        Path temp = Files.createTempFile("compare-data", ".tar");
+        Path json = Files.createTempFile("compare-result", ".json");
 
         String containerId = docker.createContainerCmd(HogConfig.compareImage)
-                .withEntrypoint(args.toArray(new String[0]))
                 .withNetworkDisabled(true)
                 .withHostConfig(new HostConfig()
                         .withCpuPeriod(100000L)
@@ -122,9 +116,6 @@ public class HogCompare implements Consumer<HogEntry> {
                         .withMemorySwappiness(0L))
                 .exec()
                 .getId();
-
-        Path temp = Files.createTempFile("compare-data", ".tar");
-        Path json = Files.createTempFile("compare-result", ".json");
 
         try (FileOutputStream tempOutputStream = new FileOutputStream(temp.toFile());
              ArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(tempOutputStream);

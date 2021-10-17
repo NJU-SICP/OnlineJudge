@@ -7,6 +7,7 @@ import HogSubmission from "./submission";
 import HogScoreboard from "./scoreboard";
 
 const HogContest = () => {
+    const totalRounds = 2e6;
     const [entries, setEntries] = useState(null);
     const [disabled, setDisabled] = useState(false);
 
@@ -25,13 +26,13 @@ const HogContest = () => {
                     for (let o in e.wins) {
                         if (valids.indexOf(o) >= 0) {
                             ++playCount;
-                            if (e.wins[o] >= 5e5) {
+                            if (e.wins[o] > totalRounds / 2) {
                                 ++winCount;
                             }
                             winRate += e.wins[o];
                         }
                     }
-                    winRate /= 1e4 * playCount;
+                    winRate /= (totalRounds / 1e2) * playCount;
                     list.push({
                         ...e,
                         playCount,
@@ -65,7 +66,7 @@ const HogContest = () => {
             截止时间：2021-11-07 23:59
         </Typography.Title>
         <Divider />
-        <HogSubmission entries={entries} reload={loadEntries} disabled={disabled}/>
+        <HogSubmission totalRounds={totalRounds} entries={entries} reload={loadEntries} disabled={disabled}/>
         <Divider />
         <HogScoreboard entries={entries} reload={loadEntries} disabled={disabled}/>
     </>);
