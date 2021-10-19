@@ -19,7 +19,7 @@ public class HogConfig {
 
     public static final String triggerImage = "sicp-hog-contest-trigger";
     public static final String compareImage = "sicp-hog-contest-compare";
-    public static final int compareRounds = (int) 1e6;
+    public static final int compareRounds = (int) 2e6;
 
     public static final String queueName = "sicp.contests.hog";
     public static final Date frozen;

@@ -112,7 +112,7 @@ public class HogCompare implements Consumer<HogEntry> {
                 .withHostConfig(new HostConfig()
                         .withCpuPeriod(100000L)
                         .withCpuQuota(100000L)
-                        .withMemory(256L * 1024 * 1024)
+                        .withMemory(1024L * 1024 * 1024) // load scenarios require huge memory
                         .withMemorySwappiness(0L))
                 .exec()
                 .getId();
