@@ -203,7 +203,9 @@ public class SubmissionController {
             if (!submission.getUserId().equals(user.getId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
-            submission.getResult().setLog(null); // hide log from students
+            if (submission.getResult() != null) {
+                submission.getResult().setLog(null); // hide log from students
+            }
         }
         return new ResponseEntity<>(submission, HttpStatus.OK);
     }
