@@ -63,7 +63,7 @@ const HogSubmission = ({ totalRounds, entries, reload, disabled }) => {
                                             .filter(o => entries.findIndex(e => e.id === o) >= 0)
                                             .map(o => <li key={o}>
                                                 {(entry.wins[o] / (totalRounds / 1e2)).toFixed(4)}%{" "}
-                                                {entry.wins[o] > totalRounds / 2 ? "负" : "胜"}{" "}
+                                                {entry.wins[o] <= totalRounds / 2 ? "负" : "胜"}{" "}
                                                 {entries.find(e => e.id === o)?.name}
                                             </li>)}
                                         {Object.keys(entry.wins)
