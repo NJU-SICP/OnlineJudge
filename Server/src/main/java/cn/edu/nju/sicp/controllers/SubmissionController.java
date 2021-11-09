@@ -213,6 +213,7 @@ public class SubmissionController {
     @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_CREATE)")
     public ResponseEntity<Submission> createSubmission(
+            @RequestPart(value = "userId", required = false) String userId,
             @RequestPart("assignmentId") String assignmentId,
             @RequestPart(value = "token", required = false) String token,
             @RequestPart("file") MultipartFile file) {
@@ -228,7 +229,15 @@ public class SubmissionController {
         }
 
         String createdBy = null; // if submit with token, set to issuer user info, else null
-        if (token != null) {
+        if (userId != null) {
+            if (user.getAuthorities().stream()
+                    .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_UPDATE))) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+            createdBy = String.format("%s %s", user.getUsername(), user.getFullName());
+            user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        } else if (token != null) {
             Token example = new Token();
             example.setToken(token);
             example.setUserId(user.getId());
