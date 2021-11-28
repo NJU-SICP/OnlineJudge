@@ -61,7 +61,13 @@ class SubmitProtocol(models.Protocol):
                     print('Aborted.')
                     return
 
-        suffix = '.py' if len(self.assignment.src) == 1 else '.zip'
+        if len(self.assignment.src) == 1:
+            if '.' in self.assignment.src[0]:
+                suffix = '.' + self.assignment.src[0].split('.')[-1]
+            else:
+                suffix = '.py'  # python source file by default
+        else:
+            suffix = '.zip'
         log.info("submit file type will be {}".format(suffix))
         with tempfile.NamedTemporaryFile(mode='wb+', prefix='sicp-submit-', suffix=suffix) as temp:
             log.info("create temp file {}".format(temp.name))
