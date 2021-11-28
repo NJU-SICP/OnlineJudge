@@ -185,7 +185,7 @@ public class GradeSubmissionListener implements ChannelAwareMessageListener {
                         }
                     }
                 } else {
-                    // single file (.pdf or .py)
+                    // single file (.pdf, .py, .scm)
                     byte[] s3Bytes = IOUtils.toByteArray(s3Stream);
                     String name = assignment.getSubmitFileName() + assignment.getSubmitFileType();
                     TarArchiveEntry entry = new TarArchiveEntry(name);

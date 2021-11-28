@@ -61,9 +61,11 @@ class QueryProtocol(models.Protocol):
                     'id': item['id'],
                     'time': datetime.fromisoformat(item['createdAt']).astimezone(),
                     'score': item['result']['score'] if 'result' in item
+                                                        and item['result'] is not None
                                                         and 'score' in item['result']
                                                         and item['result']['score'] is not None
                     else ('Error' if 'result' in item
+                                     and item['result'] is not None
                                      and 'error' in item['result']
                                      and item['result']['error'] is not None else '')
                 })
