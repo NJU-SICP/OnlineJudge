@@ -33,6 +33,7 @@ public class HogConfig {
         deadline = calendar.getTime();
     }
 
+    /* Hog contest is over.
     @Bean
     Queue hogQueue() {
         return QueueBuilder.durable(queueName).build();
@@ -42,7 +43,6 @@ public class HogConfig {
     Binding hogQueueBinding(Queue hogQueue, DirectExchange directExchange) {
         return BindingBuilder.bind(hogQueue).to(directExchange).with(queueName);
     }
-
     @Bean
     SimpleMessageListenerContainer hogListenerContainer(
             ConnectionFactory connectionFactory, Queue hogQueue, HogListener hogListener) {
@@ -55,5 +55,6 @@ public class HogConfig {
         container.setConcurrency("1-4");
         return container;
     }
+    */
 
 }
