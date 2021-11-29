@@ -1,3 +1,5 @@
+# Modifications copyright (C) 2021 Tianyun Zhang
+# This file has been modified to adapt to SICP course at Nanjing University.
 """Console for interpreting Scheme. In particular, this is meant to integrate
 with UC Berkeley CS 61A's Scheme project. SchemeConsole expects the an
 importable module called "scheme" with the following interface:
@@ -31,24 +33,21 @@ class SchemeConsole(interpreter.Console):
         """Prepares a set of setup, test, and teardown code to be
         run in the console.
 
-        Loads the Scheme module before loading any code.
+        Loads the Scheme module AFTER loading codes.
         """
-        self._import_scheme()
-        try:
-            self._output_fn = self.scheme.repl_str
-        except:
-            pass
+        self.scheme = None  # do not load before IPC, scheme cannot be pickled
         super().load(code, setup, teardown)
-        self._frame = self.scheme.create_global_frame()
 
     def interact(self):
         """Opens up an interactive session with the current state of
         the console.
         """
+        self._postpone_load()
         self.scheme.read_eval_print_loop(self.scheme.buffer_input, self._frame,
                                          True)
 
     def evaluate(self, code):
+        self._postpone_load()
         if not code.strip():
             # scheme.scheme_read can't handle empty strings.
             return None, ''
@@ -83,6 +82,15 @@ class SchemeConsole(interpreter.Console):
             return result, debug.remove_debug(printed_output)
         finally:
             output.remove_log(log_id)
+    
+    def _postpone_load(self):
+        if not self.scheme:
+            self._import_scheme()
+            try:
+                self._output_fn = self.scheme.repl_str
+            except:
+                pass
+            self._frame = self.scheme.create_global_frame()
 
     def _import_scheme(self):
         try:
