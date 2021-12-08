@@ -17,7 +17,7 @@ const AdminAssignmentList = () => {
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/assignments/?page=${page - 1}`)
+            .get(`/assignments?page=${page - 1}`)
             .then((res) => setPage(res.data))
             .catch((err) => console.error(err));
     }, [location.search]);

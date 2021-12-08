@@ -79,7 +79,7 @@ public class AssignmentController {
         return new ResponseEntity<>(infos, HttpStatus.OK);
     }
 
-    @GetMapping("/")
+    @GetMapping()
     @PreAuthorize("hasAuthority(@Roles.OP_ASSIGNMENT_READ_ALL)")
     public ResponseEntity<Page<AssignmentInfo>> listAssignments(
             @RequestParam(required = false) Integer page,
