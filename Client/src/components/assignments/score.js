@@ -11,7 +11,7 @@ const AssignmentScore = ({assignmentId, totalScore}) => {
 
     useEffect(() => {
         http()
-            .get(`/submissions/scores/statistics`, {
+            .get(`/scores/single`, {
                 params: {
                     assignmentId: assignmentId,
                     userId: auth.userId

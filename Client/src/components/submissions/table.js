@@ -8,7 +8,7 @@ import {ArrowRightOutlined, LoadingOutlined} from "@ant-design/icons";
 import SubmissionTimeline from "./timeline";
 import Download from "../download";
 
-const SubmissionTable = ({assignment, page}) => {
+const SubmissionTable = ({assignment, page, plagiarized}) => {
     const history = useHistory();
     const location = useLocation();
     const [selected, setSelected] = useState(null);
@@ -72,7 +72,7 @@ const SubmissionTable = ({assignment, page}) => {
                 if (result === null) {
                     return <LoadingOutlined/>;
                 } else if (result.error === null) {
-                    return result?.score;
+                    return <Typography.Text delete={plagiarized}>{result?.score}</Typography.Text>
                 } else if (result.retryAt != null) {
                     return <LoadingOutlined/>;
                 } else {

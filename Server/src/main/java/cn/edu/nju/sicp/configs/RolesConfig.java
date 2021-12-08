@@ -33,6 +33,12 @@ public final class RolesConfig {
     public static final String OP_BACKUP_READ_ALL = "OP_BACKUP_READ_ALL";
     public static final String OP_BACKUP_CREATE = "OP_BACKUP_CREATE";
     public static final String OP_BACKUP_DELETE = "OP_BACKUP_DELETE";
+    public static final String OP_PLAGIARISM_READ_ALL = "OP_PLAGIARISM_READ_ALL";
+    public static final String OP_PLAGIARISM_READ_SELF = "OP_PLAGIARISM_READ_SELF";
+    public static final String OP_PLAGIARISM_CREATE = "OP_PLAGIARISM_CREATE";
+    public static final String OP_PLAGIARISM_DELETE = "OP_PLAGIARISM_DELETE";
+    public static final String OP_SCORE_READ_SELF = "OP_SCORE_READ_SELF";
+    public static final String OP_SCORE_READ_ALL = "OP_SCORE_READ_ALL";
 
     private static final HashMap<String, List<String>> grantedAuthoritiesMap;
 
@@ -57,6 +63,12 @@ public final class RolesConfig {
         grantedAuthoritiesMap.put(OP_BACKUP_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_BACKUP_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));
         grantedAuthoritiesMap.put(OP_BACKUP_DELETE, List.of(ROLE_ADMIN));
+        grantedAuthoritiesMap.put(OP_PLAGIARISM_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
+        grantedAuthoritiesMap.put(OP_PLAGIARISM_READ_SELF, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));
+        grantedAuthoritiesMap.put(OP_PLAGIARISM_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
+        grantedAuthoritiesMap.put(OP_PLAGIARISM_DELETE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
+        grantedAuthoritiesMap.put(OP_SCORE_READ_SELF, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));
+        grantedAuthoritiesMap.put(OP_SCORE_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
     }
 
     public static HashMap<String, List<String>> getGrantedAuthoritiesMap() {

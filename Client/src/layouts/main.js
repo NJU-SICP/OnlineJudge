@@ -21,6 +21,7 @@ import AdminAssignmentList from "../components/admin/assignments/list";
 import AdminAssignmentCreator from "../components/admin/assignments/creator";
 import AdminAssignmentEditor from "../components/admin/assignments/editor";
 import AdminAssignmentGrader from "../components/admin/assignments/grader";
+import AdminPlagiarismList from "../components/admin/plagiarisms/list";
 import AdminSubmissionList from "../components/admin/submissions/list";
 import AdminSubmissionTokens from "../components/admin/submissions/tokens";
 import AdminBackupList from "../components/admin/backups/list";
@@ -101,6 +102,7 @@ const MainLayout = () => {
                                         <Route path="/admin/assignments/:id/grader" children={<AdminAssignmentGrader/>}/>
                                         <Route path="/admin/assignments/:id" children={<AdminAssignmentEditor/>}/>
                                         <Route path="/admin/assignments" children={<AdminAssignmentList/>}/>
+                                        <Route path="/admin/plagiarisms" children={<AdminPlagiarismList/>}/>
                                         <Route path="/admin/submissions/tokens" children={<AdminSubmissionTokens/>}/>
                                         <Route path="/admin/submissions" children={<AdminSubmissionList/>}/>
                                         <Route path="/admin/backups" children={<AdminBackupList/>}/>

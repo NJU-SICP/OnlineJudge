@@ -2,17 +2,24 @@ package cn.edu.nju.sicp.services;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import cn.edu.nju.sicp.configs.AmqpConfig;
+import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.configs.S3Config;
-import cn.edu.nju.sicp.contests.hog.HogConfig;
+import cn.edu.nju.sicp.models.Assignment;
+import cn.edu.nju.sicp.models.Result;
 import cn.edu.nju.sicp.models.Submission;
+import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.SubmissionRepository;
+import cn.edu.nju.sicp.repositories.UserRepository;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,20 +36,22 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 public class SubmissionService {
 
     private final S3Config s3Config;
-    private final SubmissionRepository repository;
+    private final UserRepository userRepository;
+    private final SubmissionRepository submissionRepository;
     private final RabbitTemplate rabbit;
-    private final Logger logger;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public SubmissionService(S3Config s3Config, SubmissionRepository repository,
-            RabbitTemplate rabbit) {
+    public SubmissionService(UserRepository userRepository,
+                             SubmissionRepository submissionRepository,
+                             S3Config s3Config,
+                             RabbitTemplate rabbit) {
+        this.userRepository = userRepository;
+        this.submissionRepository = submissionRepository;
         this.s3Config = s3Config;
-        this.repository = repository;
         this.rabbit = rabbit;
-        this.logger = LoggerFactory.getLogger(SubmissionService.class);
     }
 
-    public void uploadSubmissionFile(Submission submission, InputStream stream, long size)
-            throws S3Exception {
+    public void uploadSubmissionFile(Submission submission, InputStream stream, long size) throws S3Exception {
         S3Client s3 = s3Config.getInstance();
         String bucket = s3Config.getBucket();
         String key = submission.getKey();
@@ -66,11 +75,44 @@ public class SubmissionService {
         logger.debug(String.format("Delete submission file %s", key));
     }
 
+    public DoubleSummaryStatistics getSubmissionStatistics(User user, Assignment assignment) {
+        return getSubmissionStatistics(user, assignment, false);
+    }
+
+    public DoubleSummaryStatistics getSubmissionStatistics(User user, Assignment assignment, boolean unique) {
+        Submission submission = new Submission();
+        submission.setUserId(user == null ? null : user.getId());
+        submission.setAssignmentId(assignment == null ? null : assignment.getId());
+
+        Stream<Submission> stream;
+        if (unique) { // take only highest unique submission of each user
+            stream = submissionRepository.findAll(Example.of(submission)).stream()
+                    .filter(s -> s.getResult() != null && s.getResult().getScore() != null)
+                    .collect(Collectors.toMap(Submission::getUserId, Function.identity(),
+                            BinaryOperator.maxBy(Comparator.comparing(s -> s.getResult().getScore()))))
+                    .values().stream();
+        } else {
+            stream = submissionRepository.findAll(Example.of(submission)).stream()
+                    .filter(s -> s.getResult() != null && s.getResult().getScore() != null);
+        }
+        if (user == null) {
+            List<String> studentUserIds =
+                    userRepository.findAllByRolesContains(RolesConfig.ROLE_STUDENT).stream()
+                            .map(User::getId)
+                            .collect(Collectors.toList());
+            stream = stream.filter(s -> studentUserIds.contains(s.getUserId()));
+        }
+        return stream.map(Submission::getResult)
+                .map(Result::getScore)
+                .mapToDouble(Double::valueOf)
+                .summaryStatistics();
+    }
+
     public byte[] exportSubmissions(String assignmentId) throws IOException {
         Submission example = new Submission();
         example.setAssignmentId(assignmentId);
         Map<String, List<Submission>> submissionMap =
-                repository.findAll(Example.of(example)).stream()
+                submissionRepository.findAll(Example.of(example)).stream()
                         .collect(Collectors.groupingBy(Submission::getUserId));
         Pattern pattern = Pattern.compile("submissions/[^/]*/([^/]*)/(.*)");
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -85,7 +127,7 @@ public class SubmissionService {
                         String key = matcher.matches()
                                 ? String.format("all/%s/%s", matcher.group(1), matcher.group(2))
                                 : String.format("all/unknown/%s",
-                                        submission.getKey().replace("/", "_"));
+                                submission.getKey().replace("/", "_"));
                         ZipEntry zipEntry = new ZipEntry(key);
                         zipOutputStream.putNextEntry(zipEntry);
                         IOUtils.copy(s3InputStream, zipOutputStream);
@@ -110,7 +152,7 @@ public class SubmissionService {
                         String key = matcher.matches()
                                 ? String.format("single/%s_%s", matcher.group(1), matcher.group(2))
                                 : String.format("single/unknown/%s",
-                                        submission.getKey().replace("/", "_"));
+                                submission.getKey().replace("/", "_"));
                         ZipEntry zipEntry = new ZipEntry(key);
                         zipOutputStream.putNextEntry(zipEntry);
                         IOUtils.copy(s3InputStream, zipOutputStream);
@@ -127,7 +169,7 @@ public class SubmissionService {
     @Scheduled(fixedRate = 10 * 1000) // per minute
     public void autoRetryGradingSubmissions() {
         try {
-            List<Submission> submissions = repository.findAllByResultRetryAtBefore(new Date());
+            List<Submission> submissions = submissionRepository.findAllByResultRetryAtBefore(new Date());
             if (submissions.size() > 0) {
                 logger.info(String.format("Retry grading for %d submissions", submissions.size()));
             }
@@ -142,7 +184,7 @@ public class SubmissionService {
     public void rejudgeSubmission(Submission submission) {
         submission.setGraded(false);
         submission.setResult(null);
-        repository.save(submission);
+        submissionRepository.save(submission);
         try {
             sendGradeSubmissionMessage(submission);
             logger.info(String.format("RejudgeSubmission %s", submission));

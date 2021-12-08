@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +33,10 @@ public class ErrorController {
                 response.setMessage(rse.getReason());
             } else if (e instanceof AccessDeniedException) {
                 status = HttpStatus.FORBIDDEN;
+                response.setStatus(status.value());
+                response.setMessage(null);
+            } else if (e instanceof HttpRequestMethodNotSupportedException) {
+                status = HttpStatus.METHOD_NOT_ALLOWED;
                 response.setStatus(status.value());
                 response.setMessage(null);
             } else {

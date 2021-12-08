@@ -15,6 +15,7 @@ import {
 import moment from "moment";
 import SubmissionTable from "../submissions/table";
 import {useSelector} from "react-redux";
+import AssignmentPlagiarism from "./plagiarism";
 
 const AssignmentView = () => {
     const auth = useSelector((state) => state.auth.value);
@@ -23,6 +24,7 @@ const AssignmentView = () => {
     const location = useLocation();
 
     const [assignment, setAssignment] = useState(null);
+    const [plagiarized, setPlagiarized] = useState(false);
     const [submissionsPage, setSubmissionsPage] = useState(null);
     const [disabled, setDisabled] = useState(false);
     const [token, setToken] = useState(null);
@@ -124,21 +126,21 @@ const AssignmentView = () => {
     return (
         <>
             {!assignment
-                ? <Skeleton/>
+                ? <Skeleton />
                 : <>
                     <Typography.Title level={2}>
-                        <BookOutlined/> 作业：{assignment.title}
+                        <BookOutlined /> 作业：{assignment.title}
                         <div style={{float: "right"}}>
                             <Button type="link" onClick={() => history.push(`/assignments/${id}/backups`)}>
-                                <CloudServerOutlined/> 查看备份列表
+                                <CloudServerOutlined /> 查看备份列表
                             </Button>
                             {!token
                                 ? <>
                                     <Popover placement="left" trigger="click" title="输入提交密钥" content={<>
                                         <Form layout="inline" onFinish={(values) => setToken(values.token)}>
                                             <Form.Item name="token" label="密钥"
-                                                       rules={[{required: true, message: "请输入密钥"}]}>
-                                                <Input/>
+                                                rules={[{required: true, message: "请输入密钥"}]}>
+                                                <Input />
                                             </Form.Item>
                                             <Form.Item>
                                                 <Button type="primary" htmlType="submit">确定</Button>
@@ -146,56 +148,57 @@ const AssignmentView = () => {
                                         </Form>
                                     </>}>
                                         <Button type="text">
-                                            <AuditOutlined/> 使用提交密钥
+                                            <AuditOutlined /> 使用提交密钥
                                         </Button>
                                     </Popover>
                                 </>
                                 : <>
                                     <Button type="text" danger onClick={() => setToken(null)}>
-                                        <DeleteOutlined/> 删除提交密钥
+                                        <DeleteOutlined /> 删除提交密钥
                                     </Button>
                                 </>}
                         </div>
                     </Typography.Title>
                     <Row style={{margin: "2em auto"}}>
                         <Col span={6}>
-                            <Statistic title="截止日期" value={moment(assignment.endTime).format("YYYY-MM-DD HH:mm")}/>
+                            <Statistic title="截止日期" value={moment(assignment.endTime).format("YYYY-MM-DD HH:mm")} />
                         </Col>
                         <Col span={6}>
-                            <Statistic title="作业满分" value={assignment.totalScore} suffix="分"/>
+                            <Statistic title="作业满分" value={assignment.totalScore} suffix="分" />
                         </Col>
                         <Col span={6}>
                             <Statistic title="提交文件"
-                                       value={`${assignment.submitFileName}${assignment.submitFileType} (${assignment.submitFileSize} MiB)`}/>
+                                value={`${assignment.submitFileName}${assignment.submitFileType} (${assignment.submitFileSize} MiB)`} />
                         </Col>
                         <Col span={6}>
                             <Statistic title="提交次数" loading={!submissionsPage}
-                                       value={submissionsPage?.totalElements ?? 0}
-                                       suffix={assignment.submitCountLimit <= 0 ? "次" : `/ ${assignment.submitCountLimit} 次`}/>
+                                value={submissionsPage?.totalElements ?? 0}
+                                suffix={assignment.submitCountLimit <= 0 ? "次" : `/ ${assignment.submitCountLimit} 次`} />
                         </Col>
                     </Row>
                     <Upload.Dragger style={{maxHeight: "5em"}} name="file" accept={assignment.submitFileType}
-                                    beforeUpload={beforeUpload} customRequest={createSubmission} maxCount={1}
-                                    disabled={!token && (assignment.ended || assignment.submitCountLimit === 0 || disabled)}>
+                        beforeUpload={beforeUpload} customRequest={createSubmission} maxCount={1}
+                        disabled={!token && (assignment.ended || assignment.submitCountLimit === 0 || disabled)}>
                         {(assignment.ended && !token)
-                            ? <Typography.Text disabled><StopOutlined/> 作业已截止，无法提交</Typography.Text>
+                            ? <Typography.Text disabled><StopOutlined /> 作业已截止，无法提交</Typography.Text>
                             : <>
                                 {(assignment.submitCountLimit === 0 && !token)
-                                    ? <Typography.Text type="danger"><StopOutlined/> 此作业不允许自行提交</Typography.Text>
+                                    ? <Typography.Text type="danger"><StopOutlined /> 此作业不允许自行提交</Typography.Text>
                                     : <Typography.Text>
-                                        <InboxOutlined/> 点击或将文件拖拽到此处上传提交
+                                        <InboxOutlined /> 点击或将文件拖拽到此处上传提交
                                         {!token && assignment.submitCountLimit > 0 &&
-                                        <span>（剩余{assignment.submitCountLimit - (submissionsPage && submissionsPage.totalElements ? submissionsPage.totalElements : 0)}次提交机会）</span>
+                                            <span>（剩余{assignment.submitCountLimit - (submissionsPage && submissionsPage.totalElements ? submissionsPage.totalElements : 0)}次提交机会）</span>
                                         }
                                         {!!token && <Typography.Text type="danger">（使用提交密钥）</Typography.Text>}
                                     </Typography.Text>}
                             </>}
                     </Upload.Dragger>
                     {submissionsPage &&
-                    <>
-                        <Divider/>
-                        <SubmissionTable assignment={assignment} page={submissionsPage}/>
-                    </>}
+                        <>
+                            <Divider />
+                            <AssignmentPlagiarism assignment={assignment} setPlagiarized={setPlagiarized} />
+                            <SubmissionTable assignment={assignment} page={submissionsPage} plagiarized={plagiarized} />
+                        </>}
                 </>
             }
         </>

@@ -6,6 +6,7 @@ import {Menu as AntMenu} from "antd";
 import {
     CloudServerOutlined,
     EditOutlined,
+    HighlightOutlined,
     HomeOutlined,
     PaperClipOutlined,
     RobotOutlined,
@@ -62,6 +63,12 @@ const Menu = () => {
                     <AntMenu.Item key="/admin/assignments" icon={<EditOutlined/>}
                                   onClick={() => redirect("/admin/assignments")}>
                         作业管理
+                    </AntMenu.Item>
+                    }
+                    {auth.authorities.indexOf("OP_PLAGIARISM_READ_ALL") >= 0 &&
+                    <AntMenu.Item key="/admin/plagiarisms" icon={<HighlightOutlined/>}
+                                  onClick={() => redirect("/admin/plagiarisms")}>
+                        抄袭管理
                     </AntMenu.Item>
                     }
                     {auth.authorities.indexOf("OP_SUBMISSION_READ_ALL") >= 0 &&

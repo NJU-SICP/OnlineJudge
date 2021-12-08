@@ -27,10 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.InputStream;
 import java.util.*;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/submissions")
@@ -156,39 +153,19 @@ public class SubmissionController {
             @RequestParam String assignmentId, @RequestParam(required = false) String userId,
             @RequestParam(required = false) Boolean unique) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (userId != null && !userId.equals(user.getId()) && user.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (userId != null) {
+            if (!userId.equals(user.getId()) && user.getAuthorities().stream()
+                    .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_READ_ALL))) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+            user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         }
-        Assignment assignment =
-                assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId).orElse(null);
-
-        Submission submission = new Submission();
-        submission.setUserId(userId);
-        submission.setAssignmentId(assignment == null ? null : assignment.getId());
-
-        Stream<Submission> stream;
-        if (unique == null || !unique) {
-            stream = submissionRepository.findAll(Example.of(submission)).stream()
-                    .filter(s -> s.getResult() != null && s.getResult().getScore() != null);
-        } else {
-            stream = submissionRepository.findAll(Example.of(submission)).stream()
-                    .filter(s -> s.getResult() != null && s.getResult().getScore() != null)
-                    .collect(Collectors.toMap(Submission::getUserId, Function.identity(),
-                            BinaryOperator
-                                    .maxBy(Comparator.comparing(s -> s.getResult().getScore()))))
-                    .values().stream();
-        }
-
-        if (userId == null) {
-            List<String> studentUserIds =
-                    userRepository.findAllByRolesContains(RolesConfig.ROLE_STUDENT).stream()
-                            .map(User::getId).collect(Collectors.toList());
-            stream = stream.filter(s -> studentUserIds.contains(s.getUserId()));
-        }
-
-        DoubleSummaryStatistics statistics = stream.map(Submission::getResult).map(Result::getScore)
-                .mapToDouble(Double::valueOf).summaryStatistics();
+        Assignment assignment = assignmentId == null
+                ? null
+                : assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        DoubleSummaryStatistics statistics = service.getSubmissionStatistics(user, assignment);
         return new ResponseEntity<>(statistics, HttpStatus.OK);
     }
 
