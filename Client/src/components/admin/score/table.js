@@ -1,18 +1,20 @@
 import React, {useEffect, useState} from "react";
 import http from "../../../http";
 
-import {Skeleton, Table, Typography} from "antd";
+import {Button, Skeleton, Table, Typography} from "antd";
 import {TableOutlined} from "@ant-design/icons";
 import AdminAssignmentInfo from "../assignments/info";
 import AdminScoreSingle from "./single";
 import {Link} from "react-router-dom";
 
 const AdminScoreTable = () => {
+    const [show, setShow] = useState(false);
     const [error, setError] = useState(null);
     const [users, setUsers] = useState(null);
     const [columns, setColumns] = useState(null);
 
     useEffect(() => {
+        if (!show) return;
         Promise.all([http().get(`/scores/all`), http().get(`/users/all`), http().get(`/assignments/all`)])
             .then(([res1, res2, res3]) => {
                 const scores = res1.data;
@@ -49,18 +51,26 @@ const AdminScoreTable = () => {
                 console.error(err);
                 setError(err);
             });
-    }, []);
+    }, [show]);
 
     return (<>
         <Typography.Title level={2}>
             <TableOutlined /> 成绩查询
         </Typography.Title>
-        {!columns && !error
-            ? <Skeleton />
+        {!show
+            ? <>
+                <Typography>加载成绩表后，浏览器会占用一定内存，可能会造成卡顿。</Typography>
+                <Button onClick={() => setShow(true)}>加载所有成绩</Button>
+            </>
             : <>
-                {!error
-                    ? <Table columns={columns} dataSource={users} rowKey="id" pagination={false} />
-                    : <Typography.Text>加载失败：{error}</Typography.Text>
+                {!columns && !error
+                    ? <Skeleton />
+                    : <>
+                        {!error
+                            ? <Table columns={columns} dataSource={users} rowKey="id" pagination={false} />
+                            : <Typography.Text>加载失败：{error}</Typography.Text>
+                        }
+                    </>
                 }
             </>
         }
