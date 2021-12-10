@@ -1,9 +1,11 @@
 package cn.edu.nju.sicp.services;
 
+import cn.edu.nju.sicp.configs.CacheConfig;
 import cn.edu.nju.sicp.models.Assignment;
 import cn.edu.nju.sicp.models.Plagiarism;
 import cn.edu.nju.sicp.models.Statistics;
 import cn.edu.nju.sicp.models.User;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -20,7 +22,9 @@ public class ScoreService {
         this.plagiarismService = plagiarismService;
     }
 
-    public Statistics getStatistics(User user, Assignment assignment) {
+    // Cache results for efficiency. If submission or plagiarism is saved, evict caches.D
+    @Cacheable(cacheNames = CacheConfig.SCORE_CACHE_NAME, key = "#user.id + '-' + #assignment.id")
+    public Statistics getScoreStatistics(User user, Assignment assignment) {
         Statistics statistics = submissionService.getSubmissionStatistics(user, assignment);
         Optional<Plagiarism> optionalPlagiarism = plagiarismService.findPlagiarismByUser(user, assignment);
         if (optionalPlagiarism.isEmpty()) {

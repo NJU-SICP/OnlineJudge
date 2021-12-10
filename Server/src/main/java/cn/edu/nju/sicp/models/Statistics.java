@@ -1,8 +1,13 @@
 package cn.edu.nju.sicp.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.*;
 
-public class Statistics {
+@JsonIgnoreProperties
+public final class Statistics {
 
     private final Long count;
     private final Integer min;
@@ -21,6 +26,18 @@ public class Statistics {
         this.min = this.max = score;
         this.average = Double.valueOf(score);
     }
+
+    @JsonCreator
+    public Statistics(@JsonProperty("count") Long count,
+                      @JsonProperty("min") Integer min,
+                      @JsonProperty("max") Integer max,
+                      @JsonProperty("average") Double average) {
+        this.count = count;
+        this.min = min;
+        this.max = max;
+        this.average = average;
+    }
+
 
     public Long getCount() {
         return count;

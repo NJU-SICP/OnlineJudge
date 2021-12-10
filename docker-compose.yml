@@ -50,3 +50,13 @@ services:
       - ./data/registry:/var/lib/registry
     ports:
       - "127.0.0.1:5000:5000"
+
+  # In-memory cache
+  redis:
+    image: redis:6-alpine
+    restart: always
+    command: redis-server --save 60 1 --requirepass sicp_redis
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - "127.0.0.1:28305:6379"

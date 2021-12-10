@@ -39,11 +39,17 @@ spring:
       database: sicp
       #username:
       #password:
+      #authentication-database:
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    # password:
   servlet:
     multipart:
       max-file-size: 1MB

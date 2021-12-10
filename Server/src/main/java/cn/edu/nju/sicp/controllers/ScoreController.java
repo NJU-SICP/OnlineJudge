@@ -53,7 +53,7 @@ public class ScoreController {
         }
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        Statistics statistics = scoreService.getStatistics(user, assignment);
+        Statistics statistics = scoreService.getScoreStatistics(user, assignment);
         return new ResponseEntity<>(statistics, HttpStatus.OK);
     }
 
@@ -70,10 +70,10 @@ public class ScoreController {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         }
         User targetUser = user;
-        Map<String, Statistics> statistics = assignmentRepository.findAll().stream()
+        Map<String, Statistics> statistics = assignmentRepository.findAll().parallelStream()
                 .collect(Collectors.toMap(
                         Assignment::getId,
-                        assignment -> scoreService.getStatistics(targetUser, assignment)
+                        assignment -> scoreService.getScoreStatistics(targetUser, assignment)
                 ));
         return new ResponseEntity<>(statistics, HttpStatus.OK);
     }
@@ -83,11 +83,12 @@ public class ScoreController {
     public ResponseEntity<Map<String, Statistics>> getAssignment(@RequestParam String assignmentId) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        Map<String, Statistics> statistics = userRepository.findAllByRolesContains(RolesConfig.ROLE_STUDENT).stream()
-                .collect(Collectors.toMap(
-                        User::getId,
-                        user -> scoreService.getStatistics(user, assignment)
-                ));
+        Map<String, Statistics> statistics =
+                userRepository.findAllByRolesContains(RolesConfig.ROLE_STUDENT).parallelStream()
+                        .collect(Collectors.toMap(
+                                User::getId,
+                                user -> scoreService.getScoreStatistics(user, assignment)
+                        ));
         return new ResponseEntity<>(statistics, HttpStatus.OK);
     }
 
@@ -96,13 +97,13 @@ public class ScoreController {
     public ResponseEntity<Map<String, Map<String, Statistics>>> getAll() {
         List<User> users = userRepository.findAllByRolesContains(RolesConfig.ROLE_STUDENT);
         Map<String, Map<String, Statistics>> statistics =
-                assignmentRepository.findAll().stream()
+                assignmentRepository.findAll().parallelStream()
                         .collect(Collectors.toMap(
                                 Assignment::getId,
-                                assignment -> users.stream()
+                                assignment -> users.parallelStream()
                                         .collect(Collectors.toMap(
                                                 User::getId,
-                                                user -> scoreService.getStatistics(user, assignment)
+                                                user -> scoreService.getScoreStatistics(user, assignment)
                                         ))
                         ));
         return new ResponseEntity<>(statistics, HttpStatus.OK);
