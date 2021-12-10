@@ -149,7 +149,7 @@ public class SubmissionController {
 
     @GetMapping("/scores/statistics")
     @PreAuthorize("hasAuthority(@Roles.OP_SUBMISSION_READ_SELF) or hasAuthority(@Roles.OP_SUBMISSION_READ_ALL)")
-    public ResponseEntity<DoubleSummaryStatistics> getAverageScore(
+    public ResponseEntity<Statistics> getScoreStatistics(
             @RequestParam String assignmentId, @RequestParam(required = false) String userId,
             @RequestParam(required = false) Boolean unique) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -165,7 +165,7 @@ public class SubmissionController {
                 ? null
                 : assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        DoubleSummaryStatistics statistics = service.getSubmissionStatistics(user, assignment);
+        Statistics statistics = service.getSubmissionStatistics(user, assignment);
         return new ResponseEntity<>(statistics, HttpStatus.OK);
     }
 

@@ -2,7 +2,7 @@ package cn.edu.nju.sicp.controllers;
 
 import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.models.Assignment;
-import cn.edu.nju.sicp.models.Role;
+import cn.edu.nju.sicp.models.Statistics;
 import cn.edu.nju.sicp.models.User;
 import cn.edu.nju.sicp.repositories.AssignmentRepository;
 import cn.edu.nju.sicp.repositories.UserRepository;
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,7 +39,7 @@ public class ScoreController {
 
     @GetMapping("/single")
     @PreAuthorize("hasAuthority(@Roles.OP_SCORE_READ_SELF) or hasAuthority(@Roles.OP_SCORE_READ_ALL)")
-    public ResponseEntity<DoubleSummaryStatistics> getSingle(
+    public ResponseEntity<Statistics> getSingle(
             @RequestParam(required = false) String userId,
             @RequestParam String assignmentId) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -54,13 +53,13 @@ public class ScoreController {
         }
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        DoubleSummaryStatistics statistics = scoreService.getStatistics(user, assignment);
+        Statistics statistics = scoreService.getStatistics(user, assignment);
         return new ResponseEntity<>(statistics, HttpStatus.OK);
     }
 
     @GetMapping("/user")
     @PreAuthorize("hasAuthority(@Roles.OP_SCORE_READ_SELF) or hasAuthority(@Roles.OP_SCORE_READ_ALL)")
-    public ResponseEntity<Map<String, DoubleSummaryStatistics>> getUser(@RequestParam(required = false) String userId) {
+    public ResponseEntity<Map<String, Statistics>> getUser(@RequestParam(required = false) String userId) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (userId != null) {
             if (!userId.equals(user.getId()) && user.getAuthorities().stream()
@@ -71,7 +70,7 @@ public class ScoreController {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         }
         User targetUser = user;
-        Map<String, DoubleSummaryStatistics> statistics = assignmentRepository.findAll().stream()
+        Map<String, Statistics> statistics = assignmentRepository.findAll().stream()
                 .collect(Collectors.toMap(
                         Assignment::getId,
                         assignment -> scoreService.getStatistics(targetUser, assignment)
@@ -81,10 +80,10 @@ public class ScoreController {
 
     @GetMapping("/assignment")
     @PreAuthorize("hasAuthority(@Roles.OP_SCORE_READ_ALL)")
-    public ResponseEntity<Map<String, DoubleSummaryStatistics>> getAssignment(@RequestParam String assignmentId) {
+    public ResponseEntity<Map<String, Statistics>> getAssignment(@RequestParam String assignmentId) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        Map<String, DoubleSummaryStatistics> statistics = userRepository.findAllByRolesContains(RolesConfig.ROLE_STUDENT).stream()
+        Map<String, Statistics> statistics = userRepository.findAllByRolesContains(RolesConfig.ROLE_STUDENT).stream()
                 .collect(Collectors.toMap(
                         User::getId,
                         user -> scoreService.getStatistics(user, assignment)
@@ -94,9 +93,9 @@ public class ScoreController {
 
     @GetMapping("/all")
     @PreAuthorize("hasAuthority(@Roles.OP_SCORE_READ_ALL)")
-    public ResponseEntity<Map<String, Map<String, DoubleSummaryStatistics>>> getAll() {
+    public ResponseEntity<Map<String, Map<String, Statistics>>> getAll() {
         List<User> users = userRepository.findAllByRolesContains(RolesConfig.ROLE_STUDENT);
-        Map<String, Map<String, DoubleSummaryStatistics>> statistics =
+        Map<String, Map<String, Statistics>> statistics =
                 assignmentRepository.findAll().stream()
                         .collect(Collectors.toMap(
                                 Assignment::getId,

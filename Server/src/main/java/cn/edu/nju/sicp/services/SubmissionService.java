@@ -14,10 +14,7 @@ import java.util.zip.ZipOutputStream;
 import cn.edu.nju.sicp.configs.AmqpConfig;
 import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.configs.S3Config;
-import cn.edu.nju.sicp.models.Assignment;
-import cn.edu.nju.sicp.models.Result;
-import cn.edu.nju.sicp.models.Submission;
-import cn.edu.nju.sicp.models.User;
+import cn.edu.nju.sicp.models.*;
 import cn.edu.nju.sicp.repositories.SubmissionRepository;
 import cn.edu.nju.sicp.repositories.UserRepository;
 import org.apache.commons.io.IOUtils;
@@ -75,15 +72,14 @@ public class SubmissionService {
         logger.debug(String.format("Delete submission file %s", key));
     }
 
-    public DoubleSummaryStatistics getSubmissionStatistics(User user, Assignment assignment) {
+    public Statistics getSubmissionStatistics(User user, Assignment assignment) {
         return getSubmissionStatistics(user, assignment, false);
     }
 
-    public DoubleSummaryStatistics getSubmissionStatistics(User user, Assignment assignment, boolean unique) {
+    public Statistics getSubmissionStatistics(User user, Assignment assignment, boolean unique) {
         Submission submission = new Submission();
         submission.setUserId(user == null ? null : user.getId());
         submission.setAssignmentId(assignment == null ? null : assignment.getId());
-
         Stream<Submission> stream;
         if (unique) { // take only highest unique submission of each user
             stream = submissionRepository.findAll(Example.of(submission)).stream()
@@ -102,10 +98,12 @@ public class SubmissionService {
                             .collect(Collectors.toList());
             stream = stream.filter(s -> studentUserIds.contains(s.getUserId()));
         }
-        return stream.map(Submission::getResult)
+        IntSummaryStatistics statistics = stream
+                .map(Submission::getResult)
                 .map(Result::getScore)
-                .mapToDouble(Double::valueOf)
+                .mapToInt(Integer::valueOf)
                 .summaryStatistics();
+        return new Statistics(statistics);
     }
 
     public byte[] exportSubmissions(String assignmentId) throws IOException {
