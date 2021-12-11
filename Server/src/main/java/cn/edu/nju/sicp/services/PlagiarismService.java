@@ -20,8 +20,8 @@ public class PlagiarismService {
         this.plagiarismRepository = plagiarismRepository;
     }
 
-    public Page<Plagiarism> listPlagiarisms(PageRequest request) {
-        return plagiarismRepository.findAll(request);
+    public Page<Plagiarism> listPlagiarisms(Example<Plagiarism> example, PageRequest request) {
+        return plagiarismRepository.findAll(example, request);
     }
 
     public Optional<Plagiarism> findPlagiarismById(String id) {

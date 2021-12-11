@@ -8,6 +8,7 @@ import cn.edu.nju.sicp.repositories.UserRepository;
 import cn.edu.nju.sicp.services.PlagiarismService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -39,13 +40,18 @@ public class PlagiarismController {
     @GetMapping()
     @PreAuthorize("hasAuthority(@Roles.OP_PLAGIARISM_READ_ALL)")
     public ResponseEntity<Page<Plagiarism>> listPlagiarisms(
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String assignmentId,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
+        Plagiarism example = new Plagiarism();
+        example.setUserId(userId);
+        example.setAssignmentId(assignmentId);
         PageRequest request = PageRequest.of(
                 page == null || page < 0 ? 0 : page,
                 size == null || size < 0 ? 20 : size,
                 Sort.by(Sort.Direction.DESC, "$natural"));
-        Page<Plagiarism> plagiarisms = plagiarismService.listPlagiarisms(request);
+        Page<Plagiarism> plagiarisms = plagiarismService.listPlagiarisms(Example.of(example), request);
         return new ResponseEntity<>(plagiarisms, HttpStatus.OK);
     }
 
