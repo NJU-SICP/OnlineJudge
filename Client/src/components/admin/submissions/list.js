@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {useHistory, useLocation} from "react-router-dom";
+import {Link, useHistory, useLocation} from "react-router-dom";
 import {useSelector} from "react-redux";
 import http from "../../../http";
 import qs from "qs";
@@ -61,13 +61,13 @@ const AdminSubmissionList = () => {
             title: "用户",
             key: "userId",
             dataIndex: "userId",
-            render: (id) => <AdminUserInfo userId={id}/>
+            render: (id) => <AdminUserInfo userId={id} />
         },
         {
             title: "作业",
             key: "assignmentId",
             dataIndex: "assignmentId",
-            render: (id) => <AdminAssignmentInfo assignmentId={id}/>
+            render: (id) => <AdminAssignmentInfo assignmentId={id} />
         },
         {
             title: "提交时间",
@@ -98,33 +98,36 @@ const AdminSubmissionList = () => {
             title: "操作",
             key: "actions",
             render: (text, record) =>
-                <Button type="link" size="small"
-                        onClick={() => history.push(`/admin/assignments/${record.assignmentId}/grader?selectedId=${record.id}`)}>
-                    评分
-                </Button>
+                <Link to={`/admin/assignments/${record.assignmentId}/grader?selectedId=${record.id}`}>
+                    <Button type="link" size="small">
+                        评分
+                    </Button>
+                </Link>
         }
     ];
 
     return (
         <>
             <Typography.Title level={2}>
-                <PaperClipOutlined/> 提交管理
+                <PaperClipOutlined /> 提交管理
                 {auth.authorities && auth.authorities.indexOf("OP_SUBMISSION_TOKEN_MANAGE") >= 0 &&
-                <div style={{float: "right"}}>
-                    <Button type="primary" onClick={() => history.push("/admin/submissions/tokens")}>
-                        <AuditOutlined/> 提交密钥管理
-                    </Button>
-                </div>
+                    <div style={{float: "right"}}>
+                        <Link to="/admin/submissions/tokens">
+                            <Button type="primary">
+                                <AuditOutlined /> 提交密钥管理
+                            </Button>
+                        </Link>
+                    </div>
                 }
             </Typography.Title>
             <Form layout="inline">
                 <Form.Item label="根据用户搜索">
                     <AdminUserSearch disabled={queryUserIdDisabled}
-                                     onSelect={(text, option) => setQueryUserId(option.user.id)}/>
+                        onSelect={(text, option) => setQueryUserId(option.user.id)} />
                 </Form.Item>
                 <Form.Item label="根据作业搜索">
                     <AdminAssignmentSearch disabled={queryAssignmentIdDisabled}
-                                           onSelect={(text, option) => setQueryAssignmentId(option.assignment.id)}/>
+                        onSelect={(text, option) => setQueryAssignmentId(option.assignment.id)} />
                 </Form.Item>
                 <Form.Item label="根据结果查询">
                     <Checkbox.Group options={[
@@ -132,30 +135,30 @@ const AdminSubmissionList = () => {
                         {label: "已评分", value: true}
                     ]} defaultValue={[false, true]} onChange={(values) => {
                         setQueryGraded(values.length > 1 ? null : values[0]);
-                    }}/>
+                    }} />
                 </Form.Item>
                 <Form.Item>
                     <Button type="primary"
-                            disabled={queryUserId === null && queryAssignmentId === null && queryGraded === null}
-                            onClick={() => {
-                                setQueryUserId(null);
-                                setQueryAssignmentId(null);
-                                setQueryGraded(null);
-                            }}>清除搜索条件</Button>
+                        disabled={queryUserId === null && queryAssignmentId === null && queryGraded === null}
+                        onClick={() => {
+                            setQueryUserId(null);
+                            setQueryAssignmentId(null);
+                            setQueryGraded(null);
+                        }}>清除搜索条件</Button>
                 </Form.Item>
             </Form>
-            <Divider/>
+            <Divider />
             {!page
-                ? <Skeleton/>
+                ? <Skeleton />
                 : <>
-                    <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false}/>
+                    <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false} />
                     <div style={{float: "right", marginTop: "1em"}}>
                         <Pagination current={page.number + 1} pageSize={page.size}
-                                    total={page.totalElements}
-                                    onChange={(p) => history.push({
-                                        pathname: location.pathname,
-                                        search: `?page=${p}`
-                                    })}/>
+                            total={page.totalElements}
+                            onChange={(p) => history.push({
+                                pathname: location.pathname,
+                                search: `?page=${p}`
+                            })} />
                     </div>
                 </>}
         </>

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {useSelector} from "react-redux";
-import {useHistory, useLocation} from "react-router-dom";
+import {Link, useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 import moment from "moment";
 import http from "../../../http";
@@ -83,25 +83,28 @@ const AdminAssignmentList = () => {
             key: "actions",
             render: (text, record) => <>
                 {auth.authorities && auth.authorities.indexOf("OP_ASSIGNMENT_UPDATE") > 0 &&
-                <Button type="link" size="small"
-                        onClick={() => history.push(`/admin/assignments/${record.id}`)}>
-                    编辑作业
-                </Button>
+                    <Link to={`/admin/assignments/${record.id}`}>
+                        <Button type="link" size="small">
+                            编辑作业
+                        </Button>
+                    </Link>
                 }
                 {auth.authorities && auth.authorities.indexOf("OP_SUBMISSION_UPDATE") > 0 &&
-                <Button type="link" size="small"
-                        onClick={() => history.push(`/admin/assignments/${record.id}/grader`)}>
-                    评分管理
-                </Button>
+                    <Link to={`/admin/assignments/${record.id}/grader`}>
+                        <Button type="link" size="small">
+                            评分管理
+                        </Button>
+                    </Link>
                 }
                 {auth.authorities && auth.authorities.indexOf("OP_SUBMISSION_READ_ALL") > 0 &&
-                <Button type="link" size="small"
-                        onClick={() => history.push({
-                            pathname: `/admin/submissions`,
-                            search: `?assignmentId=${record.id}`
-                        })}>
-                    提交查询
-                </Button>
+                    <Link to={{
+                        pathname: `/admin/submissions`,
+                        search: `?assignmentId=${record.id}`
+                    }}>
+                        <Button type="link" size="small">
+                            提交查询
+                        </Button>
+                    </Link>
                 }
             </>
         }
@@ -110,25 +113,27 @@ const AdminAssignmentList = () => {
     return (
         <>
             <Typography.Title level={2}>
-                <EditOutlined/> 作业管理
+                <EditOutlined /> 作业管理
                 {auth.authorities && auth.authorities.indexOf("OP_ASSIGNMENT_CREATE") >= 0 &&
-                <div style={{float: "right"}}>
-                    <Button onClick={() => history.push("/admin/assignments/create")}>
-                        <PlusOutlined/> 添加作业
-                    </Button>
-                </div>
+                    <div style={{float: "right"}}>
+                        <Link to="/admin/assignments/create">
+                            <Button>
+                                <PlusOutlined /> 添加作业
+                            </Button>
+                        </Link>
+                    </div>
                 }
             </Typography.Title>
             {!page
-                ? <Skeleton/>
+                ? <Skeleton />
                 : <>
-                    <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false}/>
+                    <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false} />
                     <div style={{float: "right", marginTop: "1em"}}>
                         <Pagination current={page.number + 1} pageSize={page.size} total={page.totalElements}
-                                    onChange={(p) => history.push({
-                                        pathname: location.pathname,
-                                        search: `?page=${p}`
-                                    })}/>
+                            onChange={(p) => history.push({
+                                pathname: location.pathname,
+                                search: `?page=${p}`
+                            })} />
                     </div>
                 </>}
         </>

@@ -59,8 +59,7 @@ const AdminScoreTable = () => {
         </Typography.Title>
         {!show
             ? <>
-                <Typography>加载成绩表后，浏览器会占用一定内存，可能会造成卡顿。</Typography>
-                <Button onClick={() => setShow(true)}>加载所有成绩</Button>
+                <Button onClick={() => setShow(true)}>点击加载所有成绩（可能会造成浏览器卡顿）</Button>
             </>
             : <>
                 {!columns && !error

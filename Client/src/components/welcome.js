@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {useHistory} from "react-router-dom";
+import {Link} from "react-router-dom";
 import moment from "moment";
 import http from "../http";
 
@@ -8,8 +8,6 @@ import {HomeOutlined} from "@ant-design/icons";
 import AssignmentScore from "./assignments/score";
 
 const Welcome = () => {
-    const history = useHistory();
-
     const [queryDate, setQueryDate] = useState(new moment());
     const [assignments, setAssignments] = useState(null);
     useEffect(() => {
@@ -27,9 +25,11 @@ const Welcome = () => {
         return (<ul style={{margin: 0, padding: 0, listStyle: "none"}}>
             {assignments
                 .filter(assignment => moment(assignment.endTime).isSame(date, 'day'))
-                .map(assignment => <li key={assignment.id} onClick={() => history.push(`/assignments/${assignment.slug}`)}>
-                    <Badge status={moment().isAfter(assignment.endTime) ? "error" : "success"} text={assignment.slug}/><br/>
-                    得分：<AssignmentScore assignmentId={assignment.id} totalScore={assignment.totalScore}/>
+                .map(assignment => <li key={assignment.id}>
+                    <Link to={`/assignments/${assignment.slug}`} style={{color: "unset"}}>
+                        <Badge status={moment().isAfter(assignment.endTime) ? "error" : "success"} text={assignment.slug} /><br />
+                        得分：<AssignmentScore assignmentId={assignment.id} totalScore={assignment.totalScore} />
+                    </Link>
                 </li>)}
         </ul>)
     };
@@ -37,9 +37,9 @@ const Welcome = () => {
     return (
         <>
             <Typography.Title level={2}>
-                <HomeOutlined/> 系统主页
+                <HomeOutlined /> 系统主页
             </Typography.Title>
-            {assignments && <Calendar dateCellRender={dateCellRender} onChange={setQueryDate}/>}
+            {assignments && <Calendar dateCellRender={dateCellRender} onChange={setQueryDate} />}
         </>
     );
 };

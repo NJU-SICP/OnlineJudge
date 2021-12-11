@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {useHistory, useParams} from "react-router-dom";
+import {Link, useParams} from "react-router-dom";
 import http from "../../../http";
 
 import {Button, Card, Descriptions, Divider, message, Popconfirm, Skeleton, Typography, Upload} from "antd";
@@ -9,7 +9,6 @@ import AdminAssignmentInfo from "./info";
 import AdminSubmissionStatistics from "../submissions/statistics";
 
 const AdminAssignmentGrader = () => {
-    const history = useHistory();
     const {id} = useParams();
     const [assignment, setAssignment] = useState(null);
     const [grader, setGrader] = useState(null);
@@ -91,19 +90,21 @@ const AdminAssignmentGrader = () => {
     return (
         <>
             <Typography.Title level={2}>
-                <DashboardOutlined/> 评分管理
+                <DashboardOutlined /> 评分管理
                 <div style={{float: "right"}}>
-                    <Button type="primary" onClick={() => history.push(`/admin/assignments/${id}`)}>
-                        <EditOutlined/> 编辑作业
-                    </Button>
+                    <Link to={`/admin/assignments/${id}`}>
+                        <Button type="primary">
+                            <EditOutlined /> 编辑作业
+                        </Button>
+                    </Link>
                 </div>
             </Typography.Title>
             {!assignment
-                ? <Skeleton/>
+                ? <Skeleton />
                 : <>
                     <Descriptions>
                         <Descriptions.Item label="作业名称">
-                            <AdminAssignmentInfo assignmentId={id}/>
+                            <AdminAssignmentInfo assignmentId={id} />
                         </Descriptions.Item>
                         <Descriptions.Item label="作业总分" span={2}>
                             满分{assignment.totalScore}，总评占比{assignment.percentage}%
@@ -118,48 +119,48 @@ const AdminAssignmentGrader = () => {
                                             {grader.imageBuildError
                                                 ? <>编译失败，请查看编译日志</>
                                                 : <>
-                                                正在编译Docker镜像 <LoadingOutlined style={{marginLeft:"1em", marginRight: "1em"}} />
-                                                Tag：<code>{grader.imageRepository}:{grader.imageTag}</code>
-                                            </>}
+                                                    正在编译Docker镜像 <LoadingOutlined style={{marginLeft: "1em", marginRight: "1em"}} />
+                                                    Tag：<code>{grader.imageRepository}:{grader.imageTag}</code>
+                                                </>}
                                         </>
                                         : <>
                                             Docker镜像ID：<code>{grader.imageId}</code>；
                                             Tag：<code>{grader.imageRepository}:{grader.imageTag}</code>
                                         </>}
                                     <Typography.Link style={{marginLeft: 20}}
-                                                     onClick={() => setShowBuildLog(!showBuildLog)}>
+                                        onClick={() => setShowBuildLog(!showBuildLog)}>
                                         查看编译日志
                                     </Typography.Link>
                                     <Popconfirm title="确定要删除自动评分文件吗？" onConfirm={deleteGrader}>
                                         <Typography.Link type="danger" style={{marginLeft: "1.5em"}}>
-                                            <DeleteOutlined/> 删除自动评分文件
+                                            <DeleteOutlined /> 删除自动评分文件
                                         </Typography.Link>
                                     </Popconfirm>
                                     {assignment && assignment.grader !== null &&
-                                    <Popconfirm title="确定要对本作业的提交全部重测吗？" onConfirm={rejudgeAllSubmissions}>
-                                        <Typography.Link type="danger" style={{marginLeft: "1.5em"}}>
-                                            <RedoOutlined/> 重测全部提交
-                                        </Typography.Link>
-                                    </Popconfirm>
+                                        <Popconfirm title="确定要对本作业的提交全部重测吗？" onConfirm={rejudgeAllSubmissions}>
+                                            <Typography.Link type="danger" style={{marginLeft: "1.5em"}}>
+                                                <RedoOutlined /> 重测全部提交
+                                            </Typography.Link>
+                                        </Popconfirm>
                                     }
                                 </>}
                         </Descriptions.Item>
                     </Descriptions>
                     {grader !== null && showBuildLog &&
-                    <Card style={{marginBottom: 10}}>
-                        <pre style={{whiteSpace: "pre-wrap"}}><code>{grader.imageBuildLog}</code></pre>
-                    </Card>
+                        <Card style={{marginBottom: 10}}>
+                            <pre style={{whiteSpace: "pre-wrap"}}><code>{grader.imageBuildLog}</code></pre>
+                        </Card>
                     }
                     {grader !== null && <>
                         <Upload.Dragger style={{maxHeight: "5em"}} name="file" accept=".zip" maxCount={1}
-                                        beforeUpload={beforeUpload} customRequest={uploadGrader} disabled={disabled}>
-                            <UploadOutlined/> 上传自动评分文件（包含Dockerfile的zip压缩文件夹）
+                            beforeUpload={beforeUpload} customRequest={uploadGrader} disabled={disabled}>
+                            <UploadOutlined /> 上传自动评分文件（包含Dockerfile的zip压缩文件夹）
                         </Upload.Dragger>
                     </>}
-                    <Divider/>
-                    <AdminSubmissionStatistics assignment={assignment}/>
-                    <Divider/>
-                    <AdminSubmissionTable assignment={assignment}/>
+                    <Divider />
+                    <AdminSubmissionStatistics assignment={assignment} />
+                    <Divider />
+                    <AdminSubmissionTable assignment={assignment} />
                 </>}
         </>
     );

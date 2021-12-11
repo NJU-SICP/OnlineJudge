@@ -7,6 +7,7 @@ import config from "../config";
 import {set} from "../store/auth";
 
 import {Layout, Typography} from "antd";
+import {LoadingOutlined} from "@ant-design/icons";
 import Header from "../components/header";
 import Menu from "../components/menu";
 import Welcome from "../components/welcome";
@@ -28,7 +29,6 @@ import AdminBackupList from "../components/admin/backups/list";
 import AdminScoreTable from "../components/admin/score/table";
 import BackupList from "../components/assignments/backups";
 import HogContest from "../components/contests/hog/contest";
-import {LoadingOutlined} from "@ant-design/icons";
 
 const MainLayout = () => {
     const auth = useSelector((state) => state.auth.value);

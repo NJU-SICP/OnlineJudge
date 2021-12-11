@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {useHistory, useLocation, useParams} from "react-router-dom";
+import {Link, useLocation, useParams} from "react-router-dom";
 import qs from "qs";
 import http from "../../http";
 
@@ -20,7 +20,6 @@ import AssignmentPlagiarism from "./plagiarism";
 const AssignmentView = () => {
     const auth = useSelector((state) => state.auth.value);
     const {id} = useParams();
-    const history = useHistory();
     const location = useLocation();
 
     const [assignment, setAssignment] = useState(null);
@@ -131,9 +130,11 @@ const AssignmentView = () => {
                     <Typography.Title level={2}>
                         <BookOutlined /> 作业：{assignment.title}
                         <div style={{float: "right"}}>
-                            <Button type="link" onClick={() => history.push(`/assignments/${id}/backups`)}>
-                                <CloudServerOutlined /> 查看备份列表
-                            </Button>
+                            <Link to={`/assignments/${id}/backups`}>
+                                <Button type="link">
+                                    <CloudServerOutlined /> 查看备份列表
+                                </Button>
+                            </Link>
                             {!token
                                 ? <>
                                     <Popover placement="left" trigger="click" title="输入提交密钥" content={<>
