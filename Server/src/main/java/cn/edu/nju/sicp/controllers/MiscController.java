@@ -1,5 +1,6 @@
 package cn.edu.nju.sicp.controllers;
 
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,14 +13,25 @@ import java.util.Date;
 @RequestMapping("/misc")
 public class MiscController {
 
+    private final BuildProperties buildProperties;
+
+    public MiscController(BuildProperties buildProperties) {
+        this.buildProperties = buildProperties;
+    }
+
     @GetMapping("/time")
     public ResponseEntity<Date> getServerTime() {
-        return new ResponseEntity<>(new Date(), HttpStatus.OK);
+        return ResponseEntity.ok(new Date());
+    }
+
+    @GetMapping("/version")
+    public ResponseEntity<String> getServerVersion() {
+        return ResponseEntity.ok(buildProperties.getVersion());
     }
 
     @GetMapping("/ok-client/version")
     public ResponseEntity<String> getOkClientVersion() {
-        return new ResponseEntity<>("NJU-SICP-v1.7.0u2", HttpStatus.OK);
+        return ResponseEntity.ok("NJU-SICP-v1.7.0u2");
     }
 
 }

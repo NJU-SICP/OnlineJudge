@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'cn.edu.nju'
-version = '2.0.1'
+version = '2.0.2'
 sourceCompatibility = '11'
 
 repositories {
@@ -26,4 +26,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security:2.6.1'
 	implementation 'software.amazon.awssdk:s3:2.17.98'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2', 'io.jsonwebtoken:jjwt-jackson:0.11.2'
+}
+
+springBoot {
+	buildInfo()
 }
