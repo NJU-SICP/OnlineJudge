@@ -61,6 +61,21 @@ const AdminBackupList = () => {
             render: (key) => key.replace(/backups\//, "")
         },
         {
+            title: "测试内容",
+            key: "question",
+            dataIndex: "analytics",
+            render: (analytics) => {
+                if (!analytics || !analytics.history) {
+                    return 'N/A';
+                }
+                const question = analytics.history.question;
+                const attempts = analytics.history.all_attempts;
+                return question && question.length > 0
+                    ? `${question} (${analytics.history.questions[question[0]]?.attempts}, ${attempts})`
+                    : `ALL (${attempts})`;
+            }
+        },
+        {
             title: "生成时间",
             key: "time",
             dataIndex: "analytics",

@@ -70,6 +70,12 @@ const AdminSubmissionList = () => {
             render: (id) => <AdminAssignmentInfo assignmentId={id} />
         },
         {
+            title: "文件",
+            key: "key",
+            dataIndex: "key",
+            render: (key) => key.replace(/submissions\//, "")
+        },
+        {
             title: "提交时间",
             key: "createdAt",
             dataIndex: "createdAt",

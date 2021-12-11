@@ -15,6 +15,8 @@ public interface SubmissionInfo {
 
     String getAssignmentId();
 
+    String getKey();
+
     Date getCreatedAt();
 
     String getCreatedBy();
