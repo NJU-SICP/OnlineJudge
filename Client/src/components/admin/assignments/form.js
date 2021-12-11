@@ -28,6 +28,7 @@ const AdminAssignmentForm = ({initialValues, onFinish, disabled}) => {
                     <Radio value=".pdf">PDF文件（*.pdf）</Radio>
                     <Radio value=".py">Python代码文件（*.py）</Radio>
                     <Radio value=".scm">Scheme代码文件（*.scm）</Radio>
+                    <Radio value=".sql">SQL代码文件（*.sql）</Radio>
                     <Radio value=".zip">压缩文件夹（*.zip）</Radio>
                 </Radio.Group>
             </Form.Item>
