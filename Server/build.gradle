@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'cn.edu.nju'
-version = '2.0.1'
+version = '2.0.2u1'
 sourceCompatibility = '11'
 
 repositories {
