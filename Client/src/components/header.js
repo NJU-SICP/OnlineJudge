@@ -2,11 +2,12 @@ import React from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {useHistory} from "react-router-dom";
 
-import {Button, Layout, Typography} from "antd";
+import {Button, Layout, Tooltip, Typography} from "antd";
 import {UserOutlined} from "@ant-design/icons";
 
 import {clear} from "../store/auth";
 import Time from "./time";
+import Version from "./version";
 
 const Header = () => {
     const history = useHistory();
@@ -21,12 +22,14 @@ const Header = () => {
     return (
         <Layout.Header className="header" style={{zIndex: 1000}}>
             <div style={{float: "left"}}>
-                <Typography.Text strong>SICP Online Judge</Typography.Text>
-                <span style={{marginLeft: "6em"}}>当前服务器时间：<Time/></span>
+                <Tooltip title={<Version />}>
+                    <Typography.Text strong>SICP Online Judge</Typography.Text>
+                </Tooltip>
+                <span style={{marginLeft: "6em"}}>当前服务器时间：<Time /></span>
             </div>
             <div style={{float: "right"}}>
                 {!!auth && <>
-                    <UserOutlined/> &nbsp;
+                    <UserOutlined /> &nbsp;
                     <span>{auth.username} {auth.fullName}</span>
                     <Button type="text" danger onClick={logout}>退出</Button>
                 </>}

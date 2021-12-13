@@ -17,6 +17,7 @@ import {
     UserOutlined
 } from "@ant-design/icons";
 import Time from "../components/time";
+import Version from "../components/version";
 
 const AuthLayout = () => {
     const auth = useSelector((state) => state.auth.value);
@@ -145,7 +146,12 @@ const AuthLayout = () => {
                         <List.Item>
                             <Typography.Text>
                                 <CopyrightOutlined style={{marginRight: "1em"}}/>
-                                <span>南京大学 版权所有 [{config.version}]</span>
+                                <span>南京大学 2021 版权所有</span>
+                            </Typography.Text>
+                        </List.Item>
+                        <List.Item>
+                            <Typography.Text>
+                                <Version/>
                             </Typography.Text>
                         </List.Item>
                     </List>
