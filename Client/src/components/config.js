@@ -95,15 +95,6 @@ const UserConfig = () => {
                         <Form.Item name="info" label="学生">
                             <Input bordered={false} readOnly/>
                         </Form.Item>
-                        <Form.Item name="enroll" label="选课">
-                            <Input bordered={false} readOnly prefix={<>
-                                <Typography.Text type={auth.roles.indexOf("ROLE_STUDENT") >= 0 ? "success" : "danger"}>
-                                    {auth.roles.indexOf("ROLE_STUDENT") >= 0
-                                        ? <BookOutlined/>
-                                        : <WarningOutlined/>}
-                                </Typography.Text>
-                            </>}/>
-                        </Form.Item>
                     </Form>
                 </>}
             <Divider/>
@@ -142,37 +133,6 @@ const UserConfig = () => {
                                 </Button>
                             </Form.Item>
                         </Form>
-                    </Card>
-                </Col>
-                <Col xs={24} sm={24} md={12} xl={12} xxl={8}>
-                    <Card>
-                        <Typography.Title level={2}>
-                            <GitlabOutlined/> 外部登录
-                        </Typography.Title>
-                        {!user
-                            ? <Skeleton/>
-                            : <>
-                                {!user.gitlabUserId
-                                    ? <>
-                                        <p>可绑定南京大学代码托管服务（<code>git.nju.edu.cn</code>）账户。</p>
-                                        <Popconfirm title="请点击确定，在新页面中登录南京大学代码托管服务，完成绑定。"
-                                                    onConfirm={linkGitlab}>
-                                            <Button type="primary" style={{width: "100%"}}>
-                                                <LinkOutlined/> 绑定账户
-                                            </Button>
-                                        </Popconfirm>
-                                    </>
-                                    : <>
-                                        <p>已绑定账户：UID={user.gitlabUserId}，Email={user.gitlabUserEmail}</p>
-                                        <Popconfirm title="确定要解除绑定吗？"
-                                                    okType="danger" onConfirm={unlinkGitlab}>
-                                            <Button type="primary" danger style={{width: "100%"}}>
-                                                <DisconnectOutlined/> 解除绑定
-                                            </Button>
-                                        </Popconfirm>
-                                    </>
-                                }
-                            </>}
                     </Card>
                 </Col>
             </Row>

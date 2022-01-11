@@ -11,7 +11,6 @@ import {Layout, Form, Input, Button, Alert, Typography, Divider, Row, Col, List}
 import {
     CloseOutlined,
     CopyrightOutlined,
-    GitlabOutlined,
     HomeOutlined,
     LinkOutlined,
     UserOutlined
@@ -73,18 +72,14 @@ const AuthLayout = () => {
         }
     }, [auth, history, location.search]);
 
-    const loginWithGitlab = () => {
-        const redirect = qs.parse(location.search, {ignoreQueryPrefix: true}).redirect ?? "/";
-        const state = `oauth-${btoa("/auth/gitlab/login/callback")}-${btoa(redirect)}`;
-        window.location.href = `${config.baseNames.api}/auth/gitlab/login?state=${state}`;
-    };
-
     return (
         <Layout style={{paddingTop: "10vh", paddingBottom: "10vh", paddingLeft: "10vw", paddingRight: "10vw"}}>
             <Typography.Title level={1}>SICP Online Judge</Typography.Title>
             <Typography.Text>
                 当前服务器时间：<Time/>
             </Typography.Text>
+            <Divider/>
+            <Alert type="warning" message="本系统仅供学习使用，系统内的作业内容与测试数据归属于对应作者所有，管理员不提供学习上的支持。"/>
             <Divider/>
             <Row gutter={24}>
                 <Col xs={24} md={16}>
@@ -123,12 +118,6 @@ const AuthLayout = () => {
                             </Button>
                         </Form.Item>
                     </Form>
-                    <p>
-                        其他登录方式：
-                        <Button type="ghost" size="large" onClick={() => loginWithGitlab()}>
-                            <GitlabOutlined/> 使用南京大学代码托管服务登录
-                        </Button>
-                    </p>
                 </Col>
                 <Col xs={24} md={8}>
                     <Typography.Title level={2}>

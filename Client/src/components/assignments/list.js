@@ -1,23 +1,20 @@
 import React, {useEffect, useState} from "react";
-import {Link, useHistory, useLocation} from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import moment from "moment";
 import "moment/locale/zh-cn";
-import qs from "qs";
 import http from "../../http";
 
-import {Button, Pagination, Skeleton, Table, Typography} from "antd";
+import {Button, Skeleton, Table, Typography} from "antd";
 import {EditOutlined} from "@ant-design/icons";
 import AssignmentScore from "./score";
 
 const AssignmentList = () => {
-    const history = useHistory;
     const location = useLocation();
     const [page, setPage] = useState(null);
 
     useEffect(() => {
-        const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/assignments/begun?page=${page - 1}`)
+            .get(`/assignments/begun?page=0&size=99`)
             .then((res) => {
                 const list = [];
                 const now = moment();
@@ -47,18 +44,6 @@ const AssignmentList = () => {
             render: (title) => <Typography.Text strong>{title}</Typography.Text>
         },
         {
-            title: "截止时间",
-            key: "endTime",
-            dataIndex: "endTime",
-            render: (time, record) => {
-                const ddl = moment(time).locale('zh_cn');
-                return <Typography.Text delete={record.ended}>
-                    {ddl.format("YYYY-MM-DD HH:mm")}
-                    {!record.ended && <>（{ddl.fromNow()}）</>}
-                </Typography.Text>;
-            }
-        },
-        {
             title: "最高得分",
             key: "score",
             render: (_, record) => <AssignmentScore assignmentId={record.id} totalScore={record.totalScore} />
@@ -85,13 +70,6 @@ const AssignmentList = () => {
                 ? <Skeleton />
                 : <>
                     <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false} />
-                    <div style={{float: "right", marginTop: "1em"}}>
-                        <Pagination current={page.number + 1} pageSize={page.size} total={page.totalElements}
-                            onChange={(p) => history.push({
-                                pathname: location.pathname,
-                                search: `?page=${p}`
-                            })} />
-                    </div>
                 </>}
         </>
     )

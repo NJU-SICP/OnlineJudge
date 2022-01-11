@@ -103,7 +103,7 @@ public class AmqpConfig {
         container.setMessageListener(gradeSubmissionListener);
         container.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         container.setPrefetchCount(1);
-        container.setConcurrency("4-16"); // FIXME: use config instead of hardcoded string
+        container.setConcurrency("1-1"); // FIXME: use config instead of hardcoded string
         return container;
     }
 

@@ -7,7 +7,6 @@ import {
     CloudServerOutlined,
     EditOutlined,
     HighlightOutlined,
-    HomeOutlined,
     PaperClipOutlined,
     RobotOutlined,
     TableOutlined,
@@ -22,9 +21,6 @@ const Menu = () => {
             defaultSelectedKeys={[history.location.pathname]}
             selectedKeys={[history.location.pathname]}>
             <AntMenu.ItemGroup key="g1" title="系统导航">
-                <AntMenu.Item key="/" icon={<HomeOutlined />}>
-                    <Link to="/">系统主页</Link>
-                </AntMenu.Item>
                 <AntMenu.Item key="/assignments" icon={<EditOutlined />}>
                     <Link to="/assignments">作业列表</Link>
                 </AntMenu.Item>

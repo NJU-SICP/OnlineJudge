@@ -10,7 +10,6 @@ import {Layout, Typography} from "antd";
 import {LoadingOutlined} from "@ant-design/icons";
 import Header from "../components/header";
 import Menu from "../components/menu";
-import Welcome from "../components/welcome";
 import AssignmentList from "../components/assignments/list";
 import AssignmentView from "../components/assignments/view";
 import UserConfig from "../components/config";
@@ -112,7 +111,7 @@ const MainLayout = () => {
                                         <Route path="/assignments" children={<AssignmentList/>}/>
                                         <Route path="/contests/hog" children={<HogContest/>}/>
                                         <Route path="/config" children={<UserConfig/>}/>
-                                        <Route path="/" exact children={<Welcome/>}/>
+                                        <Route path="/" children={<AssignmentList/>}/>
                                     </Switch>
                                 </div>
                             </Layout>

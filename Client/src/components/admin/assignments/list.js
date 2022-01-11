@@ -1,23 +1,21 @@
 import React, {useEffect, useState} from "react";
 import {useSelector} from "react-redux";
-import {Link, useHistory, useLocation} from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import qs from "qs";
-import moment from "moment";
 import http from "../../../http";
 
-import {Button, Pagination, Skeleton, Table, Typography} from "antd";
+import {Button, Skeleton, Table, Typography} from "antd";
 import {EditOutlined, PlusOutlined} from "@ant-design/icons";
 
 const AdminAssignmentList = () => {
     const auth = useSelector((state) => state.auth.value);
-    const history = useHistory();
     const location = useLocation();
     const [page, setPage] = useState(null);
 
     useEffect(() => {
         const page = qs.parse(location.search, {ignoreQueryPrefix: true}).page ?? 1;
         http()
-            .get(`/assignments?page=${page - 1}`)
+            .get(`/assignments?page=${page - 1}&size=99`)
             .then((res) => setPage(res.data))
             .catch((err) => console.error(err));
     }, [location.search]);
@@ -32,26 +30,6 @@ const AdminAssignmentList = () => {
             title: "标题",
             key: "title",
             dataIndex: "title"
-        },
-        {
-            title: "开始时间",
-            key: "beginTime",
-            dataIndex: "beginTime",
-            render: (time) => {
-                return <Typography.Text delete={moment().isAfter(time)}>
-                    {moment(time).format("YYYY-MM-DD HH:mm:ss")}
-                </Typography.Text>;
-            }
-        },
-        {
-            title: "结束时间",
-            key: "endTime",
-            dataIndex: "endTime",
-            render: (time) => {
-                return <Typography.Text delete={moment().isAfter(time)}>
-                    {moment(time).format("YYYY-MM-DD HH:mm:ss")}
-                </Typography.Text>;
-            }
         },
         {
             title: "提交文件",
@@ -128,13 +106,6 @@ const AdminAssignmentList = () => {
                 ? <Skeleton />
                 : <>
                     <Table columns={columns} dataSource={page.content} rowKey="id" pagination={false} />
-                    <div style={{float: "right", marginTop: "1em"}}>
-                        <Pagination current={page.number + 1} pageSize={page.size} total={page.totalElements}
-                            onChange={(p) => history.push({
-                                pathname: location.pathname,
-                                search: `?page=${p}`
-                            })} />
-                    </div>
                 </>}
         </>
     );
