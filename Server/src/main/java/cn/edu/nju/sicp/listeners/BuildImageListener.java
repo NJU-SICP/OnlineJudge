@@ -12,7 +12,7 @@ import com.github.dockerjava.api.model.PruneType;
 import com.rabbitmq.client.Channel;
 
 import net.lingala.zip4j.ZipFile;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;

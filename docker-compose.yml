@@ -3,42 +3,55 @@ version: '3'
 services:
   # NoSQL Database
   mongo:
-    image: mongo:5
+    image: bitnami/mongodb:6.0
     restart: always
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=mongo
-      - MONGO_INITDB_ROOT_PASSWORD=mongo
+      - MONGODB_ROOT_PASSWORD=sicp_root
+      - MONGODB_USERNAME=sicp
+      - MONGODB_PASSWORD=sicp
+      - MONGODB_DATABASE=sicp
     volumes:
-      - ./data/mongo:/data/db
+      - ./data/mongo:/bitnami/mongodb
     ports:
-      - "127.0.0.1:27017:27017"
+      - "127.0.0.1:23001:27017"
   
   # Object Storage
   minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
+    image: bitnami/minio:2022
     restart: always
     environment:
-      - MINIO_ROOT_USER=
-      - MINIO_ROOT_PASSWORD=
+      - MINIO_ROOT_USER=sicp_minio
+      - MINIO_ROOT_PASSWORD=sicp_minio
+      - MINIO_DEFAULT_BUCKETS=sicp
     volumes:
       - ./data/minio:/data
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      - "127.0.0.1:23002:9000"
+      - "127.0.0.1:23003:9001"
 
   # Message broker
   rabbitmq:
-    image: rabbitmq:3-management
+    image: bitnami/rabbitmq:3.10
     restart: always
     environment:
-      - RABBITMQ_DEFAULT_USER=
-      - RABBITMQ_DEFAULT_PASS=
+      - RABBITMQ_USERNAME=sicp
+      - RABBITMQ_PASSWORD=sicp
     volumes:
-      - ./data/rabbitmq:/var/lib/rabbitmq
+      - ./data/rabbitmq:/bitnami
     ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
+      - "127.0.0.1:23004:5672"
+      - "127.0.0.1:23005:15672"
+
+  # In-memory cache
+  redis:
+    image: bitnami/redis:7.0
+    restart: always
+    environment:
+      - REDIS_PASSWORD=sicp
+    volumes:
+      - ./data/redis:/bitnami/redis/data
+    ports:
+      - "127.0.0.1:23006:6379"
   
   # Docker registry
   # To restrict access to registry, refer to
@@ -49,14 +62,4 @@ services:
     volumes:
       - ./data/registry:/var/lib/registry
     ports:
-      - "127.0.0.1:5000:5000"
-
-  # In-memory cache
-  redis:
-    image: redis:6-alpine
-    restart: always
-    command: redis-server --save 60 1 --requirepass sicp_redis
-    volumes:
-      - ./data/redis:/data
-    ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:23009:5000"
