@@ -1,13 +1,11 @@
 import React, {useEffect, useState} from "react";
-import {useDispatch, useSelector} from "react-redux";
+import {useSelector} from "react-redux";
 import {useHistory, useLocation} from "react-router-dom";
 import qs from "qs";
 import moment from "moment";
-import {set} from "../store/auth";
-import http from "../http";
 import config from "../config";
 
-import {Layout, Form, Input, Button, Alert, Typography, Divider, Row, Col, List} from "antd";
+import {Layout, Form, Button, Alert, Typography, Divider, Row, Col, List} from "antd";
 import {
     CloseOutlined,
     CopyrightOutlined,
@@ -23,8 +21,6 @@ const AuthLayout = () => {
     const auth = useSelector((state) => state.auth.value);
     const history = useHistory();
     const location = useLocation();
-    const dispatch = useDispatch();
-    const [disabled, setDisabled] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -33,32 +29,6 @@ const AuthLayout = () => {
             setError(error);
         }
     }, [location.search]);
-
-    const attemptLogin = (credentials) => {
-        setDisabled(true);
-        setError(null);
-        http()
-            .post("/auth/login", {
-                username: credentials.username,
-                password: credentials.password,
-                platform: `web-${config.version}`
-            })
-            .then((res) => {
-                dispatch(set(res.data));
-                history.push(qs.parse(location.search, {ignoreQueryPrefix: true}).redirect ?? "/");
-            })
-            .catch((err) => {
-                console.error(err);
-                if (err.response && err.response.status === 400) {
-                    setError(err.response.data.message);
-                } else if (!err.response) {
-                    setError("无法连接至服务器，请检查网络连接。");
-                } else {
-                    setError("未知错误，请联系管理员。");
-                }
-                setDisabled(false);
-            });
-    };
 
     useEffect(() => {
         if (!auth) return;
@@ -91,7 +61,7 @@ const AuthLayout = () => {
                     <Typography.Title level={2}>
                         <UserOutlined/> 用户登录
                     </Typography.Title>
-                    <Form name="login" onFinish={attemptLogin}
+                    <Form name="login"
                           style={{
                               maxWidth: "27em",
                               marginTop: "2em",
@@ -111,24 +81,12 @@ const AuthLayout = () => {
                                 }/>
                             }
                         </Form.Item>
-                        <Form.Item label="学号" name="username" rules={[{required: true, message: "请输入学号"}]}>
-                            <Input disabled={disabled}/>
-                        </Form.Item>
-                        <Form.Item label="密码" name="password" rules={[{required: true, message: "请输入密码"}]}>
-                            <Input.Password disabled={disabled}/>
-                        </Form.Item>
                         <Form.Item style={{marginBottom: "0.5em"}}>
-                            <Button type="primary" htmlType="submit" disabled={disabled} style={{float: "right"}}>
-                                登录
+                            <Button type="ghost" size="large" style={{width: "100%"}} onClick={() => loginWithGitlab()}>
+                                <GitlabOutlined/> 使用南京大学代码托管服务登录
                             </Button>
                         </Form.Item>
                     </Form>
-                    <p>
-                        其他登录方式：
-                        <Button type="ghost" size="large" onClick={() => loginWithGitlab()}>
-                            <GitlabOutlined/> 使用南京大学代码托管服务登录
-                        </Button>
-                    </p>
                 </Col>
                 <Col xs={24} md={8}>
                     <Typography.Title level={2}>

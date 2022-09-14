@@ -65,6 +65,7 @@ import sys
 import struct
 import colorama
 
+from client.utils.auth import authenticate
 from client.utils.printer import print_error, print_success
 
 colorama.init()
@@ -187,8 +188,8 @@ def parse_input(command_input=None):
                         help="set the server address")
     server.add_argument('--authenticate', action='store_true',
                         help="authenticate, ignoring previous authentication")
-    server.add_argument('--oauth-gitlab', action='store_true',
-                        help="use gitlab account for authentication")
+    #server.add_argument('--oauth-gitlab', action='store_true',
+    #                    help="use gitlab account for authentication")
     server.add_argument('--insecure', action='store_true',
                         help="use http instead of https")
     server.add_argument('--no-update', action='store_true',
@@ -221,6 +222,14 @@ def main():
                                                    timeout=10,
                                                    verbose=True)
         exit(not did_update)  # exit with error if ok failed to update
+    elif args.authenticate:
+        auth = authenticate(args, force=True)
+        if not auth:
+            exit(1)
+        else:
+            print_success("Authenticated as {username} {fullName}."
+                          .format(username=auth['username'], fullName=auth['fullName']))
+            exit(0)
 
     assign = None
     try:
@@ -283,7 +292,7 @@ def main():
                 if not auth:
                     exit(1)
                 else:
-                    print_success("Authenticated as {username} {fullName}.\n"
+                    print_success("Authenticated as {username} {fullName}."
                                   .format(username=auth['username'], fullName=auth['fullName']))
                     exit(0)
 

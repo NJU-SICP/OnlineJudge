@@ -35,10 +35,6 @@ public class AuthService {
         this.logger = LoggerFactory.getLogger(getClass());
     }
 
-    public Authentication authenticate(String username, String password) {
-        return authenticate(new UsernamePasswordAuthenticationToken(username, password));
-    }
-
     public Authentication authenticate(AbstractAuthenticationToken token) {
         try {
             Authentication authentication = manager.authenticate(token);
@@ -68,16 +64,6 @@ public class AuthService {
         authentication.setIssued(utils.parseJwtToken(token).getIssuedAt());
         authentication.setExpires(utils.parseJwtToken(token).getExpiration());
         return authentication;
-    }
-
-    public void setPassword(String oldPassword, String newPassword) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user.validatePassword(oldPassword)) {
-            user.setPassword(newPassword);
-            repository.save(user);
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "输入的信息不正确，请重试。");
-        }
     }
 
 }

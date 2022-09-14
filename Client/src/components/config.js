@@ -1,29 +1,24 @@
 import React, {useEffect, useState} from "react";
-import {useDispatch, useSelector} from "react-redux";
-import {useHistory, useLocation} from "react-router-dom";
+import {useSelector} from "react-redux";
+import {useLocation} from "react-router-dom";
 import qs from "qs";
 import http from "../http";
-import {clear} from "../store/auth";
 
 import {Alert, Button, Card, Col, Divider, Form, Input, message, Popconfirm, Row, Skeleton, Typography} from "antd";
 import {
     BookOutlined,
-    CheckOutlined,
     DisconnectOutlined,
     GitlabOutlined,
-    KeyOutlined, LinkOutlined,
+    LinkOutlined,
     UserSwitchOutlined, WarningOutlined
 } from "@ant-design/icons";
 import config from "../config";
 
 const UserConfig = () => {
     const auth = useSelector((state) => state.auth.value);
-    const dispatch = useDispatch();
     const location = useLocation();
-    const history = useHistory();
 
     const [user, setUser] = useState(null);
-    const [disabled, setDisabled] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -39,28 +34,6 @@ const UserConfig = () => {
             setError(error);
         }
     }, [location.search]);
-
-    const updatePassword = (values) => {
-        setDisabled(true);
-        setError(null);
-        http()
-            .put("/auth/password", {
-                oldPassword: values.oldPassword,
-                newPassword: values.newPassword
-            })
-            .then(() => {
-                message.success("修改密码成功，请重新登录。");
-                dispatch(clear());
-                history.push("/");
-            })
-            .catch((err) => {
-                console.error(err);
-                if (err.response && err.response.status === 400) {
-                    setError(err.response.data.message);
-                }
-                setDisabled(false);
-            });
-    };
 
     const linkGitlab = () => {
         const redirect = location.pathname;
@@ -110,40 +83,6 @@ const UserConfig = () => {
             {error && <Alert message={error} type={"error"} style={{marginBottom: "1em"}}
                              closable onClose={() => setError(null)}/>}
             <Row gutter={40}>
-                <Col xs={24} sm={24} md={12} xl={12} xxl={8}>
-                    <Card>
-                        <Typography.Title level={2}>
-                            <KeyOutlined/> 修改密码
-                        </Typography.Title>
-                        <Form onFinish={updatePassword}>
-                            <Alert message="修改密码后会退出登录，请妥善保管您的密码。" style={{marginBottom: "1.5em"}}/>
-                            <Form.Item name="oldPassword" label="当前密码" rules={[{required: true, message: "请输入旧密码"}]}>
-                                <Input.Password disabled={disabled}/>
-                            </Form.Item>
-                            <Form.Item name="newPassword" label="修改密码" rules={[{required: true, message: "请输入新密码"}]}>
-                                <Input.Password disabled={disabled}/>
-                            </Form.Item>
-                            <Form.Item name="verPassword" label="确认密码" dependencies={["newPassword"]}
-                                       rules={[{required: true, message: "请确认密码"},
-                                           ({getFieldValue}) => ({
-                                               validator(_, value) {
-                                                   if (!value || getFieldValue("newPassword") === value) {
-                                                       return Promise.resolve();
-                                                   } else {
-                                                       return Promise.reject(new Error("两次输入的密码不一致"));
-                                                   }
-                                               }
-                                           })]}>
-                                <Input.Password disabled={disabled}/>
-                            </Form.Item>
-                            <Form.Item style={{marginBottom: 0}}>
-                                <Button type="primary" htmlType="submit" disabled={disabled} style={{width: "100%"}}>
-                                    <CheckOutlined/> 修改密码
-                                </Button>
-                            </Form.Item>
-                        </Form>
-                    </Card>
-                </Col>
                 <Col xs={24} sm={24} md={12} xl={12} xxl={8}>
                     <Card>
                         <Typography.Title level={2}>

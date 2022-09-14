@@ -9,7 +9,6 @@ import {
     HighlightOutlined,
     HomeOutlined,
     PaperClipOutlined,
-    RobotOutlined,
     TableOutlined,
     UserSwitchOutlined
 } from "@ant-design/icons";
@@ -32,6 +31,7 @@ const Menu = () => {
                     <Link to="/config">用户设置</Link>
                 </AntMenu.Item>
             </AntMenu.ItemGroup>
+            {/*
             <AntMenu.Divider style={{
                 marginTop: "1.5em",
                 marginBottom: "1.5em",
@@ -43,6 +43,7 @@ const Menu = () => {
                     <Link to="/contests/hog">Hog Contest</Link>
                 </AntMenu.Item>
             </AntMenu.ItemGroup>
+            */}
             {!!auth && auth.roles && auth.authorities &&
                 auth.roles.filter(role => role !== "ROLE_STUDENT" && role !== "ROLE_GUEST").length > 0 && <>
                     <AntMenu.Divider style={{

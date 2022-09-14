@@ -27,7 +27,8 @@ The ok client software was developed for CS 61A at UC Berkeley.
 5. Install requirements and set up development environment:
 
         pip install -r requirements.txt
-        python3 setup.py develop
+        python3 -m client.cli.ok
+        python3 -m client.cli.publish
 
 ## Contributing
 

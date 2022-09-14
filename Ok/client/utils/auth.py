@@ -22,7 +22,7 @@ from client.utils import format, network
 log = logging.getLogger(__name__)
 
 TIMEOUT = 10
-LOGIN_ENDPOINT = '/auth/login'
+#LOGIN_ENDPOINT = '/auth/login'
 REFRESH_ENDPOINT = '/auth/refresh'
 GITLAB_ENDPOINT_1 = '/auth/gitlab/login'
 GITLAB_ENDPOINT_2 = '/auth/gitlab/login/callback'
@@ -49,13 +49,13 @@ def post(server, endpoint, json, headers):
     return body
 
 
-def make_code_post(server, username, password):
-    json = {
-        'username': username,
-        'password': password,
-        'platform': 'ok-{}'.format(__version__)
-    }
-    return post(server, LOGIN_ENDPOINT, json, None)
+#def make_code_post(server, username, password):
+#    json = {
+#        'username': username,
+#        'password': password,
+#        'platform': 'ok-{}'.format(__version__)
+#    }
+#    return post(server, LOGIN_ENDPOINT, json, None)
 
 
 def make_code_post_via_gitlab(server, code):
@@ -141,10 +141,11 @@ def authenticate(cmd_args, force=False, nointeract=False):
         if nointeract:
             return auth
         print('Performing authentication')
-        if cmd_args.oauth_gitlab:
-            auth = perform_auth(get_code_via_gitlab, cmd_args)
-        else:
-            auth = perform_auth(get_code, cmd_args)
+        auth = perform_auth(get_code_via_gitlab, cmd_args)
+        #if cmd_args.oauth_gitlab:
+        #    auth = perform_auth(get_code_via_gitlab, cmd_args)
+        #else:
+        #    auth = perform_auth(get_code, cmd_args)
     
     if auth is None:
         print_error('Error: null response')
@@ -161,11 +162,11 @@ def notebook_authenticate(cmd_args, force=False, silent=True, nointeract=False):
     raise NotImplemented
 
 
-def get_code(cmd_args):
-    server = server_url(cmd_args)
-    username = input("Please input your NJU ID: ")
-    password = getpass("Please input your password: ")
-    return make_code_post(server, username, password)
+#def get_code(cmd_args):
+#    server = server_url(cmd_args)
+#    username = input("Please input your NJU ID: ")
+#    password = getpass("Please input your password: ")
+#    return make_code_post(server, username, password)
 
 
 def get_code_via_gitlab(cmd_args):
