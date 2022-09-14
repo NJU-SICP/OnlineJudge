@@ -2,7 +2,7 @@
 
 import argparse
 import client
-import distutils.sysconfig
+import sysconfig
 import os
 import shutil
 import sys
@@ -32,7 +32,7 @@ def find_site_packages_directory():
     if not is_venv():
         abort('You must activate your virtualenv to publish.')
 
-    return distutils.sysconfig.get_python_lib()
+    return sysconfig.get_path('platlib') or sysconfig.get_path('purelib')
 
 def write_tree(zipf, src_directory, dst_directory):
     """Write all .py files in a source directory to a destination directory
