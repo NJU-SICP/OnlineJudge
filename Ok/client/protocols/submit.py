@@ -40,7 +40,11 @@ class SubmitProtocol(models.Protocol):
                 return
             self.submit(auth)
         except requests.HTTPError as e:
-            print_error('Cannot submit: {}'.format(e.response.json()['message']))
+            if e.response.status_code == 404:
+                message = "assignment does not exist"
+            else:
+                message = e.response.json()['message']
+            print_error('Cannot submit: {}'.format(message))
         except Exception as e:
             print_error('Error in submit: {}'.format(e))
 
