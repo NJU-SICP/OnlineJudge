@@ -1,7 +1,6 @@
 package cn.edu.nju.sicp.controllers;
 
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,7 +30,7 @@ public class MiscController {
 
     @GetMapping("/ok-client/version")
     public ResponseEntity<String> getOkClientVersion() {
-        return ResponseEntity.ok("NJU-SICP-v2022.0.0");
+        return ResponseEntity.ok("2022.09.16");
     }
 
 }
