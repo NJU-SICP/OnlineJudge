@@ -92,9 +92,8 @@ class SubmitProtocol(models.Protocol):
             request = requests.post(address, headers=headers, files=files, data=data)
             request.raise_for_status()
             result = request.json()
-            print_success('SICP OJ received submission ID {}'.format(result['id'][-8:]))
-            print_success('Open in browser: https://nju-sicp.bitbucket.io/oj/#/assignments/{}'
-                          .format(self.assignment.endpoint))
+            print_success('Online Judge received submission ID {}'.format(result['id'][-8:]))
+            print_success('Open in browser: https://sicp.pascal-lab.net/2022/oj/assignments')
 
     def get_submit_limit(self, auth):
         log.info("fetching assignment")

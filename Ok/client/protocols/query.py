@@ -72,7 +72,7 @@ class QueryProtocol(models.Protocol):
             print('Submissions of {assignment} by {username} {fullName} (page {currentPage} of {totalPages})'
                   .format(assignment=self.assignment.endpoint, username=auth['username'], fullName=auth['fullName'],
                           currentPage=page, totalPages=totalPages))
-            print('Open in browser: https://nju-sicp.bitbucket.io/oj/#/assignments/{}'.format(self.assignment.endpoint))
+            print('Open in browser: https://sicp.pascal-lab.net/2022/oj/assignments')
             print('---------------------------------------------------------------------')
             print('     ID        Time         Score                                    ')
             print('---------------------------------------------------------------------')
