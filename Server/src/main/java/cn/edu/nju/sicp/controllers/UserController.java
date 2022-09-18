@@ -85,11 +85,15 @@ public class UserController {
     @PostMapping()
     @PreAuthorize("hasAuthority(@Roles.OP_USER_CREATE)")
     public ResponseEntity<User> createUser(@RequestBody User createdUser) {
-        User user = new User();
-        user.setValues(createdUser);
-        userRepository.save(user);
+        User user = userRepository.findByUsername(createdUser.getUsername())
+            .orElseGet(() -> {
+                User u = new User();
+                u.setValues(createdUser);
+                userRepository.save(u);
+                logger.info(String.format("CreateUser %s", u));
+                return u;
+            });
         user.clearPassword();
-        logger.info(String.format("CreateUser %s %s", user, SecurityContextHolder.getContext().getAuthentication().getPrincipal()));
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
