@@ -202,18 +202,25 @@ def get_code_via_gitlab(cmd_args):
         def log_message(self, format, *args):
             return
 
-    host_name = "localhost"
-    port_number = 2830  # SICP
-    server_address = (host_name, port_number)
-    log.info("Authentication server running on {}:{}".format(host_name, port_number))
+    if cmd_args.code is None:
+        host_name = "localhost"
+        port_number = 2830  # SICP
+        server_address = (host_name, port_number)
+        log.info("Authentication server running on {}:{}".format(host_name, port_number))
 
-    assert webbrowser.open_new('{}/auth/gitlab/login?state=ok'.format(server))
-    try:
-        httpd = http.server.HTTPServer(server_address, CodeHandler)
-        httpd.handle_request()
-    except OSError as e:
-        log.warning("HTTP Server Err {}".format(server_address), exc_info=True)
-        raise
+        assert webbrowser.open_new('{}/auth/gitlab/login?state=ok'.format(server))
+        try:
+            httpd = http.server.HTTPServer(server_address, CodeHandler)
+            httpd.handle_request()
+        except OSError as e:
+            log.warning("HTTP Server Err {}".format(server_address), exc_info=True)
+            raise
+    else:
+        code = cmd_args.code
+        try:
+            code_response = make_code_post_via_gitlab(server, code)
+        except OAuthException as e:
+            oauth_exception = e
 
     if oauth_exception:
         raise oauth_exception

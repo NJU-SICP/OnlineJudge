@@ -48,8 +48,9 @@ To list the submissions, use the --query option:
 Finally, to log out and log in under a different email, use --authenticate:
 
     python3 ok --authenticate
+    python3 ok --authenticate --code auth-code
 
-Visit https://nju-sicp.bitbucket.io/oj/ to access web interface of online judge.
+Visit https://sicp.pascal-lab.net to access web interface of online judge.
 """
 
 from client import exceptions as ex
@@ -188,6 +189,7 @@ def parse_input(command_input=None):
                         help="set the server address")
     server.add_argument('--authenticate', action='store_true',
                         help="authenticate, ignoring previous authentication")
+    server.add_argument('--code', type=str, help="set authenticate code")
     #server.add_argument('--oauth-gitlab', action='store_true',
     #                    help="use gitlab account for authentication")
     server.add_argument('--insecure', action='store_true',
