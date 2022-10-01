@@ -39,6 +39,7 @@ server. To run the tests without any network access, use the --local option:
 To submit the assignment after you're done, use the --submit option:
 
     python3 ok --submit
+    python3 ok --submit --no-wait
     python3 ok --submit --token secret-token
 
 To list the submissions, use the --query option:
@@ -110,6 +111,8 @@ def parse_input(command_input=None):
                          help="query all submissions")
     testing.add_argument('--submit', action='store_true',
                          help="submit the assignment")
+    testing.add_argument('--no-wait', action='store_true',
+                         help='do not wait for grade after submit')
     testing.add_argument('--token', action='store', default=None,
                          help="set the submit token")
     testing.add_argument('--backup', action='store_true',
@@ -190,7 +193,7 @@ def parse_input(command_input=None):
     server.add_argument('--authenticate', action='store_true',
                         help="authenticate, ignoring previous authentication")
     server.add_argument('--code', type=str, help="set authenticate code")
-    #server.add_argument('--oauth-gitlab', action='store_true',
+    # server.add_argument('--oauth-gitlab', action='store_true',
     #                    help="use gitlab account for authentication")
     server.add_argument('--insecure', action='store_true',
                         help="use http instead of https")
@@ -287,7 +290,8 @@ def main():
             retry = False
             if force_authenticate:
                 if args.nointeract:
-                    print_error("Cannot pass in --authenticate and --nointeract")
+                    print_error(
+                        "Cannot pass in --authenticate and --nointeract")
                     exit(1)
                 # Authenticate and check for success
                 auth = assign.authenticate(force=True)
@@ -313,8 +317,10 @@ def main():
                     retry = True
                 if retry:
                     msg = "without a browser" if args.no_browser else "with a browser"
-                    log.warning('Authentication exception occurred; will retry {0}'.format(msg), exc_info=True)
-                    print_error('Authentication error; will try to re-authenticate {0}...'.format(msg))
+                    log.warning('Authentication exception occurred; will retry {0}'.format(
+                        msg), exc_info=True)
+                    print_error(
+                        'Authentication error; will try to re-authenticate {0}...'.format(msg))
                 else:
                     raise  # outer handler will be called
 

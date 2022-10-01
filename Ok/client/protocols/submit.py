@@ -2,6 +2,7 @@
 
 import logging
 import os
+from time import sleep
 import requests
 import tempfile
 from zipfile import ZipFile
@@ -58,9 +59,12 @@ class SubmitProtocol(models.Protocol):
                 print_error('This assignment does not allow submission.')
                 return
             elif limit > 0:
-                print_warning('This assignment has submit limit of {} times.'.format(limit))
-                print_warning('You have already submitted {} / {} times.'.format(count, limit))
-                action = input('Submit your code? [y]es / [N]o ').strip().lower()
+                print_warning(
+                    'This assignment has submit limit of {} times.'.format(limit))
+                print_warning(
+                    'You have already submitted {} / {} times.'.format(count, limit))
+                action = input(
+                    'Submit your code? [y]es / [N]o ').strip().lower()
                 if not action.startswith('y'):
                     print('Aborted.')
                     return
@@ -85,15 +89,57 @@ class SubmitProtocol(models.Protocol):
                     z.close()
             temp.flush()
             temp.seek(0, os.SEEK_SET)
-            address = self.SUBMISSION_ENDPOINT.format(server=self.assignment.server_url)
+            address = self.SUBMISSION_ENDPOINT.format(
+                server=self.assignment.server_url)
             headers = {'Authorization': 'Bearer {}'.format(auth['token'])}
             files = {'file': temp}
-            data = {'assignmentId': self.assignment.endpoint, 'token': self.args.token}
-            request = requests.post(address, headers=headers, files=files, data=data)
+            data = {'assignmentId': self.assignment.endpoint,
+                    'token': self.args.token}
+            request = requests.post(
+                address, headers=headers, files=files, data=data)
             request.raise_for_status()
             result = request.json()
-            print_success('Online Judge received submission ID {}'.format(result['id'][-8:]))
-            print_success('Open in browser: https://sicp.pascal-lab.net/2022/oj/assignments')
+            print_success(
+                'Online Judge received submission ID {}'.format(result['id'][-8:]))
+            print_success(
+                'Open in browser: https://sicp.pascal-lab.net/2022/oj/assignments')
+            if not self.args.no_wait:
+                self.wait_for_grade(auth, result['id'])
+
+    def wait_for_grade(self, auth, id):
+        log.info("wait for grade")
+        print("\nWaiting for online judge to grade, press Ctrl+C to exit\n")
+        address = '{}/{}'.format(self.SUBMISSION_ENDPOINT.format(
+            server=self.assignment.server_url), id)
+        headers = {'Authorization': 'Bearer {}'.format(auth['token'])}
+        for time_spent in range(180):
+            sleep(1.0)
+            print("... {}s".format(time_spent), end='\r')
+            response = requests.get(address, headers=headers)
+            response.raise_for_status()
+            submission = response.json()
+            if 'result' in submission and submission['result'] is not None:
+                if 'details' in submission['result'] and submission['result']['details'] is not None:
+                    print()
+                    print(
+                        '---------------------------------------------------------------------')
+                    print_success(
+                        f"Submission graded: score={submission['result']['score']}")
+                    for detail in submission['result']['details']:
+                        print(
+                            f" -> {detail['title']}: {detail['score']}", end='')
+                        if detail['message']:
+                            print(f" ({detail['message']})", end='')
+                        print()
+                    return
+                elif 'error' in submission['result'] and submission['result']['error'] is not None:
+                    print()
+                    print(
+                        '---------------------------------------------------------------------')
+                    print_error(
+                        f"Submission failed to grade: {submission['result']['error']}")
+                    return
+        print("Timeout (180s) waiting for grade")
 
     def get_submit_limit(self, auth):
         log.info("fetching assignment")
@@ -107,7 +153,8 @@ class SubmitProtocol(models.Protocol):
 
     def get_submit_count(self, auth):
         log.info("fetch submission count")
-        address = '{}/count'.format(self.SUBMISSION_ENDPOINT.format(server=self.assignment.server_url))
+        address = '{}/count'.format(self.SUBMISSION_ENDPOINT.format(
+            server=self.assignment.server_url))
         headers = {'Authorization': 'Bearer {}'.format(auth['token'])}
         params = {
             'userId': auth['userId'],
