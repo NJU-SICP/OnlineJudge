@@ -215,7 +215,6 @@ public class SubmissionController {
     public ResponseEntity<Submission> createSubmission(
             @RequestPart(value = "userId", required = false) String userId,
             @RequestPart("assignmentId") String assignmentId,
-            @RequestPart(value = "token", required = false) @Deprecated String token,
             @RequestPart("file") MultipartFile file) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId)
@@ -228,7 +227,7 @@ public class SubmissionController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交的文件类型不符合作业限制的文件类型。");
         }
 
-        String createdBy = null; // if submit with token, set to issuer user info, else null
+        String createdBy = null;
         if (userId != null) {
             if (user.getAuthorities().stream()
                     .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_UPDATE))) {
