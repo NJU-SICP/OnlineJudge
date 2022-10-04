@@ -24,11 +24,11 @@ import AdminAssignmentEditor from "../components/admin/assignments/editor";
 import AdminAssignmentGrader from "../components/admin/assignments/grader";
 import AdminPlagiarismList from "../components/admin/plagiarisms/list";
 import AdminSubmissionList from "../components/admin/submissions/list";
-import AdminSubmissionTokens from "../components/admin/submissions/tokens";
 import AdminBackupList from "../components/admin/backups/list";
 import AdminScoreTable from "../components/admin/score/table";
 import BackupList from "../components/assignments/backups";
 import HogContest from "../components/contests/hog/contest";
+import AdminExtensionList from "../components/admin/extensions/list";
 
 const MainLayout = () => {
     const auth = useSelector((state) => state.auth.value);
@@ -102,8 +102,8 @@ const MainLayout = () => {
                                         <Route path="/admin/assignments/:id/grader" children={<AdminAssignmentGrader/>}/>
                                         <Route path="/admin/assignments/:id" children={<AdminAssignmentEditor/>}/>
                                         <Route path="/admin/assignments" children={<AdminAssignmentList/>}/>
+                                        <Route path="/admin/extensions" children={<AdminExtensionList/>}/>
                                         <Route path="/admin/plagiarisms" children={<AdminPlagiarismList/>}/>
-                                        <Route path="/admin/submissions/tokens" children={<AdminSubmissionTokens/>}/>
                                         <Route path="/admin/submissions" children={<AdminSubmissionList/>}/>
                                         <Route path="/admin/backups" children={<AdminBackupList/>}/>
                                         <Route path="/admin/score-table" children={<AdminScoreTable/>}/>

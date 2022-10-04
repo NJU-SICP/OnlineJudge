@@ -1,19 +1,17 @@
 import React, {useEffect, useState} from "react";
 import {Link, useHistory, useLocation} from "react-router-dom";
-import {useSelector} from "react-redux";
 import http from "../../../http";
 import qs from "qs";
 import moment from "moment";
 
 import {Button, Checkbox, Divider, Form, Pagination, Skeleton, Table, Typography} from "antd";
-import {AuditOutlined, PaperClipOutlined} from "@ant-design/icons";
+import {PaperClipOutlined} from "@ant-design/icons";
 import AdminUserInfo from "../users/info";
 import AdminAssignmentInfo from "../assignments/info";
 import AdminUserSearch from "../users/search";
 import AdminAssignmentSearch from "../assignments/search";
 
 const AdminSubmissionList = () => {
-    const auth = useSelector((state) => state.auth.value);
     const history = useHistory();
     const location = useLocation();
 
@@ -116,15 +114,6 @@ const AdminSubmissionList = () => {
         <>
             <Typography.Title level={2}>
                 <PaperClipOutlined /> 提交管理
-                {auth.authorities && auth.authorities.indexOf("OP_SUBMISSION_TOKEN_MANAGE") >= 0 &&
-                    <div style={{float: "right"}}>
-                        <Link to="/admin/submissions/tokens">
-                            <Button type="primary">
-                                <AuditOutlined /> 提交密钥管理
-                            </Button>
-                        </Link>
-                    </div>
-                }
             </Typography.Title>
             <Form layout="inline">
                 <Form.Item label="根据用户搜索">

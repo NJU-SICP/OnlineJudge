@@ -4,6 +4,7 @@ import {Link, useHistory} from "react-router-dom";
 
 import {Menu as AntMenu} from "antd";
 import {
+    ClockCircleOutlined,
     CloudServerOutlined,
     EditOutlined,
     HighlightOutlined,
@@ -72,6 +73,12 @@ const Menu = () => {
                         {auth.authorities.indexOf("OP_BACKUP_READ_ALL") >= 0 &&
                             <AntMenu.Item key="/admin/backups" icon={<CloudServerOutlined />}>
                                 <Link to="/admin/backups">备份查询</Link>
+                            </AntMenu.Item>
+                        }
+                        {auth.authorities.indexOf("OP_EXTENSION_READ") >= 0 &&
+                            <AntMenu.Item key="/admin/extensions" icon={<ClockCircleOutlined />}>
+                                <Link to="/admin/extensions">迟交管理</Link>
+
                             </AntMenu.Item>
                         }
                         {auth.authorities.indexOf("OP_PLAGIARISM_READ_ALL") >= 0 &&

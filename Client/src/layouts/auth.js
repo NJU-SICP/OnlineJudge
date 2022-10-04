@@ -104,7 +104,7 @@ const AuthLayout = () => {
                         <List.Item>
                             <Typography.Text>
                                 <CopyrightOutlined style={{marginRight: "1em"}}/>
-                                <span>南京大学 2021 版权所有</span>
+                                <span>南京大学 2022 版权所有</span>
                             </Typography.Text>
                         </List.Item>
                         <List.Item>

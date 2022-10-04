@@ -40,7 +40,6 @@ To submit the assignment after you're done, use the --submit option:
 
     python3 ok --submit
     python3 ok --submit --no-wait
-    python3 ok --submit --token secret-token
 
 To list the submissions, use the --query option:
 
@@ -113,8 +112,6 @@ def parse_input(command_input=None):
                          help="submit the assignment")
     testing.add_argument('--no-wait', action='store_true',
                          help='do not wait for grade after submit')
-    testing.add_argument('--token', action='store', default=None,
-                         help="set the submit token")
     testing.add_argument('--backup', action='store_true',
                          help="attempt to reliably backup your work")
     testing.add_argument('--timeout', type=float, default=10,

@@ -52,22 +52,21 @@ class SubmitProtocol(models.Protocol):
     def submit(self, auth):
         print("Submitting {assignment} by {username} {fullName}."
               .format(assignment=self.assignment.endpoint, username=auth['username'], fullName=auth['fullName']))
-        if not self.args.token:
-            limit = self.get_submit_limit(auth)
-            count = self.get_submit_count(auth)
-            if limit == 0:
-                print_error('This assignment does not allow submission.')
+        limit = self.get_submit_limit(auth)
+        count = self.get_submit_count(auth)
+        if limit == 0:
+            print_error('This assignment does not allow submission.')
+            return
+        elif limit > 0:
+            print_warning(
+                'This assignment has submit limit of {} times.'.format(limit))
+            print_warning(
+                'You have already submitted {} / {} times.'.format(count, limit))
+            action = input(
+                'Submit your code? [y]es / [N]o ').strip().lower()
+            if not action.startswith('y'):
+                print('Aborted.')
                 return
-            elif limit > 0:
-                print_warning(
-                    'This assignment has submit limit of {} times.'.format(limit))
-                print_warning(
-                    'You have already submitted {} / {} times.'.format(count, limit))
-                action = input(
-                    'Submit your code? [y]es / [N]o ').strip().lower()
-                if not action.startswith('y'):
-                    print('Aborted.')
-                    return
 
         if len(self.assignment.src) == 1:
             if '.' in self.assignment.src[0]:
@@ -93,8 +92,7 @@ class SubmitProtocol(models.Protocol):
                 server=self.assignment.server_url)
             headers = {'Authorization': 'Bearer {}'.format(auth['token'])}
             files = {'file': temp}
-            data = {'assignmentId': self.assignment.endpoint,
-                    'token': self.args.token}
+            data = {'assignmentId': self.assignment.endpoint}
             request = requests.post(
                 address, headers=headers, files=files, data=data)
             request.raise_for_status()
