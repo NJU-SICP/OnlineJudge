@@ -48,6 +48,7 @@ public class ExtensionController {
         extension.setUserId(createdExtension.getUserId());
         extension.setAssignmentId(createdExtension.getAssignmentId());
         extension.setEndTime(createdExtension.getEndTime());
+        extension.setMessage(createdExtension.getMessage());
         extension.setCreatedBy(user.getId());
         extension.setCreatedAt(new Date());
         extensionRepository.save(extension);
