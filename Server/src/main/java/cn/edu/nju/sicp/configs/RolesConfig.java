@@ -28,7 +28,11 @@ public final class RolesConfig {
     public static final String OP_SUBMISSION_READ_ALL = "OP_SUBMISSION_READ_ALL";
     public static final String OP_SUBMISSION_UPDATE = "OP_SUBMISSION_UPDATE";
     public static final String OP_SUBMISSION_DELETE = "OP_SUBMISSION_DELETE";
+    @Deprecated
     public static final String OP_SUBMISSION_TOKEN_MANAGE = "OP_SUBMISSION_TOKEN_MANAGE";
+    public static final String OP_EXTENSION_READ = "OP_EXTENSION_READ";
+    public static final String OP_EXTENSION_CREATE = "OP_EXTENSION_CREATE";
+    public static final String OP_EXTENSION_DELETE = "OP_EXTENSION_DELETE";
     public static final String OP_BACKUP_READ_SELF = "OP_BACKUP_READ_SELF";
     public static final String OP_BACKUP_READ_ALL = "OP_BACKUP_READ_ALL";
     public static final String OP_BACKUP_CREATE = "OP_BACKUP_CREATE";
@@ -58,7 +62,9 @@ public final class RolesConfig {
         grantedAuthoritiesMap.put(OP_SUBMISSION_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_SUBMISSION_UPDATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_SUBMISSION_DELETE, List.of(ROLE_ADMIN));
-        grantedAuthoritiesMap.put(OP_SUBMISSION_TOKEN_MANAGE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
+        grantedAuthoritiesMap.put(OP_EXTENSION_READ, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
+        grantedAuthoritiesMap.put(OP_EXTENSION_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
+        grantedAuthoritiesMap.put(OP_EXTENSION_DELETE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_BACKUP_READ_SELF, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));
         grantedAuthoritiesMap.put(OP_BACKUP_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_BACKUP_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT, ROLE_GUEST));

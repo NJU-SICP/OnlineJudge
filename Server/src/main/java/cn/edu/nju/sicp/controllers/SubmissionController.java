@@ -4,10 +4,7 @@ import cn.edu.nju.sicp.configs.RolesConfig;
 import cn.edu.nju.sicp.dtos.SubmissionInfo;
 import cn.edu.nju.sicp.dtos.UserInfo;
 import cn.edu.nju.sicp.models.*;
-import cn.edu.nju.sicp.repositories.AssignmentRepository;
-import cn.edu.nju.sicp.repositories.SubmissionRepository;
-import cn.edu.nju.sicp.repositories.TokenRepository;
-import cn.edu.nju.sicp.repositories.UserRepository;
+import cn.edu.nju.sicp.repositories.*;
 import cn.edu.nju.sicp.services.SubmissionService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -40,18 +37,18 @@ public class SubmissionController {
     private final UserRepository userRepository;
     private final AssignmentRepository assignmentRepository;
     private final SubmissionRepository submissionRepository;
-    private final TokenRepository tokenRepository;
+    private final ExtensionRepository extensionRepository;
     private final ProjectionFactory projectionFactory;
     private final Logger logger;
 
     public SubmissionController(SubmissionService service, UserRepository userRepository,
                                 AssignmentRepository assignmentRepository, SubmissionRepository submissionRepository,
-                                TokenRepository tokenRepository, ProjectionFactory projectionFactory) {
+                                ExtensionRepository extensionRepository, ProjectionFactory projectionFactory) {
         this.service = service;
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
         this.submissionRepository = submissionRepository;
-        this.tokenRepository = tokenRepository;
+        this.extensionRepository = extensionRepository;
         this.projectionFactory = projectionFactory;
         this.logger = LoggerFactory.getLogger(SubmissionController.class);
     }
@@ -218,7 +215,7 @@ public class SubmissionController {
     public ResponseEntity<Submission> createSubmission(
             @RequestPart(value = "userId", required = false) String userId,
             @RequestPart("assignmentId") String assignmentId,
-            @RequestPart(value = "token", required = false) String token,
+            @RequestPart(value = "token", required = false) @Deprecated String token,
             @RequestPart("file") MultipartFile file) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Assignment assignment = assignmentRepository.findOneByIdOrSlug(assignmentId, assignmentId)
@@ -240,37 +237,37 @@ public class SubmissionController {
             createdBy = String.format("%s %s", user.getUsername(), user.getFullName());
             user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        } else if (token != null) {
-            Token example = new Token();
-            example.setToken(token);
-            example.setUserId(user.getId());
-            example.setAssignmentId(assignment.getId());
-            Token _token = tokenRepository.findOne(Example.of(example)).orElseThrow(
-                    () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交密钥不合法。"));
-            User issuer = userRepository.findById(_token.getIssuedBy()).orElseThrow(
-                    () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交密钥不合法（内部错误）。"));
-            logger.info(String.format("ConsumeToken %s", _token));
-            createdBy = String.format("%s %s", issuer.getUsername(), issuer.getFullName());
-            tokenRepository.delete(_token);
         } else if (user.getAuthorities().stream()
                 .noneMatch(a -> a.getAuthority().equals(RolesConfig.OP_SUBMISSION_UPDATE))) {
             Date now = new Date();
             if (now.before(assignment.getBeginTime())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交时间早于作业开始时间。");
             } else if (now.after(assignment.getEndTime())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交时间晚于作业截止时间。");
-            }
-            long limit = assignment.getSubmitCountLimit();
-            if (limit > 0) {
-                Submission submission = new Submission();
-                submission.setUserId(user.getId());
-                submission.setAssignmentId(assignment.getId());
-                long count = submissionRepository.count(Example.of(submission));
-                if (count >= limit) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交次数已达上限。");
+                Extension example = new Extension();
+                example.setUserId(user.getId());
+                example.setAssignmentId(assignmentId);
+                Optional<Extension> extension = extensionRepository.findAll(Example.of(example)).stream()
+                        .filter((e) -> now.before(e.getEndTime()))
+                        .findAny();
+                if (extension.isEmpty()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交时间晚于作业截止时间。");
+                } else {
+                    logger.info(String.format("Extension hit %s", extension));
+                    createdBy = extension.get().getCreatedBy();
                 }
-            } else if (limit == 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "此作业不允许自行提交。");
+            } else {
+                long limit = assignment.getSubmitCountLimit();
+                if (limit > 0) {
+                    Submission submission = new Submission();
+                    submission.setUserId(user.getId());
+                    submission.setAssignmentId(assignment.getId());
+                    long count = submissionRepository.count(Example.of(submission));
+                    if (count >= limit) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交次数已达上限。");
+                    }
+                } else if (limit == 0) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "此作业不允许自行提交。");
+                }
             }
         }
 

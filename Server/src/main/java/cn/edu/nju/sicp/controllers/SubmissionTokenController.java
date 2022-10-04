@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Date;
 import java.util.UUID;
 
+@Deprecated
 @RestController
 @RequestMapping("/submissions/tokens")
 public class SubmissionTokenController {

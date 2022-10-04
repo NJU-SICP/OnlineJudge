@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 
 import java.util.Date;
 
+@Deprecated
 public class Token {
 
     @Id
