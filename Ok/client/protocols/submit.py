@@ -1,6 +1,7 @@
 # Copyright (C) 2021 Tianyun Zhang
 
 import logging
+import math
 import os
 from time import sleep
 import requests
@@ -52,7 +53,8 @@ class SubmitProtocol(models.Protocol):
     def submit(self, auth):
         print("Submitting {assignment} by {username} {fullName}."
               .format(assignment=self.assignment.endpoint, username=auth['username'], fullName=auth['fullName']))
-        limit = self.get_submit_limit(auth)
+        assignment = self.get_assignment(auth)
+        limit = assignment['submitCountLimit']
         count = self.get_submit_count(auth)
         if limit == 0:
             print_error('This assignment does not allow submission.')
@@ -102,9 +104,9 @@ class SubmitProtocol(models.Protocol):
             print_success(
                 'Open in browser: https://sicp.pascal-lab.net/2022/oj/assignments')
             if not self.args.no_wait:
-                self.wait_for_grade(auth, result['id'])
+                self.wait_for_grade(auth, result['id'], assignment)
 
-    def wait_for_grade(self, auth, id):
+    def wait_for_grade(self, auth, id, assignment):
         log.info("wait for grade")
         print("\nWaiting for online judge to grade, press Ctrl+C to exit\n")
         address = '{}/{}'.format(self.SUBMISSION_ENDPOINT.format(
@@ -121,8 +123,12 @@ class SubmitProtocol(models.Protocol):
                     print()
                     print(
                         '---------------------------------------------------------------------')
+                    score = math.floor(
+                        100 * submission['result']['score'] / assignment['totalScore'])
                     print_success(
-                        f"Submission graded: score={submission['result']['score']}")
+                        f"Submission graded: score = {score}%", end=" ")
+                    print_success(
+                        f"({submission['result']['score']} / {math.floor(assignment['totalScore'])})")
                     for detail in submission['result']['details']:
                         print(
                             f" -> {detail['title']}: {detail['score']}", end='')
@@ -139,7 +145,7 @@ class SubmitProtocol(models.Protocol):
                     return
         print("Timeout (180s) waiting for grade")
 
-    def get_submit_limit(self, auth):
+    def get_assignment(self, auth):
         log.info("fetching assignment")
         address = '{}/{}'.format(self.ASSIGNMENT_ENDPOINT.format(server=self.assignment.server_url),
                                  self.assignment.endpoint)
@@ -147,7 +153,7 @@ class SubmitProtocol(models.Protocol):
         response = requests.get(address, headers=headers)
         response.raise_for_status()
         log.info("fetched assignment {}".format(response.json()))
-        return response.json()['submitCountLimit']
+        return response.json()
 
     def get_submit_count(self, auth):
         log.info("fetch submission count")
