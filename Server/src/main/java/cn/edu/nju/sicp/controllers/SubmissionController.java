@@ -244,7 +244,7 @@ public class SubmissionController {
             } else if (now.after(assignment.getEndTime())) {
                 Extension example = new Extension();
                 example.setUserId(user.getId());
-                example.setAssignmentId(assignmentId);
+                example.setAssignmentId(assignment.getId());
                 Optional<Extension> extension = extensionRepository.findAll(Example.of(example)).stream()
                         .filter((e) -> now.before(e.getEndTime()))
                         .findAny();
