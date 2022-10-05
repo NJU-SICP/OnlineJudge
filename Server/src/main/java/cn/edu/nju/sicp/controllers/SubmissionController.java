@@ -252,7 +252,9 @@ public class SubmissionController {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "提交时间晚于作业截止时间。");
                 } else {
                     logger.info(String.format("Extension hit %s", extension));
-                    createdBy = extension.get().getCreatedBy();
+                    User admin = userRepository.findById(extension.get().getCreatedBy())
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "未找到创建迟交许可的用户。"));
+                    createdBy = String.format("%s %s", admin.getUsername(), admin.getFullName());
                 }
             } else {
                 long limit = assignment.getSubmitCountLimit();
