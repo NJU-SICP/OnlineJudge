@@ -5,11 +5,12 @@ import qs from "qs";
 import moment from "moment";
 
 import {Button, Checkbox, Divider, Form, Pagination, Skeleton, Table, Typography} from "antd";
-import {PaperClipOutlined} from "@ant-design/icons";
+import {EditOutlined, PaperClipOutlined} from "@ant-design/icons";
 import AdminUserInfo from "../users/info";
 import AdminAssignmentInfo from "../assignments/info";
 import AdminUserSearch from "../users/search";
 import AdminAssignmentSearch from "../assignments/search";
+import Download from "../../download";
 
 const AdminSubmissionList = () => {
     const history = useHistory();
@@ -102,11 +103,14 @@ const AdminSubmissionList = () => {
             title: "操作",
             key: "actions",
             render: (text, record) =>
-                <Link to={`/admin/assignments/${record.assignmentId}/grader?selectedId=${record.id}`}>
-                    <Button type="link" size="small">
-                        评分
-                    </Button>
-                </Link>
+                <>
+                    <Download link={`/submissions/${record.id}/download`} name={record.key} />
+                    <Link to={`/admin/assignments/${record.assignmentId}/grader?selectedId=${record.id}`}>
+                        <Button type="link" size="small">
+                            <EditOutlined/> 查看评分
+                        </Button>
+                    </Link>
+                </>
         }
     ];
 

@@ -6,8 +6,8 @@ const config = {
         auth: "sicp-auth"
     },
     baseNames: {
-        web: isDevelopment ? "/" : "/oj",
-        api: isDevelopment ? "http://localhost:8080" : "https://sicp.pascal-lab.net/api"
+        web: "/",
+        api: "https://sicp.pascal-lab.net/api"
     }
 };
 
