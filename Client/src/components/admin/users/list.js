@@ -40,7 +40,7 @@ const AdminUserList = () => {
                     "ROLE_ADMIN": "red",
                     "ROLE_TEACHER": "purple",
                     "ROLE_STAFF": "blue",
-                    "ROLE_STUDENT": "green"
+                    "ROLE_SENIOR": "green"
                 };
                 return <>{roles.map(role => <Tag key={role} color={colors[role]}>{role}</Tag>)}</>;
             }

@@ -25,8 +25,8 @@ const AdminUserForm = ({initialValues, onFinish, disabled}) => {
                     {label: "管理 [ROLE_ADMIN]", value: "ROLE_ADMIN", disabled: true},
                     {label: "教师 [ROLE_TEACHER]", value: "ROLE_TEACHER"},
                     {label: "助教 [ROLE_STAFF]", value: "ROLE_STAFF"},
-                    {label: "学生 [ROLE_STUDENT]", value: "ROLE_STUDENT"},
-                    {label: "访客 [ROLE_GUEST]", value: "ROLE_GUEST"}
+                    {label: "热心学长/学姐 [ROLE_SENIOR]", value: "ROLE_SENIOR"},
+                    {label: "学生 [ROLE_STUDENT]", value: "ROLE_STUDENT"}
                 ]} disabled={disabled}/>
             </Form.Item>
             <Form.Item name="expires" label="过期日（如为空值则该用户不会过期）">
