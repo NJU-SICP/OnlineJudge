@@ -1,12 +1,14 @@
 """Formatting utilities."""
 
 from client import exceptions
+from client.utils.printer import print_success, print_error
 import textwrap
 from contextlib import contextmanager
 
 #############
 # Whtespace #
 #############
+
 
 def dedent(text):
     """Dedents a string of text.
@@ -16,6 +18,7 @@ def dedent(text):
     removed.
     """
     return textwrap.dedent(text).lstrip('\n').rstrip()
+
 
 def indent(text, indentation):
     """Indents a string of text with the given string of indentation.
@@ -30,6 +33,7 @@ def indent(text, indentation):
     """
     return '\n'.join([indentation + line for line in text.splitlines()])
 
+
 def normalize(text):
     """Normalizes whitespace in a specified string of text."""
     return " ".join(text.strip().split())
@@ -37,6 +41,7 @@ def normalize(text):
 ############
 # Printing #
 ############
+
 
 def print_line(style, length=69):
     """Prints an underlined version of the given line with the
@@ -49,6 +54,7 @@ def print_line(style, length=69):
     """
     print(style * length)
 
+
 @contextmanager
 def block(style, length=69):
     """Print a block with the specified style.
@@ -60,6 +66,7 @@ def block(style, length=69):
     yield
     print_line(style, length)
 
+
 def print_progress_bar(header, passed, failed, locked, verbose=True):
     print_line('-')
     print(header)
@@ -69,16 +76,18 @@ def print_progress_bar(header, passed, failed, locked, verbose=True):
         print('    Passed: {}'.format(passed))
         print('    Failed: {}'.format(failed))
     elif failed > 0:
-        print('    {} test cases passed before encountering '
-              'first failed test case'.format(passed))
+        print_error('    {} test cases passed before encountering '
+                    'first failed test case'.format(passed))
         return
     else:
-        print('    {} test cases passed! No cases failed.'.format(passed))
+        print_success(
+            '    {} test cases passed! No cases failed.'.format(passed))
         return
 
     # Print [oook.....] progress bar
     total = passed + failed + locked
     print_percent(passed, total)
+
 
 def print_coverage_bar(header, exec_lines, tot_lines, verbose=True):
     print_line('-')
@@ -97,6 +106,7 @@ def print_coverage_bar(header, exec_lines, tot_lines, verbose=True):
     # Print [oook.....] progress bar
     print_percent(exec_lines, tot_lines)
 
+
 def print_test_progress_bar(header, passed, failed, verbose=True):
     print_line('-')
     print(header)
@@ -104,17 +114,19 @@ def print_test_progress_bar(header, passed, failed, verbose=True):
         print('    Passed: {}'.format(passed))
         print('    Failed: {}'.format(failed))
     elif failed > 0:
-        print('    {} test examples passed before encountering '
-              'first failed test example'.format(passed))
+        print_error('    {} test examples passed before encountering '
+                    'first failed test example'.format(passed))
         return
     else:
-        print('    {} test examples passed! No examples failed.'.format(passed))
+        print_success(
+            '    {} test examples passed! No examples failed.'.format(passed))
         return
 
     # Print [oook.....] progress bar
     total = passed + failed
     print_percent(passed, total)
-    
+
+
 def print_percent(numer, denom):
     percent = round(100 * numer / denom, 1) if denom != 0 else 0.0
     print('[{}k{}] {}% passed'.format(
@@ -125,6 +137,7 @@ def print_percent(numer, denom):
 #################
 # Serialization #
 #################
+
 
 def prettyjson(json, indentation='  '):
     """Formats a Python-object into a string in a JSON like way, but
@@ -157,5 +170,5 @@ def prettyjson(json, indentation='  '):
             pairs.append(indent(k + ': ' + v, indentation))
         return '{\n' + ',\n'.join(pairs) + '\n}'
     else:
-        raise exceptions.SerializeException('Invalid json type: {}'.format(json))
-
+        raise exceptions.SerializeException(
+            'Invalid json type: {}'.format(json))
