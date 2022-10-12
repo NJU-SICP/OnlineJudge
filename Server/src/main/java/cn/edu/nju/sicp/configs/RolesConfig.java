@@ -55,7 +55,7 @@ public final class RolesConfig {
         grantedAuthoritiesMap.put(OP_ASSIGNMENT_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_SENIOR));
         grantedAuthoritiesMap.put(OP_ASSIGNMENT_UPDATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
         grantedAuthoritiesMap.put(OP_ASSIGNMENT_DELETE, List.of(ROLE_ADMIN, ROLE_TEACHER));
-        grantedAuthoritiesMap.put(OP_SUBMISSION_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_STUDENT));
+        grantedAuthoritiesMap.put(OP_SUBMISSION_CREATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_SENIOR, ROLE_STUDENT));
         grantedAuthoritiesMap.put(OP_SUBMISSION_READ_SELF, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_SENIOR, ROLE_STUDENT));
         grantedAuthoritiesMap.put(OP_SUBMISSION_READ_ALL, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF, ROLE_SENIOR));
         grantedAuthoritiesMap.put(OP_SUBMISSION_UPDATE, List.of(ROLE_ADMIN, ROLE_TEACHER, ROLE_STAFF));
