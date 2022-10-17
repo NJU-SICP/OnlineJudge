@@ -22,14 +22,11 @@ public class HogConfig {
     public static final int compareRounds = (int) 2e6;
 
     public static final String queueName = "sicp.contests.hog";
-    public static final Date frozen;
     public static final Date deadline;
 
     static {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2021, Calendar.NOVEMBER, 23, 23, 59, 0);
-        frozen = calendar.getTime();
-        calendar.set(2021, Calendar.NOVEMBER, 30, 23, 59, 0);
+        calendar.set(2022, Calendar.NOVEMBER, 12, 23, 59, 0);
         deadline = calendar.getTime();
     }
 
