@@ -17,8 +17,8 @@ import java.util.Date;
 @Configuration
 public class HogConfig {
 
-    public static final String triggerImage = "sicp-hog-contest-trigger";
-    public static final String compareImage = "sicp-hog-contest-compare";
+    public static final String triggerImage = "sicp-hog-contest-trigger:2022";
+    public static final String compareImage = "sicp-hog-contest-compare:2022";
     public static final int compareRounds = (int) 2e6;
 
     public static final String queueName = "sicp.contests.hog";
@@ -33,7 +33,6 @@ public class HogConfig {
         deadline = calendar.getTime();
     }
 
-    /* Hog contest is over.
     @Bean
     Queue hogQueue() {
         return QueueBuilder.durable(queueName).build();
@@ -55,6 +54,5 @@ public class HogConfig {
         container.setConcurrency("1-4");
         return container;
     }
-    */
 
 }

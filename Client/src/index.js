@@ -1,37 +1,39 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import {HashRouter, Route, Switch} from "react-router-dom";
+import React from "react";
+import ReactDOM from "react-dom";
+import { HashRouter, Route, Switch } from "react-router-dom";
 
-import {Provider} from "react-redux";
+import { Provider } from "react-redux";
 import store from "./store";
 
-import './index.less';
-import {ConfigProvider, Layout} from "antd";
-import zhCN from 'antd/lib/locale/zh_CN';
+import "./index.less";
+import { ConfigProvider, Layout } from "antd";
+import zhCN from "antd/lib/locale/zh_CN";
 
 import MainLayout from "./layouts/main";
 import AuthLayout from "./layouts/auth";
+import HogContestLayout from "./layouts/hogcon";
 
 console.info(
-    `Welcome to SICP Online Judge!\n` +
+  `Welcome to SICP Online Judge!\n` +
     `To access API directly, call \`http()\` in console.\n` +
     `E.g. \`http().get("/assignments")\` fetches assignments.`
 );
 
 ReactDOM.render(
-    <React.StrictMode>
-        <Provider store={store}>
-            <ConfigProvider locale={zhCN}>
-                <HashRouter>
-                    <Layout style={{minHeight: "100vh"}}>
-                        <Switch>
-                            <Route path="/auth/login" exact children={<AuthLayout/>}/>
-                            <Route path="/" children={<MainLayout/>}/>
-                        </Switch>
-                    </Layout>
-                </HashRouter>
-            </ConfigProvider>
-        </Provider>
-    </React.StrictMode>,
-    document.getElementById('root')
+  <React.StrictMode>
+    <Provider store={store}>
+      <ConfigProvider locale={zhCN}>
+        <HashRouter>
+          <Layout style={{ minHeight: "100vh" }}>
+            <Switch>
+              <Route path="/hogcon" exact children={<HogContestLayout />} />
+              <Route path="/auth/login" exact children={<AuthLayout />} />
+              <Route path="/" children={<MainLayout />} />
+            </Switch>
+          </Layout>
+        </HashRouter>
+      </ConfigProvider>
+    </Provider>
+  </React.StrictMode>,
+  document.getElementById("root")
 );

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import http from "../../../http";
+import http from "../../http";
 
 import { Divider, Typography } from "antd";
 import { RobotOutlined } from "@ant-design/icons";
@@ -60,10 +60,10 @@ const HogContest = () => {
 
     return (<>
         <Typography.Title level={1} style={{ textAlign: "center" }}>
-            <RobotOutlined /> Hog Contest 2021
+            <RobotOutlined /> Hog Contest 2022
         </Typography.Title>
         <Typography.Title level={4} style={{ textAlign: "center" }}>
-            截止时间：2021-11-14 23:59
+            截止时间：待定
         </Typography.Title>
         <Divider />
         <HogSubmission totalRounds={totalRounds} entries={entries} reload={loadEntries} disabled={disabled}/>

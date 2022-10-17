@@ -1,7 +1,7 @@
 const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
 
 const config = {
-    version: "2022.10.06",
+    version: "2022.10.17",
     storageKeys: {
         auth: "sicp-auth"
     },

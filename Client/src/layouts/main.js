@@ -27,7 +27,6 @@ import AdminSubmissionList from "../components/admin/submissions/list";
 import AdminBackupList from "../components/admin/backups/list";
 import AdminScoreTable from "../components/admin/score/table";
 import BackupList from "../components/assignments/backups";
-import HogContest from "../components/contests/hog/contest";
 import AdminExtensionList from "../components/admin/extensions/list";
 
 const MainLayout = () => {
@@ -110,7 +109,6 @@ const MainLayout = () => {
                                         <Route path="/assignments/:id/backups" children={<BackupList/>}/>
                                         <Route path="/assignments/:id" children={<AssignmentView/>}/>
                                         <Route path="/assignments" children={<AssignmentList/>}/>
-                                        <Route path="/contests/hog" children={<HogContest/>}/>
                                         <Route path="/config" children={<UserConfig/>}/>
                                         <Route path="/" exact children={<Welcome/>}/>
                                     </Switch>

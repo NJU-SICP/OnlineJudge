@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
 import moment from "moment";
 
 import { Button, Card, Descriptions, Empty, Skeleton, Typography } from "antd";
@@ -40,7 +39,7 @@ const HogSubmission = ({ totalRounds, entries, reload, disabled }) => {
             : <Card>
                 {!entries || !entry
                     ? <Empty description={<>
-                        你还没有参与Hog Contest，请提交代码到<Link to="/assignments/hogcon"><code>hogcon</code>作业</Link>以参与比赛。
+                        你还没有参与Hog Contest，请提交代码到<code>hogcon</code>作业以参与比赛。
                     </>} />
                     : <Descriptions>
                         <Descriptions.Item label="玩家名称">{entry.name}</Descriptions.Item>
