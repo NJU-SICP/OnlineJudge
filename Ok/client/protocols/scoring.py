@@ -1,4 +1,4 @@
-# Modifications copyright (C) 2021 Tianyun Zhang
+# Modifications copyright (C) 2021-2022 Tianyun Zhang
 # This file has been modified to adapt to SICP course at Nanjing University.
 
 """Implements the ScoringProtocol, which runs all specified tests
@@ -12,7 +12,6 @@ from client.protocols.common import models as protocol_models
 from client.utils import format
 from collections import OrderedDict
 import logging
-from multiprocessing import Pool
 
 log = logging.getLogger(__name__)
 
@@ -49,8 +48,7 @@ class ScoringProtocol(protocol_models.Protocol):
             # environment through to Python tests.
             # Use type to ensure is an actual OkTest and not a subclass
             if type(test) == ok_test_models.OkTest:
-                with Pool(1) as pool:
-                    score, tle = test.score(env=env, pool=pool)
+                score, tle = test.score(env=env, use_pool=True)
             else:
                 score, tle = test.score(), False
 

@@ -1,15 +1,22 @@
+# Modifications copyright (C) 2021-2022 Tianyun Zhang
+# This file has been modified to adapt to SICP course at Nanjing University.
+
+from client.utils.printer import print_error
 from client import exceptions as ex
 from client.sources.common import core
 from client.sources.common import models
 from client.utils import format
 from client.utils import output
 from client.utils import storage
+from multiprocessing import Pool, TimeoutError
+import logging
 import os
+
+log = logging.getLogger(__name__)
 
 ##########
 # Models #
 ##########
-from client.utils.printer import print_error
 
 
 class OkTest(models.Test):
@@ -44,7 +51,7 @@ class OkTest(models.Test):
                 raise ex.SerializeException('Invalid suite type: '
                                             '{}'.format(suite['type']))
             self.suites[i] = self.suite_map[suite['type']](
-                    self, self.verbose, self.interactive, self.timeout, **suite)
+                self, self.verbose, self.interactive, self.timeout, **suite)
 
     def run(self, env):
         """Runs the suites associated with this OK test.
@@ -92,7 +99,7 @@ class OkTest(models.Test):
             'locked': locked,
         }
 
-    def score(self, env=None, pool=None):
+    def score(self, env=None, use_pool=False):
         """Runs test cases and computes the score for this particular test.
 
         Scores are determined by aggregating results from suite.run() for each
@@ -104,20 +111,27 @@ class OkTest(models.Test):
         """
         passed, total, tle = 0, 0, False
         for i, suite in enumerate(self.suites):
+            log.info(f"Running suite {i}")
             if not suite.scored:
                 continue
             total += 1
 
             # Env is for programmatic API users to plumb a custom environment
             # Use multiprocessing for correct timeout handling
-            if not pool:
+            if not use_pool:
                 results = suite.run(self.name, i + 1, env)
             else:
+                pool = Pool(1)
                 r = pool.apply_async(suite.run, (self.name, i + 1, env,))
                 try:
-                    results = r.get(self.timeout)
+                    try:
+                        results = r.get(self.timeout)
+                    except TimeoutError:
+                        results = None
+                        pool.terminate()
+                        log.error(f"Timeout on suite {i}")
                 except Exception:
-                    results = None
+                    raise
 
                 if results is None:
                     tle = True
@@ -138,7 +152,7 @@ class OkTest(models.Test):
         for suite_num, suite in enumerate(self.suites):
             for case_num, case in enumerate(suite.cases):
                 case_id = '{} > Suite {} > Case {}'.format(
-                            self.name, suite_num + 1, case_num + 1)
+                    self.name, suite_num + 1, case_num + 1)
 
                 format.print_line('-')
                 print(case_id)
@@ -197,7 +211,7 @@ class OkTest(models.Test):
             # Try to use os.replace, but if on Windows manually remove then rename
             # (ref issue #339)
             if os.name == 'nt':
-            # TODO(colin) Add additional error handling in case process gets killed mid remove/rename
+                # TODO(colin) Add additional error handling in case process gets killed mid remove/rename
                 os.remove(self.file)
                 os.rename(test_tmp, self.file)
             else:
@@ -224,8 +238,10 @@ class EncryptedOKTest(models.Test):
     name = core.String()
     points = core.Float()
     partner = core.String(optional=True)
+
     def warn(self, method):
-        print_error("Cannot {} {}: test is encrypted".format(method, self.name))
+        print_error("Cannot {} {}: test is encrypted".format(
+            method, self.name))
         keys_string = input("Please paste the key to decrypt this test: ")
         keys = keys_string.strip().split()
         if keys:
@@ -293,7 +309,7 @@ class Suite(core.Serializable):
         data = [{'setup': c.formatted_setup(),
                  'code': c.formatted_code(),
                  'teardown': c.formatted_teardown()} for _, c in self.enumerate_cases()
-                                                     if hasattr(c, 'setup')]
+                if hasattr(c, 'setup')]
         return data
 
     def _run_case(self, test_name, suite_number, case, case_number):
@@ -324,6 +340,6 @@ class Suite(core.Serializable):
             short_name = self.test.get_short_name()
             # TODO: Change when in notebook mode
             print('Run only this test case with '
-                '"python3 ok -q {} --suite {} --case {}"'.format(
-                    short_name, suite_number, case_number))
+                  '"python3 ok -q {} --suite {} --case {}"'.format(
+                      short_name, suite_number, case_number))
         return success

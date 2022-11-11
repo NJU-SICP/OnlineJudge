@@ -57,7 +57,7 @@ class DoctestSuite(models.Suite):
             self.console.load_env(env)
 
         for i, case in self.enumerate_cases():
-            log.info('Running case {}'.format(i))
+            log.info(f'Running case {suite_number}.{i}')
 
             if (case.locked == True or results['locked'] > 0) and self.skip_locked_cases:
                 # If a test case is locked, refuse to run any of the subsequent
@@ -79,4 +79,5 @@ class DoctestSuite(models.Suite):
             if not success and not self.verbose:
                 # Stop at the first failed test
                 break
+        log.info(f"Results for suite {suite_number}: {results}")
         return results
