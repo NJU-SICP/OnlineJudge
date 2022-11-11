@@ -149,7 +149,7 @@ public class HogTrigger implements Consumer<Submission> {
         try (InputStream resultStream =
                      docker.copyArchiveFromContainerCmd(containerId, "/workdir/result.json").exec();
              TarArchiveInputStream tarInputStream = new TarArchiveInputStream(resultStream)) {
-            //docker.removeContainerCmd(containerId).exec();
+            docker.removeContainerCmd(containerId).exec();
             ArchiveEntry entry = tarInputStream.getNextEntry();
             if (entry == null || !tarInputStream.canReadEntryData(entry)) {
                 throw new Exception("无法读取Hog策略生成程序保存的结果。");
