@@ -128,8 +128,9 @@ class OkTest(models.Test):
                         results = r.get(self.timeout)
                     except TimeoutError:
                         results = None
-                        pool.terminate()
                         log.error(f"Timeout on suite {i}")
+                    finally:
+                        pool.terminate()
                 except Exception:
                     raise
 
