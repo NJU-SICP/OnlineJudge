@@ -30,7 +30,7 @@ public class MiscController {
 
     @GetMapping("/ok-client/version")
     public ResponseEntity<String> getOkClientVersion() {
-        return ResponseEntity.ok("2022.11.11");
+        return ResponseEntity.ok("2022.11.27");
     }
 
 }

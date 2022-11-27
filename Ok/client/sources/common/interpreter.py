@@ -181,8 +181,6 @@ class Console(object):
     PS1 = '> '
     PS2 = '. '
 
-    _output_fn = repr
-
     ####################
     # Public interface #
     ####################
@@ -280,10 +278,21 @@ class Console(object):
                     return False
                 current = []
         return True
+    
+    @staticmethod
+    def _output_fn(value):
+        """Safe wrapper for __repr__."""
+        try:
+            return repr(value)
+        except Exception as e:
+            raise ConsoleException(e)
 
     def _compare(self, expected, code):
         try:
             value, printed = self.evaluate(code)
+            if value is not None:
+                print(self._output_fn(value))
+                printed += self._output_fn(value)
         except ConsoleException as e:
             detail = "{}: {}".format(e.exception_type, str(e.exception))
             actual = CodeAnswer(
@@ -291,9 +300,6 @@ class Console(object):
                 exception_type=e.exception_type,
                 exception_detail=detail.splitlines())
         else:
-            if value is not None:
-                print(self._output_fn(value))
-                printed += self._output_fn(value)
             output = printed.splitlines()
             actual = CodeAnswer(output=output)
 
