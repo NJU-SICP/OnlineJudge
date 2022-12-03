@@ -1,4 +1,4 @@
-# Modifications copyright (C) 2021 Tianyun Zhang
+# Modifications copyright (C) 2021-2022 Tianyun Zhang
 # This file has been modified to adapt to SICP course at Nanjing University.
 """Timeout mechanism."""
 
@@ -6,6 +6,7 @@ from client import exceptions
 import threading
 import traceback
 import signal
+
 
 def timed(timeout, fn, args=(), kargs={}):
     """For a nonzero timeout, evaluates a call expression in a separate thread.
@@ -27,13 +28,17 @@ def timed(timeout, fn, args=(), kargs={}):
     """
     if timeout == 0:
         return fn(*args, **kargs)
-    
+
     try:
+        # If the system is not UNIX, skip this method.
+        # Otherwise, raise all exceptions in execution.
         with __UnixTimeout(timeout):
             return fn(*args, **kargs)
-    except:
+    except exceptions.NotUnix:
         pass
-    
+    except Exception:
+        raise
+
     submission = __ReturningThread(fn, args, kargs)
     submission.start()
     submission.join(timeout)
@@ -43,8 +48,10 @@ def timed(timeout, fn, args=(), kargs={}):
         raise submission.error
     return submission.result
 
+
 class __ReturningThread(threading.Thread):
     """Creates a daemon Thread with a result variable."""
+
     def __init__(self, fn, args, kargs):
         super().__init__()
         self.daemon = True
@@ -61,21 +68,23 @@ class __ReturningThread(threading.Thread):
             e._message = traceback.format_exc(limit=2)
             self.error = e
 
+
 class __UnixTimeout:
     """Use SIGALRM to get result with timeout safely on UNIX."""
+
     def __init__(self, timeout):
         try:
             signal.SIGALRM
         except:
-            raise Exception("SIGALRM is not available")
+            raise exceptions.NotUnix("SIGALRM is not available")
         self.timeout = timeout
 
     def handle_timeout(self, signum, frame):
         raise exceptions.Timeout(self.timeout)
-    
+
     def __enter__(self):
         signal.signal(signal.SIGALRM, self.handle_timeout)
         signal.alarm(self.timeout)
-    
+
     def __exit__(self, type, value, traceback):
         signal.alarm(0)
