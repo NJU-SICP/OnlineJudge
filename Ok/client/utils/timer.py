@@ -3,6 +3,7 @@
 """Timeout mechanism."""
 
 from client import exceptions
+import math
 import threading
 import traceback
 import signal
@@ -77,7 +78,7 @@ class __UnixTimeout:
             signal.SIGALRM
         except:
             raise exceptions.NotUnix("SIGALRM is not available")
-        self.timeout = timeout
+        self.timeout = math.ceil(timeout)
 
     def handle_timeout(self, signum, frame):
         raise exceptions.Timeout(self.timeout)
